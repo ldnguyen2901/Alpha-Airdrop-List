@@ -1,0 +1,100 @@
+import { useState, useRef } from 'react';
+import { readExcelFile, parseExcelData } from '../utils/excel';
+
+export default function ExcelUpload({ onImportData }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Kiểm tra định dạng file
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv', // .csv
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      setError('Only Excel files (.xlsx, .xls) or CSV are supported');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const excelData = await readExcelFile(file);
+      const parsedData = parseExcelData(excelData);
+
+      if (parsedData.length === 0) {
+        setError('No valid data found in file');
+        return;
+      }
+
+      onImportData(parsedData);
+      setError('');
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      const fakeEvent = { target: { files: [file] } };
+      handleFileUpload(fakeEvent);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  return (
+    <div className='flex flex-col items-center'>
+      <div
+        className='w-full max-w-lg md:max-w-xl lg:max-w-2xl p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer'
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <div className='text-4xl mb-2'>📊</div>
+        <div className='text-lg font-medium mb-2 dark:text-white'>
+          {isLoading ? 'Reading file...' : 'Upload Excel file'}
+        </div>
+        <div className='text-sm text-gray-500 dark:text-gray-400 mb-4'>
+          Drag & drop file or click to select
+        </div>
+        <div className='text-xs text-gray-400 dark:text-gray-500'>
+          Supported: .xlsx, .xls, .csv
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept='.xlsx,.xls,.csv'
+          onChange={handleFileUpload}
+          className='hidden'
+        />
+      </div>
+
+      {error && (
+        <div className='mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg'>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,39 @@
+{
+  "name": "airdrop-alpha-tracker",
+  "version": "1.0.0",
+  "description": "Ứng dụng theo dõi giá tiền điện tử sử dụng CoinGecko API, được thiết kế đặc biệt cho việc quản lý airdrop alpha",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "xlsx": "^0.18.5",
+    "firebase": "^10.12.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "vite": "^7.1.2"
+  },
+  "keywords": [
+    "airdrop",
+    "alpha",
+    "crypto",
+    "price-tracker",
+    "coingecko",
+    "react",
+    "binance",
+    "gate"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
