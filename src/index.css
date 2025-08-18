@@ -16,36 +16,6 @@ code {
     monospace;
 }
 
-/* Custom Toastify styles for dark theme */
-.Toastify__toast-container {
-  z-index: 9999;
-}
-
-.Toastify__toast {
-  border-radius: 12px;
-  font-family: inherit;
-}
-
-.Toastify__toast--error {
-  background: #dc2626;
-  color: white;
-}
-
-.Toastify__toast--success {
-  background: #059669;
-  color: white;
-}
-
-.Toastify__toast--warning {
-  background: #d97706;
-  color: white;
-}
-
-.Toastify__toast--info {
-  background: #2563eb;
-  color: white;
-}
-
 /* Dark theme improvements */
 .dark .border-gray-200 {
   border-color: #374151;
@@ -126,5 +96,145 @@ code {
 }
 
 .dark .bg-gray-100 {
+  border-color: #374151;
+}
+
+/* Table hover effects */
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+tbody tr:nth-child(even) td.sticky {
+  background-color: #f9fafb;
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:nth-child(odd) td.sticky {
+  background-color: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover td.sticky {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.dark tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Dark theme table improvements */
+.dark table {
+  border-color: #374151;
+}
+
+.dark thead {
+  background-color: #0f172a;
+}
+
+.dark thead th {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #374151;
+  font-weight: 600;
+}
+
+.dark thead th.sticky {
+  background-color: #0f172a;
+}
+
+.dark tbody tr:nth-child(even) {
+  background-color: #111827;
+}
+
+.dark tbody tr:nth-child(odd) {
+  background-color: #1f2937;
+}
+
+.dark tbody tr:nth-child(even) td.sticky {
+  background-color: #111827;
+  transition: background-color 0.2s ease;
+}
+
+.dark tbody tr:nth-child(odd) td.sticky {
+  background-color: #1f2937;
+  transition: background-color 0.2s ease;
+}
+
+.dark tbody tr:hover {
+  background-color: #374151;
+}
+
+.dark tbody tr:hover td.sticky {
+  background-color: #374151;
+}
+
+.dark tbody td {
+  border-color: #374151;
+  color: #e5e7eb;
+}
+
+/* Input fields in dark theme with better contrast */
+.dark input {
+  border-color: #4b5563;
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.dark input:focus {
+  border-color: #6b7280;
+  background-color: #111827;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+}
+
+.dark input::placeholder {
+  color: #9ca3af;
+}
+
+/* Button improvements for dark theme */
+.dark button {
+  border-color: #4b5563;
+}
+
+.dark button:hover {
+  border-color: #6b7280;
+}
+
+/* Card improvements for dark theme */
+.dark .bg-white {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .bg-gray-50 {
+  background-color: #111827;
+  border-color: #374151;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .bg-gray-800 {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+/* Modal improvements for dark theme */
+.dark .bg-black\/30 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .bg-white.dark\:bg-gray-800 {
+  background-color: #1f2937;
   border-color: #374151;
 }

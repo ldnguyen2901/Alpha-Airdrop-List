@@ -263,7 +263,7 @@ export default function SortableTable({
                       : ''
                   } ${
                     h === 'Token'
-                      ? 'sticky left-0 top-0 z-30 bg-gray-100 dark:bg-gray-700'
+                      ? 'sticky left-0 top-0 z-30 bg-gray-100 dark:bg-gray-700 sticky'
                       : ''
                   }`}
                   onClick={
@@ -296,13 +296,13 @@ export default function SortableTable({
           {sortedRows.map((r, idx) => (
             <tr
               key={idx}
-              className={`border-t dark:border-gray-600 ${
+              className={`group border-t dark:border-gray-600 transition-colors duration-200 ${
                 idx % 2 === 0
                   ? 'bg-white dark:bg-gray-800'
                   : 'bg-gray-50 dark:bg-gray-700'
               } hover:bg-gray-100 dark:hover:bg-gray-600`}
             >
-              <td className='px-1 py-2 sticky left-0 z-10 bg-white dark:bg-gray-800'>
+              <td className='px-1 py-2 sticky left-0 z-10 bg-white dark:bg-gray-800 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 sticky'>
                 <input
                   className='w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
                   value={

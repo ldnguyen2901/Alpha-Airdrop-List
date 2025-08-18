@@ -95,8 +95,8 @@ export default function App() {
     } catch (e) {
       console.error(e);
       toast.error('Failed to fetch prices. Please try again.', {
-        position: 'top-right',
-        autoClose: 5000,
+        position: 'bottom-right',
+        autoClose: 2000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -501,8 +501,8 @@ export default function App() {
 
         {/* Toast Container */}
         <ToastContainer
-          position='top-right'
-          autoClose={5000}
+          position='bottom-right'
+          autoClose={2000}
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick
@@ -511,6 +511,7 @@ export default function App() {
           draggable
           pauseOnHover
           theme='colored'
+          limit={3}
         />
       </div>
     </ThemeProvider>
