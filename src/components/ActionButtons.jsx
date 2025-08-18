@@ -22,12 +22,6 @@ export default function ActionButtons({
         >
           ➕ Add Row
         </button>
-        <button
-          onClick={() => document.querySelector('#paste-open')?.click()}
-          className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white'
-        >
-          📋 Paste from Sheet
-        </button>
         <PasteButton onPasteText={onPasteText} />
         <button
           onClick={onImportExcel}
