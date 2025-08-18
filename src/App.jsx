@@ -15,6 +15,8 @@ import StatsCards from './components/StatsCards';
 import ActionButtons from './components/ActionButtons';
 import SortableTable from './components/SortableTable';
 import ExcelUpload from './components/ExcelUpload';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * React Airdrop Alpha Tracker
@@ -92,7 +94,14 @@ export default function App() {
       );
     } catch (e) {
       console.error(e);
-      alert('Failed to fetch prices. Please try again.');
+      toast.error('Failed to fetch prices. Please try again.', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -170,6 +179,9 @@ export default function App() {
         };
       } catch (e) {
         console.error('Auth/subscribe error:', e);
+        toast.error(
+          'Failed to connect to cloud sync. Please refresh the page.',
+        );
       }
     })();
     return cleanup;
@@ -182,7 +194,10 @@ export default function App() {
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
         saveWorkspaceData('global', newRows)
-          .catch((e) => console.error('Save cloud failed:', e))
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
           .finally(() => setSyncing(false));
       }
       return newRows;
@@ -197,11 +212,15 @@ export default function App() {
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
         saveWorkspaceData('global', newRows)
-          .catch((e) => console.error('Save cloud failed:', e))
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
           .finally(() => setSyncing(false));
       }
       return newRows;
     });
+    toast.success('New row added successfully!');
   }
 
   function removeRow(idx) {
@@ -211,7 +230,10 @@ export default function App() {
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
         saveWorkspaceData('global', newRows)
-          .catch((e) => console.error('Save cloud failed:', e))
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
           .finally(() => setSyncing(false));
       }
       return newRows;
@@ -225,9 +247,13 @@ export default function App() {
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
         saveWorkspaceData('global', [])
-          .catch((e) => console.error('Save cloud failed:', e))
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
           .finally(() => setSyncing(false));
       }
+      toast.success('All data cleared successfully!');
     }
   }
 
@@ -267,10 +293,19 @@ export default function App() {
         saveDataToStorage(newRows);
         return newRows;
       });
+
+      toast.success(
+        `Imported ${filteredNewRows.length} rows successfully! ${duplicates.length} duplicates skipped.`,
+      );
     }
   }
 
   function exportCSV() {
+    if (rows.length === 0) {
+      toast.warning('No data to export. Please add some data first.');
+      return;
+    }
+
     const lines = rows.map((r) =>
       [
         r.name,
@@ -295,6 +330,8 @@ export default function App() {
     a.download = `crypto-tracker-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+
+    toast.success(`Exported ${rows.length} rows to CSV successfully!`);
   }
 
   function handlePaste(text) {
@@ -335,11 +372,17 @@ export default function App() {
         if (!isRemoteUpdateRef.current) {
           setSyncing(true);
           saveWorkspaceData('global', newRows)
-            .catch((e) => console.error('Save cloud failed:', e))
+            .catch((e) => {
+              console.error('Save cloud failed:', e);
+              toast.error('Failed to sync data to cloud. Please try again.');
+            })
             .finally(() => setSyncing(false));
         }
         return newRows;
       });
+      toast.success(
+        `Imported ${parsed.length} rows from clipboard successfully!`,
+      );
     }
   }
 
@@ -357,11 +400,17 @@ export default function App() {
         if (!isRemoteUpdateRef.current) {
           setSyncing(true);
           saveWorkspaceData('global', newRows)
-            .catch((e) => console.error('Save cloud failed:', e))
+            .catch((e) => {
+              console.error('Save cloud failed:', e);
+              toast.error('Failed to sync data to cloud. Please try again.');
+            })
             .finally(() => setSyncing(false));
         }
         return newRows;
       });
+      toast.success(
+        `Imported ${parsedData.length} rows from Excel successfully!`,
+      );
     }
     setShowExcelUpload(false);
   }
@@ -449,6 +498,20 @@ export default function App() {
             </div>
           </div>
         </footer>
+
+        {/* Toast Container */}
+        <ToastContainer
+          position='top-right'
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme='colored'
+        />
       </div>
     </ThemeProvider>
   );

@@ -15,3 +15,116 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Custom Toastify styles for dark theme */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+.Toastify__toast {
+  border-radius: 12px;
+  font-family: inherit;
+}
+
+.Toastify__toast--error {
+  background: #dc2626;
+  color: white;
+}
+
+.Toastify__toast--success {
+  background: #059669;
+  color: white;
+}
+
+.Toastify__toast--warning {
+  background: #d97706;
+  color: white;
+}
+
+.Toastify__toast--info {
+  background: #2563eb;
+  color: white;
+}
+
+/* Dark theme improvements */
+.dark .border-gray-200 {
+  border-color: #374151;
+}
+
+.dark .border-gray-300 {
+  border-color: #4b5563;
+}
+
+.dark .border-gray-400 {
+  border-color: #6b7280;
+}
+
+.dark .border-gray-500 {
+  border-color: #9ca3af;
+}
+
+.dark .border-gray-600 {
+  border-color: #d1d5db;
+}
+
+.dark .border-gray-700 {
+  border-color: #e5e7eb;
+}
+
+.dark .border-gray-800 {
+  border-color: #f3f4f6;
+}
+
+.dark .border-gray-900 {
+  border-color: #f9fafb;
+}
+
+/* Softer borders for dark theme */
+.dark .border {
+  border-color: #374151;
+}
+
+.dark .border-2 {
+  border-color: #374151;
+}
+
+.dark .border-4 {
+  border-color: #374151;
+}
+
+/* Input fields in dark theme */
+.dark input {
+  border-color: #374151;
+}
+
+.dark input:focus {
+  border-color: #6b7280;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+}
+
+/* Table borders in dark theme */
+.dark table {
+  border-color: #374151;
+}
+
+.dark th {
+  border-color: #374151;
+}
+
+.dark td {
+  border-color: #374151;
+}
+
+/* Card and modal borders in dark theme */
+.dark .bg-white {
+  border-color: #374151;
+}
+
+.dark .bg-gray-50 {
+  border-color: #374151;
+}
+
+.dark .bg-gray-100 {
+  border-color: #374151;
+}
