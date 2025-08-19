@@ -22,17 +22,17 @@
 
 Ứng dụng sử dụng 8 cột tương ứng với Google Sheet:
 
-| Cột | Tên              | Mô tả                                |
-| --- | ---------------- | ------------------------------------ |
-| A   | Token            | Tên hiển thị của token               |
-| B   | Amount           | Số lượng token sở hữu                |
+| Cột | Tên              | Mô tả                                   |
+| --- | ---------------- | --------------------------------------- |
+| A   | Token            | Tên hiển thị của token                  |
+| B   | Amount           | Số lượng token sở hữu                   |
 | C   | Listing time     | Ngày ra mắt token (DD/MM/YYYY HH:mm:ss) |
-| D   | API ID           | ID CoinGecko (quan trọng để lấy giá) |
-| E   | Point (Priority) | Điểm ưu tiên                         |
-| F   | Point (FCFS)     | Điểm FCFS                            |
-| G   | Token Price      | Giá token (tự động từ API)           |
-| H   | Reward           | B × G (tự động tính)                 |
-| I   | Highest Price    | Giá cao nhất đã đạt được             |
+| D   | API ID           | ID CoinGecko (quan trọng để lấy giá)    |
+| E   | Point (Priority) | Điểm ưu tiên                            |
+| F   | Point (FCFS)     | Điểm FCFS                               |
+| G   | Token Price      | Giá token (tự động từ API)              |
+| H   | Reward           | B × G (tự động tính)                    |
+| I   | Highest Price    | Giá cao nhất đã đạt được                |
 
 ## Cài đặt
 
@@ -122,6 +122,27 @@ GET https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies={curre
 - API ID phải chính xác để lấy được giá
 - Chu kỳ làm mới tối thiểu 5 giây để tránh rate limit
 - Dữ liệu được lưu trong memory, refresh trang sẽ mất dữ liệu
+
+## Firebase (Cloud sync)
+
+Ứng dụng hỗ trợ đồng bộ dữ liệu qua Firebase Firestore. Để bật tính năng này:
+
+1. Tạo một project trên Firebase Console và bật Firestore (in test mode hoặc cấu hình rules phù hợp).
+2. Trong phần Project settings lấy các biến cấu hình (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
+3. Tạo file `.env.local` (hoặc `.env`) ở gốc dự án và thêm các biến bắt đầu bằng `VITE_` theo mẫu trong `.env.example` (đã thêm vào repo).
+
+Ví dụ: copy `.env.example` -> `.env.local` và điền giá trị:
+
+VITE_FIREBASE_API_KEY=AIzA...your_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
+VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef123456
+
+4. Khởi động lại dev server nếu đang chạy (`npm run dev`). Ứng dụng sẽ tự động đăng nhập ẩn danh và cố gắng load/workspace `global` từ Firestore.
+
+Ghi chú bảo mật: không commit file `.env.local` chứa khóa vào git; giữ các khóa an toàn.
 
 ## Công nghệ sử dụng
 

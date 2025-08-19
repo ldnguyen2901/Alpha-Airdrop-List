@@ -82,35 +82,39 @@ export default function SortableTable({
         aValue = Number(aValue) || 0;
         bValue = Number(bValue) || 0;
       } else if (sortConfig.key === 'launchAt') {
-        // Sort theo thứ tự dd/mm/yyyy rồi mới đến hh:mm:ss
-        aValue = aValue || '';
-        bValue = bValue || '';
-        if (aValue && bValue) {
-          const aParts = aValue.split(' ');
-          const bParts = bValue.split(' ');
-          if (aParts.length === 2 && bParts.length === 2) {
-            const aDate = aParts[0].split('/');
-            const bDate = bParts[0].split('/');
-            if (aDate.length === 3 && bDate.length === 3) {
-              const aDateObj = new Date(aDate[2], aDate[1] - 1, aDate[0]);
-              const bDateObj = new Date(bDate[2], bDate[1] - 1, bDate[0]);
-              if (aDateObj.getTime() !== bDateObj.getTime()) {
-                return sortConfig.direction === 'asc'
-                  ? aDateObj - bDateObj
-                  : bDateObj - aDateObj;
-              }
-              // Nếu cùng ngày thì sort theo thời gian
-              const aTime = aParts[1];
-              const bTime = bParts[1];
-              return sortConfig.direction === 'asc'
-                ? aTime.localeCompare(bTime)
-                : bTime.localeCompare(aTime);
-            }
+        // Sort by parsed Date object: accept DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+        const parse = (v) => {
+          if (!v) return null;
+          const parts = v.trim().split(' ');
+          const dateParts = parts[0].split('/');
+          if (dateParts.length !== 3) return null;
+          const d = Number(dateParts[0]);
+          const mo = Number(dateParts[1]);
+          const y = Number(dateParts[2]);
+          let h = 0,
+            mi = 0,
+            s = 0;
+          if (parts[1]) {
+            const t = parts[1].split(':');
+            h = Number(t[0] || 0);
+            mi = Number(t[1] || 0);
+            s = Number(t[2] || 0);
           }
+          const dt = new Date(y, mo - 1, d, h, mi, s);
+          return isNaN(dt.getTime()) ? null : dt;
+        };
+
+        const aDt = parse(aValue);
+        const bDt = parse(bValue);
+        if (aDt && bDt) {
+          return sortConfig.direction === 'asc' ? aDt - bDt : bDt - aDt;
         }
+        if (aDt && !bDt) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (!aDt && bDt) return sortConfig.direction === 'asc' ? 1 : -1;
+        // fallback to string compare
         return sortConfig.direction === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
+          ? String(aValue).localeCompare(String(bValue))
+          : String(bValue).localeCompare(String(aValue));
       } else {
         aValue = String(aValue || '').toLowerCase();
         bValue = String(bValue || '').toLowerCase();
@@ -174,57 +178,79 @@ export default function SortableTable({
   };
 
   const formatDateTime = (value) => {
-    // Validate DD/MM/YYYY HH:mm:ss format
-    const regex =
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/;
-    const match = value.match(regex);
+    if (!value) return value;
+    const v = String(value).trim();
 
-    if (match) {
-      const [, day, month, year, hour, minute, second] = match;
+    // date-only: DD/MM/YYYY -> normalize to DD/MM/YYYY 00:00:00
+    const dateOnly = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dateOnly) {
+      const [, d, mo, y] = dateOnly;
+      return `${String(d).padStart(2, '0')}/${String(mo).padStart(
+        2,
+        '0',
+      )}/${y} 00:00:00`;
+    }
 
-      // Validate ranges
-      const dayNum = parseInt(day);
-      const monthNum = parseInt(month);
-      const yearNum = parseInt(year);
-      const hourNum = parseInt(hour);
-      const minuteNum = parseInt(minute);
-      const secondNum = parseInt(second);
-
+    // full datetime: DD/MM/YYYY HH:mm:ss
+    const full = v.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
+    );
+    if (full) {
+      const [, d, mo, y, hh, mm, ss] = full;
+      const D = Number(d);
+      const M = Number(mo);
+      const Y = Number(y);
+      const H = Number(hh);
+      const MIN = Number(mm);
+      const S = Number(ss);
       if (
-        dayNum >= 1 &&
-        dayNum <= 31 &&
-        monthNum >= 1 &&
-        monthNum <= 12 &&
-        yearNum >= 1900 &&
-        yearNum <= 2100 &&
-        hourNum >= 0 &&
-        hourNum <= 23 &&
-        minuteNum >= 0 &&
-        minuteNum <= 59 &&
-        secondNum >= 0 &&
-        secondNum <= 59
+        D >= 1 &&
+        D <= 31 &&
+        M >= 1 &&
+        M <= 12 &&
+        Y >= 1900 &&
+        Y <= 2100 &&
+        H >= 0 &&
+        H <= 23 &&
+        MIN >= 0 &&
+        MIN <= 59 &&
+        S >= 0 &&
+        S <= 59
       ) {
-        // Return formatted string with leading zeros
-        return `${day.padStart(2, '0')}/${month.padStart(
+        return `${String(d).padStart(2, '0')}/${String(mo).padStart(
           2,
           '0',
-        )}/${year} ${hour.padStart(2, '0')}:${minute.padStart(
+        )}/${y} ${String(hh).padStart(2, '0')}:${String(mm).padStart(
           2,
           '0',
-        )}:${second.padStart(2, '0')}`;
+        )}:${String(ss).padStart(2, '0')}`;
       }
     }
-    return value; // Return original if invalid format
+    return value;
   };
 
   const parseLaunchAt = (value) => {
     if (!value) return null;
-    const m = value.match(
+    const v = String(value).trim();
+    const dateOnly = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dateOnly) {
+      const [, d, mo, y] = dateOnly;
+      const dt = new Date(Number(y), Number(mo) - 1, Number(d), 0, 0, 0);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    const m = v.match(
       /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
     );
     if (!m) return null;
-    const [_, d, mo, y, h, mi, s] = m;
-    const dt = new Date(+y, +mo - 1, +d, +h, +mi, +s);
+    const [, d, mo, y, h, mi, s] = m;
+    const dt = new Date(
+      Number(y),
+      Number(mo) - 1,
+      Number(d),
+      Number(h),
+      Number(mi),
+      Number(s),
+    );
     return isNaN(dt.getTime()) ? null : dt;
   };
 
@@ -297,14 +323,23 @@ export default function SortableTable({
             <tr
               key={idx}
               className={`group border-t dark:border-gray-600 transition-colors duration-200 ${
-                idx % 2 === 0
+                String(r.apiId || '').trim() === ''
+                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                  : idx % 2 === 0
                   ? 'bg-white dark:bg-gray-800'
                   : 'bg-gray-50 dark:bg-gray-700'
               } hover:bg-gray-100 dark:hover:bg-gray-600`}
             >
-              <td className='px-1 py-2 sticky left-0 z-10 bg-white dark:bg-gray-800 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 sticky'>
+              <td
+                className={`px-1 py-2 sticky left-0 z-10`}
+                style={{ backgroundColor: 'transparent' }}
+              >
                 <input
-                  className='w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                  className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                    isEditing(idx)
+                      ? 'bg-white dark:bg-gray-700 dark:text-white'
+                      : 'bg-transparent dark:bg-transparent dark:text-white'
+                  }`}
                   value={
                     isEditing(idx) ? getDraftField(idx, 'name') ?? '' : r.name
                   }
@@ -319,11 +354,20 @@ export default function SortableTable({
                   placeholder='Bitcoin'
                   maxLength={20}
                   disabled={!isEditing(idx)}
+                  style={
+                    isEditing(idx)
+                      ? undefined
+                      : { backgroundColor: 'transparent' }
+                  }
                 />
               </td>
               <td className='px-1 py-2'>
                 <input
-                  className='w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                    isEditing(idx)
+                      ? 'bg-white dark:bg-gray-700 dark:text-white'
+                      : 'bg-transparent dark:bg-transparent dark:text-white'
+                  }`}
                   type='number'
                   value={
                     isEditing(idx)
@@ -346,7 +390,11 @@ export default function SortableTable({
               </td>
               <td className='px-1 py-2'>
                 <input
-                  className='w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                  className={`w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                    isEditing(idx)
+                      ? 'bg-white dark:bg-gray-700 dark:text-white'
+                      : 'bg-transparent dark:bg-transparent dark:text-white'
+                  }`}
                   value={
                     isEditing(idx)
                       ? getDraftField(idx, 'launchAt') ?? ''
@@ -387,7 +435,11 @@ export default function SortableTable({
               {showApiId && (
                 <td className='px-1 py-2'>
                   <input
-                    className='w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                    className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                      isEditing(idx)
+                        ? 'bg-white dark:bg-gray-700 dark:text-white'
+                        : 'bg-transparent dark:bg-transparent dark:text-white'
+                    }`}
                     value={
                       isEditing(idx)
                         ? getDraftField(idx, 'apiId') ?? ''
@@ -401,7 +453,7 @@ export default function SortableTable({
                         [actual]: { ...prev[actual], apiId: e.target.value },
                       }));
                     }}
-                    placeholder='bitcoin'
+                    placeholder=''
                     maxLength={15}
                     disabled={!isEditing(idx)}
                   />
@@ -409,7 +461,11 @@ export default function SortableTable({
               )}
               <td className='px-1 py-2'>
                 <input
-                  className='w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                    isEditing(idx)
+                      ? 'bg-white dark:bg-gray-700 dark:text-white'
+                      : 'bg-transparent dark:bg-transparent dark:text-white'
+                  }`}
                   value={
                     isEditing(idx)
                       ? getDraftField(idx, 'pointPriority') ?? ''
@@ -433,7 +489,11 @@ export default function SortableTable({
               </td>
               <td className='px-1 py-2'>
                 <input
-                  className='w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:text-white'
+                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                    isEditing(idx)
+                      ? 'bg-white dark:bg-gray-700 dark:text-white'
+                      : 'bg-transparent dark:bg-transparent dark:text-white'
+                  }`}
                   value={
                     isEditing(idx)
                       ? getDraftField(idx, 'pointFCFS') ?? ''

@@ -40,6 +40,22 @@ export function parseExcelData(excelData) {
 
   // Bỏ qua header nếu có
   const dataRows = excelData.slice(1);
+  // Validate rows: no extra non-empty columns beyond F (indices >=6)
+  const invalidRows = [];
+  dataRows.forEach((row, idx) => {
+    if (row.length > 6) {
+      const extras = row.slice(6).some((v) => String(v || '').trim() !== '');
+      if (extras) invalidRows.push(idx + 2); // +2 to account for header + 1-based
+    }
+  });
+
+  if (invalidRows.length) {
+    throw new Error(
+      `Excel contains data in columns beyond F at rows: ${invalidRows.join(
+        ', ',
+      )}`,
+    );
+  }
 
   return dataRows
     .map((row) => {

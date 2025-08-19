@@ -40,71 +40,153 @@ export default function App() {
       newRow({ name: 'BNB', amount: 0.5, apiId: 'binancecoin' }),
     ];
   });
-  const [refreshSec, setRefreshSec] = useState(60);
-  const [loading, setLoading] = useState(false);
-  const [showExcelUpload, setShowExcelUpload] = useState(false);
-  const [btcPrice, setBtcPrice] = useState(0);
-  const [ethPrice, setEthPrice] = useState(0);
-  const [bnbPrice, setBnbPrice] = useState(0);
-  const [showApiId, setShowApiId] = useState(false);
-  const [showHighestPrice, setShowHighestPrice] = useState(false);
-  const [searchToken, setSearchToken] = useState('');
+  // Refs and state used throughout the component (some were accidentally removed)
   const timerRef = useRef(null);
   const unsubRef = useRef(null);
   const isRemoteUpdateRef = useRef(false);
+
+  const [refreshSec, setRefreshSec] = useState(60);
+  const [workspaceId, setWorkspaceId] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Lấy danh sách id hợp lệ
-  const ids = useMemo(
-    () => rows.map((r) => r.apiId.trim()).filter(Boolean),
-    [rows],
-  );
+  const [btcPrice, setBtcPrice] = useState(0);
+  const [ethPrice, setEthPrice] = useState(0);
+  const [bnbPrice, setBnbPrice] = useState(0);
 
+  const [showApiId, setShowApiId] = useState(false);
+  const [showHighestPrice, setShowHighestPrice] = useState(false);
+  const [searchToken, setSearchToken] = useState('');
+  const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const [addForm, setAddForm] = useState({
+    name: '',
+    amount: '',
+    launchAt: '',
+    apiId: '',
+    pointPriority: '',
+    pointFCFS: '',
+  });
+  const [addErrors, setAddErrors] = useState({});
+
+  // derived list of api ids for fetching prices (unique, non-empty)
+  const ids = useMemo(() => {
+    return Array.from(
+      new Set(rows.map((r) => (r.apiId || '').trim()).filter(Boolean)),
+    );
+  }, [rows]);
+
+  // Fetch prices and update rows' price/value/highestPrice
   async function fetchPrices() {
-    // Luôn lấy giá BTC/ETH/BNB cho thẻ thống kê, đồng thời lấy các ID trong bảng
-    const baseIds = ['bitcoin', 'ethereum', 'binancecoin'];
-    const fetchIds = Array.from(new Set([...ids, ...baseIds].filter(Boolean)));
-    if (!fetchIds.length) return;
+    // Always include common coins so BTC/ETH/BNB cards show even when table ids missing
+    const idsToFetch = Array.from(
+      new Set([...(ids || []), 'bitcoin', 'ethereum', 'binancecoin']),
+    );
+    if (!idsToFetch.length) return;
     setLoading(true);
     try {
-      const data = await fetchCryptoPrices(fetchIds, 'usd'); // mặc định USD
-
-      // Update BTC and ETH prices
-      setBtcPrice(data?.bitcoin?.usd ? Number(data.bitcoin.usd) : 0);
-      setEthPrice(data?.ethereum?.usd ? Number(data.ethereum.usd) : 0);
-      setBnbPrice(data?.binancecoin?.usd ? Number(data.binancecoin.usd) : 0);
+      const priceMap = await fetchCryptoPrices(idsToFetch, 'usd');
 
       setRows((prev) =>
         prev.map((r) => {
-          const key = r.apiId?.trim();
-          const p = key && data[key]?.usd ? Number(data[key].usd) : 0;
+          const id = (r.apiId || '').trim();
+          const priceRaw =
+            id && priceMap[id] && priceMap[id].usd
+              ? priceMap[id].usd
+              : r.price || 0;
+          const price = Number(priceRaw) || 0;
           const amount = Number(r.amount) || 0;
-          const currentValue = +(amount * p).toFixed(6);
-
-          // Update highest price if current price is higher
-          const highestPrice = Math.max(r.highestPrice || 0, p);
-
-          return {
-            ...r,
-            price: p,
-            value: currentValue,
-            highestPrice: highestPrice,
-          };
+          const highest = Math.max(Number(r.highestPrice) || 0, price || 0);
+          return { ...r, price, value: amount * price, highestPrice: highest };
         }),
       );
+
+      // small convenience: set common coin displays if present; fallback to any existing row prices
+      if (priceMap.bitcoin && priceMap.bitcoin.usd)
+        setBtcPrice(Number(priceMap.bitcoin.usd) || 0);
+      else
+        setBtcPrice(
+          (
+            rows.find(
+              (r) => (r.apiId || '').trim().toLowerCase() === 'bitcoin',
+            ) || {}
+          ).price || 0,
+        );
+
+      if (priceMap.ethereum && priceMap.ethereum.usd)
+        setEthPrice(Number(priceMap.ethereum.usd) || 0);
+      else
+        setEthPrice(
+          (
+            rows.find(
+              (r) => (r.apiId || '').trim().toLowerCase() === 'ethereum',
+            ) || {}
+          ).price || 0,
+        );
+
+      if (priceMap.binancecoin && priceMap.binancecoin.usd)
+        setBnbPrice(Number(priceMap.binancecoin.usd) || 0);
+      else
+        setBnbPrice(
+          (
+            rows.find(
+              (r) => (r.apiId || '').trim().toLowerCase() === 'binancecoin',
+            ) || {}
+          ).price || 0,
+        );
     } catch (e) {
-      console.error(e);
-      toast.error('Failed to fetch prices. Please try again.', {
-        position: 'bottom-right',
-        autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      console.error('fetchPrices error', e);
     } finally {
       setLoading(false);
     }
+  }
+
+  // Form submit wrapper used by the Add Row modal form (form object passed)
+  function handleAddRowSubmit(form) {
+    // validate and insert immediately (mirror addRowFromForm behavior)
+    const errs = validateAddForm(form);
+    setAddErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setAddForm(form);
+      return;
+    }
+
+    const nr = newRow({
+      name: form.name,
+      amount: Number(form.amount) || 0,
+      launchAt: form.launchAt || '',
+      apiId: form.apiId || '',
+      pointPriority: form.pointPriority || '',
+      pointFCFS: form.pointFCFS || '',
+    });
+
+    setRows((prev) => {
+      const newRows = [nr, ...prev];
+      saveDataToStorage(newRows);
+      if (!isRemoteUpdateRef.current) {
+        setSyncing(true);
+        saveWorkspaceData('global', newRows)
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
+          .finally(() => setSyncing(false));
+      }
+      return newRows;
+    });
+
+    setShowAddModal(false);
+    setAddForm({
+      name: '',
+      amount: '',
+      launchAt: '',
+      apiId: '',
+      pointPriority: '',
+      pointFCFS: '',
+    });
+    setAddErrors({});
+    toast.success('New row added successfully!');
   }
 
   // Tự động refresh
@@ -204,10 +286,54 @@ export default function App() {
     });
   }
 
-  function addEmptyRow() {
+  function openAddRowModal() {
+    setShowAddModal(true);
+  }
+
+  function validateAddForm(form) {
+    const errs = {};
+    if (!form.name || !String(form.name).trim())
+      errs.name = 'Token (A) is required';
+
+    if (!form.launchAt || !String(form.launchAt).trim()) {
+      errs.launchAt = 'Listing time (C) is required';
+    } else {
+      // accept DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
+      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+      const regexDateTime =
+        /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/;
+      const val = String(form.launchAt).trim();
+      if (!(regexDate.test(val) || regexDateTime.test(val))) {
+        errs.launchAt =
+          'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm:ss';
+      }
+    }
+
+    if (form.amount !== undefined && String(form.amount).trim() !== '') {
+      const n = Number(form.amount);
+      if (isNaN(n) || n < 0)
+        errs.amount = 'Amount (B) must be a non-negative number';
+    }
+
+    return errs;
+  }
+
+  function addRowFromForm() {
+    const errs = validateAddForm(addForm);
+    setAddErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    const nr = newRow({
+      name: addForm.name,
+      amount: Number(addForm.amount) || 0,
+      launchAt: addForm.launchAt || '',
+      apiId: addForm.apiId || '',
+      pointPriority: addForm.pointPriority || '',
+      pointFCFS: addForm.pointFCFS || '',
+    });
+
     setRows((prev) => {
-      // luôn thêm dòng mới ở đầu và ghim tạm (_forceTop) cho đến khi Save
-      const newRows = [newRow({ _forceTop: true }), ...prev];
+      const newRows = [nr, ...prev];
       saveDataToStorage(newRows);
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
@@ -220,6 +346,17 @@ export default function App() {
       }
       return newRows;
     });
+
+    setShowAddModal(false);
+    setAddForm({
+      name: '',
+      amount: '',
+      launchAt: '',
+      apiId: '',
+      pointPriority: '',
+      pointFCFS: '',
+    });
+    setAddErrors({});
     toast.success('New row added successfully!');
   }
 
@@ -337,8 +474,28 @@ export default function App() {
   function handlePaste(text) {
     // Hỗ trợ dán từ Google Sheet: nhận TSV hoặc CSV
     const rowsText = text.trim().split(/\r?\n/);
-    const parsed = rowsText.map((line) => {
+    const errors = [];
+    const parsedRows = [];
+
+    // Validate each pasted line: only columns A-F allowed (indices 0..5)
+    rowsText.forEach((line, idx) => {
       const parts = line.includes('\t') ? line.split('\t') : splitCSV(line);
+
+      // If extra columns beyond F (index >=6) contain non-empty values -> reject
+      if (parts.length > 6) {
+        const extras = parts
+          .slice(6)
+          .some((v) => String(v || '').trim() !== '');
+        if (extras) {
+          errors.push(
+            `Row ${
+              idx + 1
+            }: contains columns beyond F. Only columns A-F are allowed.`,
+          );
+          return;
+        }
+      }
+
       const [
         name = '',
         amount = '',
@@ -346,28 +503,52 @@ export default function App() {
         apiId = '',
         pPri = '',
         pFcfs = '',
-        price = '',
-        value = '',
       ] = parts;
-      return newRow({
-        name: name?.trim(),
-        amount: Number(amount) || 0,
-        launchAt: launchAt?.trim(),
-        apiId: apiId?.trim(),
-        pointPriority: pPri?.trim(),
-        pointFCFS: pFcfs?.trim(),
-        price: Number(price) || 0,
-        value: Number(value) || 0,
-      });
+
+      // Basic field validation
+      const rowErrors = [];
+      if (!String(name || '').trim()) rowErrors.push('name (A) is required');
+      const amountNum = Number(amount);
+      if (amount !== '' && (isNaN(amountNum) || amountNum < 0))
+        rowErrors.push('amount (B) must be a non-negative number');
+      if (launchAt && launchAt.trim()) {
+        const regex =
+          /^(\d{1,2})\/(\d{1,2})\/(\d{4})(\s+\d{1,2}:\d{1,2}:\d{1,2})?$/;
+        if (!regex.test(launchAt.trim()))
+          rowErrors.push(
+            'listing time (C) should be DD/MM/YYYY or DD/MM/YYYY HH:mm:ss',
+          );
+      }
+
+      if (rowErrors.length) {
+        errors.push(`Row ${idx + 1}: ${rowErrors.join('; ')}`);
+        return;
+      }
+
+      parsedRows.push(
+        newRow({
+          name: name?.trim(),
+          amount: Number(amount) || 0,
+          launchAt: launchAt?.trim(),
+          apiId: apiId?.trim(),
+          pointPriority: pPri?.trim(),
+          pointFCFS: pFcfs?.trim(),
+        }),
+      );
     });
 
+    if (errors.length) {
+      toast.error(`Paste failed:\n${errors.join('\n')}`, { autoClose: 5000 });
+      return;
+    }
+
     // Kiểm tra trùng lặp
-    const duplicates = checkDuplicates(parsed, rows);
+    const duplicates = checkDuplicates(parsedRows, rows);
     if (duplicates.length > 0) {
-      handleDuplicateImport(duplicates, parsed);
+      handleDuplicateImport(duplicates, parsedRows);
     } else {
       setRows((prev) => {
-        const newRows = [...prev, ...parsed];
+        const newRows = [...prev, ...parsedRows];
         saveDataToStorage(newRows);
         if (!isRemoteUpdateRef.current) {
           setSyncing(true);
@@ -381,7 +562,7 @@ export default function App() {
         return newRows;
       });
       toast.success(
-        `Imported ${parsed.length} rows from clipboard successfully!`,
+        `Imported ${parsedRows.length} rows from clipboard successfully!`,
       );
     }
   }
@@ -439,7 +620,7 @@ export default function App() {
           />
 
           <ActionButtons
-            onAddRow={addEmptyRow}
+            onAddRow={openAddRowModal}
             onPasteText={handlePaste}
             onExportCSV={exportCSV}
             onClearAll={clearAll}
@@ -488,6 +669,142 @@ export default function App() {
                   (Priority) | F: Point (FCFS)
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Row Modal */}
+        {showAddModal && (
+          <div className='fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50'>
+            <div className='bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl'>
+              <div className='flex items-center justify-between mb-4'>
+                <h3 className='text-lg font-semibold dark:text-white'>
+                  Add Row
+                </h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddRowSubmit(addForm);
+                }}
+              >
+                <div className='grid grid-cols-1 gap-3'>
+                  <div>
+                    <input
+                      name='name'
+                      value={addForm.name}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                      placeholder='Token (required)'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                    {addErrors.name && (
+                      <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                        {addErrors.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      name='amount'
+                      value={addForm.amount}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, amount: e.target.value }))
+                      }
+                      placeholder='Amount'
+                      type='number'
+                      step='0.000001'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                    {addErrors.amount && (
+                      <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                        {addErrors.amount}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      name='launchAt'
+                      value={addForm.launchAt}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, launchAt: e.target.value }))
+                      }
+                      placeholder='Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                    {addErrors.launchAt && (
+                      <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                        {addErrors.launchAt}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      name='apiId'
+                      value={addForm.apiId}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, apiId: e.target.value }))
+                      }
+                      placeholder='API ID'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                  </div>
+
+                  <div>
+                    <input
+                      name='pointPriority'
+                      value={addForm.pointPriority}
+                      onChange={(e) =>
+                        setAddForm((p) => ({
+                          ...p,
+                          pointPriority: e.target.value,
+                        }))
+                      }
+                      placeholder='Point (Priority)'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                  </div>
+
+                  <div>
+                    <input
+                      name='pointFCFS'
+                      value={addForm.pointFCFS}
+                      onChange={(e) =>
+                        setAddForm((p) => ({ ...p, pointFCFS: e.target.value }))
+                      }
+                      placeholder='Point (FCFS)'
+                      className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    />
+                  </div>
+                </div>
+
+                <div className='mt-4 flex justify-end gap-2'>
+                  <button
+                    type='button'
+                    onClick={() => setShowAddModal(false)}
+                    className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type='submit'
+                    className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm'
+                  >
+                    Add to table
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
