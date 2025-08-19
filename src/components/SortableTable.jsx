@@ -319,121 +319,35 @@ export default function SortableTable({
           </tr>
         </thead>
         <tbody>
-          {sortedRows.map((r, idx) => (
-            <tr
-              key={idx}
-              className={`group border-t dark:border-gray-600 transition-colors duration-200 ${
-                String(r.apiId || '').trim() === ''
-                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                  : idx % 2 === 0
-                  ? 'bg-white dark:bg-gray-800'
-                  : 'bg-gray-50 dark:bg-gray-700'
-              } hover:bg-gray-100 dark:hover:bg-gray-600`}
-            >
-              <td
-                className={`px-1 py-2 sticky left-0 z-10`}
-                style={{ backgroundColor: 'transparent' }}
+          {sortedRows.map((r, idx) => {
+            const missingApi = String(r.apiId || '').trim() === '';
+            const rootIsDark =
+              typeof document !== 'undefined' &&
+              document.documentElement.classList.contains('dark');
+            const rowStyle = missingApi
+              ? {
+                  backgroundColor: rootIsDark
+                    ? 'rgba(255,214,102,0.15)' // brighter dark-mode yellow
+                    : 'rgba(255,243,205,0.45)', // toned-down light yellow
+                }
+              : undefined;
+
+            return (
+              <tr
+                key={idx}
+                className={`group border-t dark:border-gray-600 transition-colors duration-200 ${
+                  missingApi
+                    ? ''
+                    : idx % 2 === 0
+                    ? 'bg-white dark:bg-gray-800'
+                    : 'bg-gray-50 dark:bg-gray-700'
+                } hover:bg-gray-100 dark:hover:bg-gray-600`}
+                style={rowStyle}
               >
-                <input
-                  className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                    isEditing(idx)
-                      ? 'bg-white dark:bg-gray-700 dark:text-white'
-                      : 'bg-transparent dark:bg-transparent dark:text-white'
-                  }`}
-                  value={
-                    isEditing(idx) ? getDraftField(idx, 'name') ?? '' : r.name
-                  }
-                  onChange={(e) => {
-                    if (!isEditing(idx)) return;
-                    const actual = getActualIndex(idx);
-                    setRowDrafts((prev) => ({
-                      ...prev,
-                      [actual]: { ...prev[actual], name: e.target.value },
-                    }));
-                  }}
-                  placeholder='Bitcoin'
-                  maxLength={20}
-                  disabled={!isEditing(idx)}
-                  style={
-                    isEditing(idx)
-                      ? undefined
-                      : { backgroundColor: 'transparent' }
-                  }
-                />
-              </td>
-              <td className='px-1 py-2'>
-                <input
-                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                    isEditing(idx)
-                      ? 'bg-white dark:bg-gray-700 dark:text-white'
-                      : 'bg-transparent dark:bg-transparent dark:text-white'
-                  }`}
-                  type='number'
-                  value={
-                    isEditing(idx)
-                      ? getDraftField(idx, 'amount') ?? ''
-                      : r.amount
-                  }
-                  onChange={(e) => {
-                    if (!isEditing(idx)) return;
-                    const actual = getActualIndex(idx);
-                    setRowDrafts((prev) => ({
-                      ...prev,
-                      [actual]: { ...prev[actual], amount: e.target.value },
-                    }));
-                  }}
-                  placeholder='1.23'
-                  step='0.000001'
-                  maxLength={10}
-                  disabled={!isEditing(idx)}
-                />
-              </td>
-              <td className='px-1 py-2'>
-                <input
-                  className={`w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                    isEditing(idx)
-                      ? 'bg-white dark:bg-gray-700 dark:text-white'
-                      : 'bg-transparent dark:bg-transparent dark:text-white'
-                  }`}
-                  value={
-                    isEditing(idx)
-                      ? getDraftField(idx, 'launchAt') ?? ''
-                      : r.launchAt || ''
-                  }
-                  onChange={(e) => {
-                    if (!isEditing(idx)) return;
-                    const value = e.target.value;
-                    const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
-                    const actual = getActualIndex(idx);
-                    setRowDrafts((prev) => ({
-                      ...prev,
-                      [actual]: { ...prev[actual], launchAt: sanitizedValue },
-                    }));
-                  }}
-                  onBlur={(e) => {
-                    if (!isEditing(idx)) return;
-                    const value = e.target.value.trim();
-                    if (value) {
-                      const formattedValue = formatDateTime(value);
-                      if (formattedValue !== value) {
-                        const actual = getActualIndex(idx);
-                        setRowDrafts((prev) => ({
-                          ...prev,
-                          [actual]: {
-                            ...prev[actual],
-                            launchAt: formattedValue,
-                          },
-                        }));
-                      }
-                    }
-                  }}
-                  placeholder='DD/MM/YYYY HH:mm:ss'
-                  maxLength={19}
-                  disabled={!isEditing(idx)}
-                />
-              </td>
-              {showApiId && (
-                <td className='px-1 py-2'>
+                <td
+                  className={`px-1 py-2 sticky left-0 z-10`}
+                  style={{ backgroundColor: 'transparent' }}
+                >
                   <input
                     className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                       isEditing(idx)
@@ -441,142 +355,246 @@ export default function SortableTable({
                         : 'bg-transparent dark:bg-transparent dark:text-white'
                     }`}
                     value={
-                      isEditing(idx)
-                        ? getDraftField(idx, 'apiId') ?? ''
-                        : r.apiId
+                      isEditing(idx) ? getDraftField(idx, 'name') ?? '' : r.name
                     }
                     onChange={(e) => {
                       if (!isEditing(idx)) return;
                       const actual = getActualIndex(idx);
                       setRowDrafts((prev) => ({
                         ...prev,
-                        [actual]: { ...prev[actual], apiId: e.target.value },
+                        [actual]: { ...prev[actual], name: e.target.value },
                       }));
                     }}
-                    placeholder=''
-                    maxLength={15}
+                    placeholder='Bitcoin'
+                    maxLength={20}
+                    disabled={!isEditing(idx)}
+                    style={
+                      isEditing(idx)
+                        ? undefined
+                        : { backgroundColor: 'transparent' }
+                    }
+                  />
+                </td>
+                <td className='px-1 py-2'>
+                  <input
+                    className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                      isEditing(idx)
+                        ? 'bg-white dark:bg-gray-700 dark:text-white'
+                        : 'bg-transparent dark:bg-transparent dark:text-white'
+                    }`}
+                    type='number'
+                    value={
+                      isEditing(idx)
+                        ? getDraftField(idx, 'amount') ?? ''
+                        : r.amount
+                    }
+                    onChange={(e) => {
+                      if (!isEditing(idx)) return;
+                      const actual = getActualIndex(idx);
+                      setRowDrafts((prev) => ({
+                        ...prev,
+                        [actual]: { ...prev[actual], amount: e.target.value },
+                      }));
+                    }}
+                    placeholder='1.23'
+                    step='0.000001'
+                    maxLength={10}
                     disabled={!isEditing(idx)}
                   />
                 </td>
-              )}
-              <td className='px-1 py-2'>
-                <input
-                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                    isEditing(idx)
-                      ? 'bg-white dark:bg-gray-700 dark:text-white'
-                      : 'bg-transparent dark:bg-transparent dark:text-white'
-                  }`}
-                  value={
-                    isEditing(idx)
-                      ? getDraftField(idx, 'pointPriority') ?? ''
-                      : r.pointPriority
+                <td className='px-1 py-2'>
+                  <input
+                    className={`w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                      isEditing(idx)
+                        ? 'bg-white dark:bg-gray-700 dark:text-white'
+                        : 'bg-transparent dark:bg-transparent dark:text-white'
+                    }`}
+                    value={
+                      isEditing(idx)
+                        ? getDraftField(idx, 'launchAt') ?? ''
+                        : r.launchAt || ''
+                    }
+                    onChange={(e) => {
+                      if (!isEditing(idx)) return;
+                      const value = e.target.value;
+                      const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
+                      const actual = getActualIndex(idx);
+                      setRowDrafts((prev) => ({
+                        ...prev,
+                        [actual]: { ...prev[actual], launchAt: sanitizedValue },
+                      }));
+                    }}
+                    onBlur={(e) => {
+                      if (!isEditing(idx)) return;
+                      const value = e.target.value.trim();
+                      if (value) {
+                        const formattedValue = formatDateTime(value);
+                        if (formattedValue !== value) {
+                          const actual = getActualIndex(idx);
+                          setRowDrafts((prev) => ({
+                            ...prev,
+                            [actual]: {
+                              ...prev[actual],
+                              launchAt: formattedValue,
+                            },
+                          }));
+                        }
+                      }
+                    }}
+                    placeholder='DD/MM/YYYY HH:mm:ss'
+                    maxLength={19}
+                    disabled={!isEditing(idx)}
+                  />
+                </td>
+                {showApiId && (
+                  <td className='px-1 py-2'>
+                    <input
+                      className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                        isEditing(idx)
+                          ? 'bg-white dark:bg-gray-700 dark:text-white'
+                          : 'bg-transparent dark:bg-transparent dark:text-white'
+                      }`}
+                      value={
+                        isEditing(idx)
+                          ? getDraftField(idx, 'apiId') ?? ''
+                          : r.apiId
+                      }
+                      onChange={(e) => {
+                        if (!isEditing(idx)) return;
+                        const actual = getActualIndex(idx);
+                        setRowDrafts((prev) => ({
+                          ...prev,
+                          [actual]: { ...prev[actual], apiId: e.target.value },
+                        }));
+                      }}
+                      placeholder=''
+                      maxLength={15}
+                      disabled={!isEditing(idx)}
+                    />
+                  </td>
+                )}
+                <td className='px-1 py-2'>
+                  <input
+                    className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                      isEditing(idx)
+                        ? 'bg-white dark:bg-gray-700 dark:text-white'
+                        : 'bg-transparent dark:bg-transparent dark:text-white'
+                    }`}
+                    value={
+                      isEditing(idx)
+                        ? getDraftField(idx, 'pointPriority') ?? ''
+                        : r.pointPriority
+                    }
+                    onChange={(e) => {
+                      if (!isEditing(idx)) return;
+                      const actual = getActualIndex(idx);
+                      setRowDrafts((prev) => ({
+                        ...prev,
+                        [actual]: {
+                          ...prev[actual],
+                          pointPriority: e.target.value,
+                        },
+                      }));
+                    }}
+                    placeholder='Priority'
+                    maxLength={8}
+                    disabled={!isEditing(idx)}
+                  />
+                </td>
+                <td className='px-1 py-2'>
+                  <input
+                    className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
+                      isEditing(idx)
+                        ? 'bg-white dark:bg-gray-700 dark:text-white'
+                        : 'bg-transparent dark:bg-transparent dark:text-white'
+                    }`}
+                    value={
+                      isEditing(idx)
+                        ? getDraftField(idx, 'pointFCFS') ?? ''
+                        : r.pointFCFS
+                    }
+                    onChange={(e) => {
+                      if (!isEditing(idx)) return;
+                      const actual = getActualIndex(idx);
+                      setRowDrafts((prev) => ({
+                        ...prev,
+                        [actual]: {
+                          ...prev[actual],
+                          pointFCFS: e.target.value,
+                        },
+                      }));
+                    }}
+                    placeholder='FCFS'
+                    maxLength={8}
+                    disabled={!isEditing(idx)}
+                  />
+                </td>
+                {(() => {
+                  const cd = getCountdownText(r.launchAt);
+                  if (cd) {
+                    return (
+                      <>
+                        <td className='px-1 py-2 text-center text-xs sm:text-sm dark:text-white font-medium'>
+                          {cd}
+                        </td>
+                        <td className='px-1 py-2 text-center text-xs sm:text-sm dark:text-white font-medium'>
+                          Wait for listing
+                        </td>
+                      </>
+                    );
                   }
-                  onChange={(e) => {
-                    if (!isEditing(idx)) return;
-                    const actual = getActualIndex(idx);
-                    setRowDrafts((prev) => ({
-                      ...prev,
-                      [actual]: {
-                        ...prev[actual],
-                        pointPriority: e.target.value,
-                      },
-                    }));
-                  }}
-                  placeholder='Priority'
-                  maxLength={8}
-                  disabled={!isEditing(idx)}
-                />
-              </td>
-              <td className='px-1 py-2'>
-                <input
-                  className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                    isEditing(idx)
-                      ? 'bg-white dark:bg-gray-700 dark:text-white'
-                      : 'bg-transparent dark:bg-transparent dark:text-white'
-                  }`}
-                  value={
-                    isEditing(idx)
-                      ? getDraftField(idx, 'pointFCFS') ?? ''
-                      : r.pointFCFS
-                  }
-                  onChange={(e) => {
-                    if (!isEditing(idx)) return;
-                    const actual = getActualIndex(idx);
-                    setRowDrafts((prev) => ({
-                      ...prev,
-                      [actual]: { ...prev[actual], pointFCFS: e.target.value },
-                    }));
-                  }}
-                  placeholder='FCFS'
-                  maxLength={8}
-                  disabled={!isEditing(idx)}
-                />
-              </td>
-              {(() => {
-                const cd = getCountdownText(r.launchAt);
-                if (cd) {
                   return (
                     <>
-                      <td className='px-1 py-2 text-center text-xs sm:text-sm dark:text-white font-medium'>
-                        {cd}
+                      <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
+                        {formatNumber(r.price)}
                       </td>
-                      <td className='px-1 py-2 text-center text-xs sm:text-sm dark:text-white font-medium'>
-                        Wait for listing
+                      <td className='px-1 py-2 text-center tabular-nums font-medium text-xs sm:text-sm dark:text-white'>
+                        {formatNumber(r.value)}
                       </td>
                     </>
                   );
-                }
-                return (
-                  <>
-                    <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
-                      {formatNumber(r.price)}
-                    </td>
-                    <td className='px-1 py-2 text-center tabular-nums font-medium text-xs sm:text-sm dark:text-white'>
-                      {formatNumber(r.value)}
-                    </td>
-                  </>
-                );
-              })()}
-              {showHighestPrice && (
-                <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
-                  {formatNumber(r.highestPrice)}
-                </td>
-              )}
-              <td className='px-1 py-2 text-right'>
-                {isEditing(idx) ? (
-                  <div className='flex items-center justify-end gap-2'>
-                    <button
-                      onClick={() => saveRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs'
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ) : (
-                  <div className='flex items-center justify-end gap-2'>
-                    <button
-                      onClick={() => startEditRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs'
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
-                    >
-                      Delete
-                    </button>
-                  </div>
+                })()}
+                {showHighestPrice && (
+                  <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
+                    {formatNumber(r.highestPrice)}
+                  </td>
                 )}
-              </td>
-            </tr>
-          ))}
+                <td className='px-1 py-2 text-right'>
+                  {isEditing(idx) ? (
+                    <div className='flex items-center justify-end gap-2'>
+                      <button
+                        onClick={() => saveRow(idx)}
+                        className='px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs'
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRow(idx)}
+                        className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : (
+                    <div className='flex items-center justify-end gap-2'>
+                      <button
+                        onClick={() => startEditRow(idx)}
+                        className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs'
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRow(idx)}
+                        className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
           {sortedRows.length === 0 && (
             <tr>
               <td
