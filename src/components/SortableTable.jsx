@@ -332,13 +332,7 @@ export default function SortableTable({
             >
               <td
                 className={`px-1 py-2 sticky left-0`}
-                style={{
-                  position: 'sticky',
-                  left: 0,
-                  zIndex: 20,
-                  backgroundColor: 'inherit',
-                  boxShadow: '2px 0 8px rgba(0,0,0,0.08)',
-                }}
+                style={{ position: 'sticky', left: 0, zIndex: 20, backgroundColor: 'inherit', boxShadow: '2px 0 8px rgba(0,0,0,0.08)' }}
               >
                 <input
                   className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
@@ -367,10 +361,7 @@ export default function SortableTable({
                   }
                 />
               </td>
-              <td
-                className='px-1 py-2'
-                style={{ position: 'relative', zIndex: 1 }}
-              >
+              <td className='px-1 py-2' style={{ position: 'relative', zIndex: 1 }}>
                 <input
                   className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                     isEditing(idx)
@@ -397,10 +388,7 @@ export default function SortableTable({
                   disabled={!isEditing(idx)}
                 />
               </td>
-              <td
-                className='px-1 py-2'
-                style={{ position: 'relative', zIndex: 1 }}
-              >
+              <td className='px-1 py-2' style={{ position: 'relative', zIndex: 1 }}>
                 <input
                   className={`w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                     isEditing(idx)
@@ -445,10 +433,7 @@ export default function SortableTable({
                 />
               </td>
               {showApiId && (
-                <td
-                  className='px-1 py-2'
-                  style={{ position: 'relative', zIndex: 1 }}
-                >
+                <td className='px-1 py-2' style={{ position: 'relative', zIndex: 1 }}>
                   <input
                     className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                       isEditing(idx)
@@ -474,10 +459,7 @@ export default function SortableTable({
                   />
                 </td>
               )}
-              <td
-                className='px-1 py-2'
-                style={{ position: 'relative', zIndex: 1 }}
-              >
+              <td className='px-1 py-2' style={{ position: 'relative', zIndex: 1 }}>
                 <input
                   className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                     isEditing(idx)
@@ -505,10 +487,7 @@ export default function SortableTable({
                   disabled={!isEditing(idx)}
                 />
               </td>
-              <td
-                className='px-1 py-2'
-                style={{ position: 'relative', zIndex: 1 }}
-              >
+              <td className='px-1 py-2' style={{ position: 'relative', zIndex: 1 }}>
                 <input
                   className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
                     isEditing(idx)
