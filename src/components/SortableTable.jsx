@@ -307,7 +307,13 @@ export default function SortableTable({
                     }`}
                   >
                     <span className='text-xs sm:text-sm'>
-                      {h === 'Token Price' ? 'Token Price (USD)' : h}
+                      {h === 'Token Price'
+                        ? 'Price'
+                        : h === 'Point (Priority)'
+                        ? 'Priority'
+                        : h === 'Point (FCFS)'
+                        ? 'FCFS'
+                        : h}
                     </span>
                     {isSortable && (
                       <span className='text-xs'>{getSortIcon(columnKey)}</span>
@@ -507,7 +513,7 @@ export default function SortableTable({
                       },
                     }));
                   }}
-                  placeholder='Priority'
+                  placeholder=''
                   maxLength={8}
                   disabled={!isEditing(idx)}
                 />
@@ -535,7 +541,7 @@ export default function SortableTable({
                       [actual]: { ...prev[actual], pointFCFS: e.target.value },
                     }));
                   }}
-                  placeholder='FCFS'
+                  placeholder=''
                   maxLength={8}
                   disabled={!isEditing(idx)}
                 />
