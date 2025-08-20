@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { newRow, CSV_HEADERS } from './utils/constants';
-import { splitCSV } from './utils/helpers';
+import { splitCSV, normalizeDateTime } from './utils/helpers';
 import { fetchCryptoPrices } from './services/api';
 import { saveDataToStorage, loadDataFromStorage } from './utils/storage';
 import {
@@ -45,7 +45,8 @@ export default function App() {
   const unsubRef = useRef(null);
   const isRemoteUpdateRef = useRef(false);
 
-  const [refreshSec, setRefreshSec] = useState(60);
+  // refresh interval fixed to 60 seconds (user control removed)
+  const refreshSec = 60;
   const [workspaceId, setWorkspaceId] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,6 @@ export default function App() {
   const [ethPrice, setEthPrice] = useState(0);
   const [bnbPrice, setBnbPrice] = useState(0);
 
-  const [showApiId, setShowApiId] = useState(false);
   const [showHighestPrice, setShowHighestPrice] = useState(false);
   const [searchToken, setSearchToken] = useState('');
   const [showExcelUpload, setShowExcelUpload] = useState(false);
@@ -152,10 +152,20 @@ export default function App() {
       return;
     }
 
+    // normalize launchAt: date-only -> DD/MM/YYYY 00:00:00, keep time if provided
+    const normalizedLaunch = form.launchAt
+      ? (function (v) {
+          const n = normalizeDateTime(v);
+          // If normalizeDateTime returned date-only (no time), append 00:00:00
+          if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
+          return n;
+        })(form.launchAt)
+      : '';
+
     const nr = newRow({
       name: form.name,
       amount: Number(form.amount) || 0,
-      launchAt: form.launchAt || '',
+      launchAt: normalizedLaunch || '',
       apiId: form.apiId || '',
       pointPriority: form.pointPriority || '',
       pointFCFS: form.pointFCFS || '',
@@ -194,10 +204,10 @@ export default function App() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       fetchPrices();
-    }, Math.max(5, Number(refreshSec) || 60) * 1000);
+    }, 60 * 1000);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids.join(','), refreshSec]);
+  }, [ids.join(',')]);
 
   // Fetch lần đầu
   useEffect(() => {
@@ -323,10 +333,18 @@ export default function App() {
     setAddErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
+    const normalizedLaunch = addForm.launchAt
+      ? (function (v) {
+          const n = normalizeDateTime(v);
+          if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
+          return n;
+        })(addForm.launchAt)
+      : '';
+
     const nr = newRow({
       name: addForm.name,
       amount: Number(addForm.amount) || 0,
-      launchAt: addForm.launchAt || '',
+      launchAt: normalizedLaunch || '',
       apiId: addForm.apiId || '',
       pointPriority: addForm.pointPriority || '',
       pointFCFS: addForm.pointFCFS || '',
@@ -602,13 +620,7 @@ export default function App() {
     <ThemeProvider>
       <div className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6'>
         <div className='max-w-full mx-auto'>
-          <Header
-            refreshSec={refreshSec}
-            setRefreshSec={setRefreshSec}
-            loading={loading}
-            onRefresh={fetchPrices}
-            syncing={syncing}
-          />
+          <Header loading={loading} onRefresh={fetchPrices} syncing={syncing} />
 
           <StatsCards
             rowsCount={rows.length}
@@ -625,8 +637,6 @@ export default function App() {
             onExportCSV={exportCSV}
             onClearAll={clearAll}
             onImportExcel={() => setShowExcelUpload(true)}
-            showApiId={showApiId}
-            setShowApiId={setShowApiId}
             showHighestPrice={showHighestPrice}
             setShowHighestPrice={setShowHighestPrice}
             searchToken={searchToken}
@@ -637,7 +647,6 @@ export default function App() {
             rows={rows}
             onUpdateRow={updateRow}
             onRemoveRow={removeRow}
-            showApiId={showApiId}
             showHighestPrice={showHighestPrice}
             searchToken={searchToken}
           />
@@ -811,7 +820,7 @@ export default function App() {
         <footer className='mt-2 text-center text-xs text-gray-500 dark:text-gray-400'>
           <div className='py-1'>
             <div className='inline-block px-3 py-1 rounded-full bg-white/90 dark:bg-gray-900/90 border dark:border-gray-700 shadow-sm'>
-              © <span className='font-semibold'>Nguyenwolf - Karama</span> 2025
+              © 2025 ~ <span className='font-semibold'>Nguyenwolf</span>
             </div>
           </div>
         </footer>

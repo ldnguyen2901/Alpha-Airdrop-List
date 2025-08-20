@@ -1,13 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { TABLE_HEADERS } from '../utils/constants';
-import { formatNumber } from '../utils/helpers';
+import { normalizeDateTime, formatAmount, formatPrice } from '../utils/helpers';
 import { saveSortConfig, loadSortConfig } from '../utils/storage';
 
 export default function SortableTable({
   rows,
   onUpdateRow,
   onRemoveRow,
-  showApiId: showApiIdProp,
   showHighestPrice: showHighestPriceProp,
   searchToken,
 }) {
@@ -16,9 +15,9 @@ export default function SortableTable({
     return savedSort || { key: null, direction: 'asc' };
   });
   const [rowDrafts, setRowDrafts] = useState({});
-  const showApiId = !!showApiIdProp;
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
+  const [editingModal, setEditingModal] = useState({ open: false, idx: -1 });
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -33,21 +32,43 @@ export default function SortableTable({
   const startEditRow = (sortedIndex) => {
     const actual = getActualIndex(sortedIndex);
     if (actual === -1) return;
+    // open inline modal for editing
     setRowDrafts((prev) => ({ ...prev, [actual]: { ...rows[actual] } }));
+    setEditingModal({ open: true, idx: actual });
   };
 
   const saveRow = (sortedIndex) => {
-    const actual = getActualIndex(sortedIndex);
+    // Accept either a sortedIndex or an actual rows index (modal passes actual)
+    let actual = getActualIndex(sortedIndex);
+    if (
+      actual === -1 &&
+      Number.isInteger(sortedIndex) &&
+      sortedIndex >= 0 &&
+      sortedIndex < rows.length
+    ) {
+      actual = sortedIndex;
+    }
     if (actual === -1) return;
     const draft = rowDrafts[actual];
     if (!draft) return;
-    const toSave = { ...draft, _forceTop: false };
+    // normalize launchAt before saving and ensure date-only gets 00:00:00
+    let normalizedLaunch = draft.launchAt
+      ? normalizeDateTime(draft.launchAt) || draft.launchAt
+      : draft.launchAt;
+    if (normalizedLaunch && /^\d{2}\/\d{2}\/\d{4}$/.test(normalizedLaunch)) {
+      normalizedLaunch = normalizedLaunch + ' 00:00:00';
+    }
+    const toSave = { ...draft, launchAt: normalizedLaunch, _forceTop: false };
     onUpdateRow(actual, toSave);
     setRowDrafts((prev) => {
       const next = { ...prev };
       delete next[actual];
       return next;
     });
+    // close modal if open for this row
+    setEditingModal((m) =>
+      m && m.idx === actual ? { open: false, idx: -1 } : m,
+    );
   };
 
   const handleDeleteRow = (rowIndex) => {
@@ -272,8 +293,8 @@ export default function SortableTable({
         <thead className='bg-gray-100 dark:bg-gray-700 sticky top-0 z-30'>
           <tr>
             {TABLE_HEADERS.map((h) => {
-              // Skip API ID column if not showing
-              if (h === 'API ID' && !showApiId) return null;
+              // Always skip API ID column in table display
+              if (h === 'API ID') return null;
               // Skip Highest Price column if not showing
               if (h === 'Highest Price' && !showHighestPrice) return null;
 
@@ -390,11 +411,11 @@ export default function SortableTable({
                       ? 'bg-white dark:bg-gray-700 dark:text-white'
                       : 'bg-transparent dark:bg-transparent dark:text-white'
                   }`}
-                  type='number'
+                  type={isEditing(idx) ? 'number' : 'text'}
                   value={
                     isEditing(idx)
                       ? getDraftField(idx, 'amount') ?? ''
-                      : r.amount
+                      : formatAmount(r.amount)
                   }
                   onChange={(e) => {
                     if (!isEditing(idx)) return;
@@ -439,17 +460,19 @@ export default function SortableTable({
                     if (!isEditing(idx)) return;
                     const value = e.target.value.trim();
                     if (value) {
-                      const formattedValue = formatDateTime(value);
-                      if (formattedValue !== value) {
-                        const actual = getActualIndex(idx);
-                        setRowDrafts((prev) => ({
-                          ...prev,
-                          [actual]: {
-                            ...prev[actual],
-                            launchAt: formattedValue,
-                          },
-                        }));
-                      }
+                      const normalized = normalizeDateTime(value) || value;
+                      const formattedValue = formatDateTime(normalized);
+                      const actual = getActualIndex(idx);
+                      setRowDrafts((prev) => ({
+                        ...prev,
+                        [actual]: {
+                          ...prev[actual],
+                          launchAt:
+                            formattedValue === value
+                              ? normalized
+                              : formattedValue,
+                        },
+                      }));
                     }
                   }}
                   placeholder='DD/MM/YYYY HH:mm:ss'
@@ -457,36 +480,7 @@ export default function SortableTable({
                   disabled={!isEditing(idx)}
                 />
               </td>
-              {showApiId && (
-                <td
-                  className='px-1 py-2'
-                  style={{ position: 'relative', zIndex: 1 }}
-                >
-                  <input
-                    className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-xs sm:text-sm ${
-                      isEditing(idx)
-                        ? 'bg-white dark:bg-gray-700 dark:text-white'
-                        : 'bg-transparent dark:bg-transparent dark:text-white'
-                    }`}
-                    value={
-                      isEditing(idx)
-                        ? getDraftField(idx, 'apiId') ?? ''
-                        : r.apiId
-                    }
-                    onChange={(e) => {
-                      if (!isEditing(idx)) return;
-                      const actual = getActualIndex(idx);
-                      setRowDrafts((prev) => ({
-                        ...prev,
-                        [actual]: { ...prev[actual], apiId: e.target.value },
-                      }));
-                    }}
-                    placeholder=''
-                    maxLength={15}
-                    disabled={!isEditing(idx)}
-                  />
-                </td>
-              )}
+              {/* API ID column removed from table rows; API ID is available only in Add/Edit forms */}
               <td
                 className='px-1 py-2'
                 style={{ position: 'relative', zIndex: 1 }}
@@ -548,6 +542,7 @@ export default function SortableTable({
               </td>
               {(() => {
                 const cd = getCountdownText(r.launchAt);
+                // If countdown exists, show countdown and placeholder
                 if (cd) {
                   return (
                     <>
@@ -560,54 +555,52 @@ export default function SortableTable({
                     </>
                   );
                 }
+
+                // Countdown ended or no valid date: if price is 0, show Wait for listing, otherwise show price and reward
+                if (Number(r.price) === 0) {
+                  return (
+                    <>
+                      <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
+                        {formatPrice(r.price)}
+                      </td>
+                      <td className='px-1 py-2 text-center tabular-nums font-medium text-xs sm:text-sm dark:text-white'>
+                        Wait for listing
+                      </td>
+                    </>
+                  );
+                }
+
                 return (
                   <>
                     <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
-                      {formatNumber(r.price)}
+                      {formatPrice(r.price)}
                     </td>
                     <td className='px-1 py-2 text-center tabular-nums font-medium text-xs sm:text-sm dark:text-white'>
-                      {formatNumber(r.value)}
+                      {formatPrice(r.value)}
                     </td>
                   </>
                 );
               })()}
               {showHighestPrice && (
                 <td className='px-1 py-2 text-center tabular-nums text-xs sm:text-sm dark:text-white'>
-                  {formatNumber(r.highestPrice)}
+                  {formatPrice(r.highestPrice)}
                 </td>
               )}
               <td className='px-1 py-2 text-right'>
-                {isEditing(idx) ? (
-                  <div className='flex items-center justify-end gap-2'>
-                    <button
-                      onClick={() => saveRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs'
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ) : (
-                  <div className='flex items-center justify-end gap-2'>
-                    <button
-                      onClick={() => startEditRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs'
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteRow(idx)}
-                      className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                <div className='flex items-center justify-end gap-2'>
+                  <button
+                    onClick={() => startEditRow(idx)}
+                    className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs'
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteRow(idx)}
+                    className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs'
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -616,7 +609,8 @@ export default function SortableTable({
               <td
                 colSpan={
                   TABLE_HEADERS.filter((h) => {
-                    if (h === 'API ID' && !showApiId) return false;
+                    // Always hide API ID column in table display
+                    if (h === 'API ID') return false;
                     if (h === 'Highest Price' && !showHighestPrice)
                       return false;
                     return true;
@@ -630,6 +624,138 @@ export default function SortableTable({
           )}
         </tbody>
       </table>
+      {/* Edit Modal - simple inline modal using editingModal state */}
+      {editingModal && editingModal.open && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'>
+          <div className='bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl'>
+            <div className='flex items-center justify-between mb-4'>
+              <h3 className='text-lg font-semibold dark:text-white'>
+                Edit Row
+              </h3>
+              <button
+                onClick={() => setEditingModal({ open: false, idx: -1 })}
+                className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* form fields bound to rowDrafts[editingModal.idx] */}
+            <div className='grid grid-cols-1 gap-3'>
+              {editingModal.idx !== -1 && rowDrafts[editingModal.idx] && (
+                <>
+                  <input
+                    value={rowDrafts[editingModal.idx].name}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          name: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='Token (required)'
+                  />
+
+                  <input
+                    value={rowDrafts[editingModal.idx].amount}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          amount: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='Amount'
+                    type='number'
+                    step='0.000001'
+                  />
+
+                  <input
+                    value={rowDrafts[editingModal.idx].launchAt}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          launchAt: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss'
+                  />
+
+                  <input
+                    value={rowDrafts[editingModal.idx].apiId}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          apiId: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='API ID'
+                  />
+
+                  <input
+                    value={rowDrafts[editingModal.idx].pointPriority}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          pointPriority: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='Point (Priority)'
+                  />
+
+                  <input
+                    value={rowDrafts[editingModal.idx].pointFCFS}
+                    onChange={(e) =>
+                      setRowDrafts((p) => ({
+                        ...p,
+                        [editingModal.idx]: {
+                          ...p[editingModal.idx],
+                          pointFCFS: e.target.value,
+                        },
+                      }))
+                    }
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    placeholder='Point (FCFS)'
+                  />
+
+                  <div className='flex justify-end gap-2 mt-2'>
+                    <button
+                      onClick={() => setEditingModal({ open: false, idx: -1 })}
+                      className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => saveRow(editingModal.idx)}
+                      className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm'
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

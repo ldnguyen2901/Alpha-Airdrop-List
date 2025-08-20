@@ -1,5 +1,5 @@
 import { TABLE_HEADERS } from '../utils/constants';
-import { formatNumber } from '../utils/helpers';
+import { formatAmount, formatPrice } from '../utils/helpers';
 
 export default function CryptoTable({ rows, onUpdateRow, onRemoveRow }) {
   return (
@@ -31,8 +31,8 @@ export default function CryptoTable({ rows, onUpdateRow, onRemoveRow }) {
               <td className='px-3 py-2'>
                 <input
                   className='w-32 border rounded-lg px-2 py-1'
-                  type='number'
-                  value={r.amount}
+                  type='text'
+                  value={formatAmount(r.amount)}
                   onChange={(e) => onUpdateRow(idx, { amount: e.target.value })}
                   placeholder='VD 1.23'
                 />
@@ -76,10 +76,10 @@ export default function CryptoTable({ rows, onUpdateRow, onRemoveRow }) {
                 />
               </td>
               <td className='px-3 py-2 text-right tabular-nums'>
-                {formatNumber(r.price)}
+                {formatPrice(r.price)}
               </td>
               <td className='px-3 py-2 text-right tabular-nums font-medium'>
-                {formatNumber(r.value)}
+                {formatPrice(r.value)}
               </td>
               <td className='px-3 py-2 text-right'>
                 <button

@@ -6,8 +6,6 @@ export default function ActionButtons({
   onExportCSV,
   onClearAll,
   onImportExcel,
-  showApiId,
-  setShowApiId,
   showHighestPrice,
   setShowHighestPrice,
   searchToken,
@@ -51,15 +49,6 @@ export default function ActionButtons({
         />
       </div>
       <div className='flex items-center gap-4'>
-        <label className='flex items-center gap-2 text-sm'>
-          <input
-            type='checkbox'
-            checked={showApiId}
-            onChange={(e) => setShowApiId(e.target.checked)}
-            className='rounded'
-          />
-          Show API ID
-        </label>
         <label className='flex items-center gap-2 text-sm'>
           <input
             type='checkbox'
