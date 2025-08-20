@@ -12,7 +12,7 @@ export default function SortableTable({
 }) {
   const [sortConfig, setSortConfig] = useState(() => {
     const savedSort = loadSortConfig();
-    return savedSort || { key: null, direction: 'asc' };
+    return savedSort || { key: 'launchAt', direction: 'desc' };
   });
   const [rowDrafts, setRowDrafts] = useState({});
   const showHighestPrice = !!showHighestPriceProp;
@@ -562,7 +562,22 @@ export default function SortableTable({
               </td>
               {(() => {
                 const cd = getCountdownText(r.launchAt);
-                // If countdown exists, show countdown and placeholder
+                const priceNum = Number(r.price) || 0;
+                // If API returned a price, always show price and reward to be consistent with API
+                if (priceNum > 0) {
+                  return (
+                    <>
+                      <td className='px-1 py-2 text-center tabular-nums text-[11px] sm:text-sm dark:text-white'>
+                        {formatPrice(priceNum)}
+                      </td>
+                      <td className='px-1 py-2 text-center tabular-nums font-medium text-[11px] sm:text-sm dark:text-white'>
+                        {formatPrice(r.value)}
+                      </td>
+                    </>
+                  );
+                }
+
+                // No price yet: if countdown exists, show countdown and placeholder, otherwise show 0 and placeholder
                 if (cd) {
                   return (
                     <>
@@ -576,27 +591,13 @@ export default function SortableTable({
                   );
                 }
 
-                // Countdown ended or no valid date: if price is 0, show Wait for listing, otherwise show price and reward
-                if (Number(r.price) === 0) {
-                  return (
-                    <>
-                      <td className='px-1 py-2 text-center tabular-nums text-[11px] sm:text-sm dark:text-white'>
-                        {formatPrice(r.price)}
-                      </td>
-                      <td className='px-1 py-2 text-center tabular-nums font-medium text-[11px] sm:text-sm dark:text-white'>
-                        Wait for listing
-                      </td>
-                    </>
-                  );
-                }
-
                 return (
                   <>
                     <td className='px-1 py-2 text-center tabular-nums text-[11px] sm:text-sm dark:text-white'>
-                      {formatPrice(r.price)}
+                      {formatPrice(0)}
                     </td>
                     <td className='px-1 py-2 text-center tabular-nums font-medium text-[11px] sm:text-sm dark:text-white'>
-                      {formatPrice(r.value)}
+                      Wait for listing
                     </td>
                   </>
                 );

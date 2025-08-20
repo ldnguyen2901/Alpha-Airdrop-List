@@ -6,6 +6,8 @@ export default function ActionButtons({
   onExportCSV,
   onClearAll,
   onImportExcel,
+  onRefresh,
+  loading,
   showHighestPrice,
   setShowHighestPrice,
   searchToken,
@@ -60,6 +62,13 @@ export default function ActionButtons({
           />
           Show Highest Price
         </label>
+        <button
+          onClick={onRefresh}
+          className='hidden sm:inline-flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm'
+          title='Refresh now'
+        >
+          {loading ? 'Updating...' : 'Refresh'}
+        </button>
       </div>
     </div>
   );

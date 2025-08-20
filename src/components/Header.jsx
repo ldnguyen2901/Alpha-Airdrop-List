@@ -8,9 +8,10 @@ export default function Header({ loading, onRefresh, syncing }) {
       </h1>
       <div className='flex flex-wrap items-center gap-2'>
         {/* Status text moved to StatsCards */}
+        {/* Mobile-only Refresh; desktop version is in ActionButtons next to checkbox */}
         <button
           onClick={onRefresh}
-          className='px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm w-full sm:w-auto'
+          className='inline-flex sm:hidden px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm w-full'
           title='Refresh now'
         >
           {loading ? 'Updating...' : 'Refresh'}

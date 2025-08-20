@@ -8,6 +8,7 @@ export default function StatsCards({
   ethPrice,
   bnbPrice,
   syncing,
+  lastUpdated,
 }) {
   return (
     <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6'>
@@ -51,6 +52,9 @@ export default function StatsCards({
       <Card>
         <div className='text-xs sm:text-sm text-gray-500'>Airdrop Alpha Projects</div>
         <div className='text-xl sm:text-2xl font-semibold'>{rowsCount}</div>
+        <div className='mt-1 text-[11px] text-gray-500'>
+          {loading ? 'Updating…' : lastUpdated ? `Updated: ${new Date(lastUpdated).toLocaleTimeString()}` : 'Ready'}
+        </div>
       </Card>
     </div>
   );

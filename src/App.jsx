@@ -44,12 +44,14 @@ export default function App() {
   const timerRef = useRef(null);
   const unsubRef = useRef(null);
   const isRemoteUpdateRef = useRef(false);
+  const fetchPendingRef = useRef(null);
 
   // refresh interval fixed to 60 seconds (user control removed)
   const refreshSec = 60;
   const [workspaceId, setWorkspaceId] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [btcPrice, setBtcPrice] = useState(0);
   const [ethPrice, setEthPrice] = useState(0);
@@ -102,6 +104,9 @@ export default function App() {
         }),
       );
 
+      // record last updated time once prices have been applied
+      setLastUpdated(new Date());
+
       // small convenience: set common coin displays if present; fallback to any existing row prices
       if (priceMap.bitcoin && priceMap.bitcoin.usd)
         setBtcPrice(Number(priceMap.bitcoin.usd) || 0);
@@ -140,6 +145,17 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Debounced trigger to fetch prices to coalesce multiple rapid changes
+  function requestFetchPrices(delayMs = 150) {
+    if (fetchPendingRef.current) {
+      clearTimeout(fetchPendingRef.current);
+    }
+    fetchPendingRef.current = setTimeout(() => {
+      fetchPendingRef.current = null;
+      fetchPrices();
+    }, delayMs);
   }
 
   // Form submit wrapper used by the Add Row modal form (form object passed)
@@ -207,6 +223,8 @@ export default function App() {
     timerRef.current = setInterval(() => {
       fetchPrices();
     }, 60 * 1000);
+    // Trigger an immediate debounced fetch when ids set changes so prices show up right away
+    requestFetchPrices(100);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(',')]);
@@ -250,6 +268,8 @@ export default function App() {
             setRows(cloudRows);
             saveDataToStorage(cloudRows);
             setTimeout(() => (isRemoteUpdateRef.current = false), 0);
+            // After cloud rows loaded, fetch prices (debounced)
+            requestFetchPrices(50);
           } else if (!cloudRows || cloudRows.length === 0) {
             // ensure document exists so other devices can subscribe immediately
             await saveWorkspaceData(GLOBAL_WS, []);
@@ -263,6 +283,8 @@ export default function App() {
           setRows(cloudRows);
           saveDataToStorage(cloudRows);
           setTimeout(() => (isRemoteUpdateRef.current = false), 0);
+          // Fetch latest prices when cloud data changes (debounced)
+          requestFetchPrices(100);
         });
 
         cleanup = () => {
@@ -664,6 +686,7 @@ export default function App() {
             ethPrice={ethPrice}
             bnbPrice={bnbPrice}
             syncing={syncing}
+            lastUpdated={lastUpdated}
           />
 
           <ActionButtons
@@ -672,6 +695,8 @@ export default function App() {
             onExportCSV={exportCSV}
             onClearAll={clearAll}
             onImportExcel={() => setShowExcelUpload(true)}
+            onRefresh={fetchPrices}
+            loading={loading}
             showHighestPrice={showHighestPrice}
             setShowHighestPrice={setShowHighestPrice}
             searchToken={searchToken}
