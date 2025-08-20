@@ -1,7 +1,7 @@
 // Kiểu dữ liệu một dòng
 export function newRow(partial = {}) {
   return {
-    name: '', // Token name
+    name: '', // Token name (will be normalized by caller/newRow merging)
     amount: 0, // Amount
     launchAt: '', // Listing time
     apiId: '', // API ID (CoinGecko id)

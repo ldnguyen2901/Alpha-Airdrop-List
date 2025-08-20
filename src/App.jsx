@@ -163,7 +163,9 @@ export default function App() {
       : '';
 
     const nr = newRow({
-      name: form.name,
+      name: String(form.name || '')
+        .trim()
+        .toUpperCase(),
       amount: Number(form.amount) || 0,
       launchAt: normalizedLaunch || '',
       apiId: form.apiId || '',
@@ -196,7 +198,7 @@ export default function App() {
       pointFCFS: '',
     });
     setAddErrors({});
-    toast.success('New row added successfully!');
+    toast.success(`New ${nr.name || 'token'} added successfully!`);
   }
 
   // Tự động refresh
@@ -281,7 +283,15 @@ export default function App() {
 
   function updateRow(idx, patch) {
     setRows((prev) => {
-      const newRows = prev.map((r, i) => (i === idx ? { ...r, ...patch } : r));
+      const normalizedPatch = { ...patch };
+      if (normalizedPatch.name !== undefined) {
+        normalizedPatch.name = String(normalizedPatch.name || '')
+          .trim()
+          .toUpperCase();
+      }
+      const newRows = prev.map((r, i) =>
+        i === idx ? { ...r, ...normalizedPatch } : r,
+      );
       saveDataToStorage(newRows);
       if (!isRemoteUpdateRef.current) {
         setSyncing(true);
@@ -291,6 +301,13 @@ export default function App() {
             toast.error('Failed to sync data to cloud. Please try again.');
           })
           .finally(() => setSyncing(false));
+      }
+      // notify user which token was updated
+      try {
+        const updatedName = (newRows[idx] && newRows[idx].name) || 'token';
+        toast.success(`Updated ${updatedName} successfully!`);
+      } catch (e) {
+        /* ignore */
       }
       return newRows;
     });
@@ -342,7 +359,9 @@ export default function App() {
       : '';
 
     const nr = newRow({
-      name: addForm.name,
+      name: String(addForm.name || '')
+        .trim()
+        .toUpperCase(),
       amount: Number(addForm.amount) || 0,
       launchAt: normalizedLaunch || '',
       apiId: addForm.apiId || '',
@@ -380,6 +399,7 @@ export default function App() {
 
   function removeRow(idx) {
     setRows((prev) => {
+      const removed = prev[idx];
       const newRows = prev.filter((_, i) => i !== idx);
       saveDataToStorage(newRows);
       if (!isRemoteUpdateRef.current) {
@@ -390,6 +410,12 @@ export default function App() {
             toast.error('Failed to sync data to cloud. Please try again.');
           })
           .finally(() => setSyncing(false));
+      }
+      try {
+        const name = (removed && removed.name) || 'token';
+        toast.success(`Deleted ${name} successfully!`);
+      } catch (e) {
+        /* ignore */
       }
       return newRows;
     });
@@ -545,7 +571,9 @@ export default function App() {
 
       parsedRows.push(
         newRow({
-          name: name?.trim(),
+          name: String(name || '')
+            .trim()
+            .toUpperCase(),
           amount: Number(amount) || 0,
           launchAt: launchAt?.trim(),
           apiId: apiId?.trim(),
@@ -586,7 +614,14 @@ export default function App() {
   }
 
   function handleImportExcel(data) {
-    const parsedData = data.map((item) => newRow(item));
+    const parsedData = data.map((item) =>
+      newRow({
+        ...item,
+        name: String(item.name || '')
+          .trim()
+          .toUpperCase(),
+      }),
+    );
 
     // Kiểm tra trùng lặp
     const duplicates = checkDuplicates(parsedData, rows);
