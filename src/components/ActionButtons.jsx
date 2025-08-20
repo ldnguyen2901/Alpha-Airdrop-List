@@ -12,7 +12,7 @@ export default function ActionButtons({
   setSearchToken,
 }) {
   return (
-    <div className='flex flex-wrap items-center justify-between gap-2 md:gap-3 lg:gap-4 mb-3'>
+    <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 lg:gap-4 mb-3'>
       <div className='flex flex-wrap items-center gap-2'>
         <button
           onClick={onAddRow}
@@ -39,14 +39,16 @@ export default function ActionButtons({
         >
           🗑️ Clear All
         </button>
-        <input
-          type='text'
-          value={searchToken}
-          onChange={(e) => setSearchToken(e.target.value)}
-          className='ml-2 w-40 md:w-52 lg:w-64 border rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-sm dark:text-white'
-          placeholder='Search token name...'
-          title='Search token name'
-        />
+        <div className='w-full sm:w-auto'>
+          <input
+            type='text'
+            value={searchToken}
+            onChange={(e) => setSearchToken(e.target.value)}
+            className='mt-1 sm:mt-0 sm:ml-2 w-full sm:w-40 md:w-52 lg:w-64 border rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-sm dark:text-white'
+            placeholder='Search token name...'
+            title='Search token name'
+          />
+        </div>
       </div>
       <div className='flex items-center gap-4'>
         <label className='flex items-center gap-2 text-sm'>

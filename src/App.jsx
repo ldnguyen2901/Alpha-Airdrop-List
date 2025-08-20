@@ -653,7 +653,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-6'>
+      <div className='min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white p-3 sm:p-6'>
         <div className='max-w-full mx-auto'>
           <Header loading={loading} onRefresh={fetchPrices} syncing={syncing} />
 

@@ -1,4 +1,4 @@
-# Airdrop Alpha Binance/Gate
+# Binance Alpha Airdrop
 
 Ứng dụng theo dõi giá tiền điện tử sử dụng CoinGecko API với giao diện React hiện đại, được thiết kế đặc biệt cho việc quản lý airdrop alpha.
 

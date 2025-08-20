@@ -15,8 +15,8 @@ export default function PasteButton({ onPasteText }) {
       </button>
 
       {open && (
-        <div className='fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50'>
-          <div className='bg-white dark:bg-gray-800 w-full max-w-4xl rounded-2xl p-4 shadow-xl z-50'>
+        <div className='fixed inset-0 bg-black/30 flex items-center justify-center p-2 sm:p-4 z-50'>
+          <div className='bg-white dark:bg-gray-800 w-full max-w-full sm:max-w-4xl rounded-2xl p-3 sm:p-4 shadow-xl z-50'>
             <div className='font-semibold mb-2 dark:text-white'>
               Paste data (CSV or TSV)
               <span className='ml-2 text-xs text-gray-500 dark:text-gray-400'>
@@ -24,7 +24,7 @@ export default function PasteButton({ onPasteText }) {
               </span>
             </div>
             <textarea
-              className='w-full h-64 md:h-80 lg:h-96 border dark:border-gray-600 rounded-xl p-3 mb-3 bg-white dark:bg-gray-700 dark:text-white'
+              className='w-full h-60 sm:h-64 md:h-80 lg:h-96 border dark:border-gray-600 rounded-xl p-3 mb-3 bg-white dark:bg-gray-700 dark:text-white'
               placeholder={`Example row:\nBitcoin,1.5,01/01/2025 12:00:00,bitcoin,100,50,0,0`}
               value={text}
               onChange={(e) => setText(e.target.value)}

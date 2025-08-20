@@ -65,19 +65,19 @@ export default function ExcelUpload({ onImportData }) {
   return (
     <div className='flex flex-col items-center'>
       <div
-        className='w-full max-w-lg md:max-w-xl lg:max-w-2xl p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer'
+        className='w-full max-w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl p-4 sm:p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer'
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
       >
-        <div className='text-4xl mb-2'>📊</div>
-        <div className='text-lg font-medium mb-2 dark:text-white'>
+        <div className='text-3xl sm:text-4xl mb-2'>📊</div>
+        <div className='text-base sm:text-lg font-medium mb-2 dark:text-white'>
           {isLoading ? 'Reading file...' : 'Upload Excel file'}
         </div>
-        <div className='text-sm text-gray-500 dark:text-gray-400 mb-4'>
+        <div className='text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4'>
           Drag & drop file or click to select
         </div>
-        <div className='text-xs text-gray-400 dark:text-gray-500'>
+        <div className='text-[11px] sm:text-xs text-gray-400 dark:text-gray-500'>
           Supported: .xlsx, .xls, .csv
         </div>
 
@@ -91,7 +91,7 @@ export default function ExcelUpload({ onImportData }) {
       </div>
 
       {error && (
-        <div className='mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg'>
+        <div className='mt-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg w-full'>
           {error}
         </div>
       )}
