@@ -26,7 +26,8 @@ export function splitCSV(line) {
 export function formatNumber(n) {
   if (typeof n !== 'number' || isNaN(n)) return '-';
   // Hiển thị tối đa 8 chữ số thập phân, bỏ số 0 dư
-  const s = n.toLocaleString(undefined, { maximumFractionDigits: 8 });
+  // Sử dụng 'de-DE' để đảm bảo dấu chấm là thousands separator và dấu phẩy là decimal separator
+  const s = n.toLocaleString('de-DE', { maximumFractionDigits: 8 });
   return s;
 }
 
@@ -63,19 +64,28 @@ export function normalizeDateTime(value) {
   return value;
 }
 
-// Format amount with dot as thousands separator. Keeps up to 6 decimals if present.
+// Format amount with dot as thousands separator and comma as decimal separator. Keeps up to 6 decimals if present.
 export function formatAmount(n) {
   if (n === null || n === undefined || n === '') return '';
   const num = Number(n);
   if (isNaN(num)) return String(n);
   // Use up to 6 decimals for amounts
   const options = { maximumFractionDigits: 6 };
-  const s = num.toLocaleString('en-US', options);
-  // replace comma thousands with dot
-  return s.replace(/,/g, '.');
+  const s = num.toLocaleString('de-DE', options);
+  // Keep standard de-DE format: dot for thousands, comma for decimal
+  return s;
 }
 
-// Format price/reward with exactly 4 decimal places and dot thousands separator
+// Parse number input that may contain dots
+export function parseNumberInput(value) {
+  if (!value && value !== 0) return '';
+  // Remove dots and parse as number
+  const cleaned = String(value).replace(/\./g, '');
+  const num = Number(cleaned);
+  return isNaN(num) ? value : num;
+}
+
+// Format price/reward with exactly 4 decimal places and dot as thousands separator
 export function formatPrice(n) {
   if (n === null || n === undefined || n === '') return '-';
   const num = Number(n);
@@ -119,8 +129,8 @@ export function formatPrice(n) {
     }
   }
 
-  // format integer thousands with dot
+  // format integer thousands with dot (chuẩn Việt Nam)
   const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  if (fracPart) return sign + intFormatted + '.' + fracPart;
+  if (fracPart) return sign + intFormatted + ',' + fracPart;
   return sign + intFormatted;
 }

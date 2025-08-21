@@ -61,6 +61,7 @@ export default function App() {
   const [showHighestPrice, setShowHighestPrice] = useState(false);
   const [searchToken, setSearchToken] = useState('');
   const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const highlightRowRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [addForm, setAddForm] = useState({
@@ -216,6 +217,11 @@ export default function App() {
     });
     setAddErrors({});
     toast.success(`New ${nr.name || 'token'} added successfully!`);
+    
+    // Highlight the newly added row
+    if (highlightRowRef.current) {
+      highlightRowRef.current(rows.length); // Highlight the last row (newly added)
+    }
   }
 
   // Tự động refresh
@@ -444,22 +450,7 @@ export default function App() {
     });
   }
 
-  function clearAll() {
-    if (confirm('Delete all rows?')) {
-      setRows([]);
-      saveDataToStorage([]);
-      if (!isRemoteUpdateRef.current) {
-        setSyncing(true);
-        saveWorkspaceData('global', [])
-          .catch((e) => {
-            console.error('Save cloud failed:', e);
-            toast.error('Failed to sync data to cloud. Please try again.');
-          })
-          .finally(() => setSyncing(false));
-      }
-      toast.success('All data cleared successfully!');
-    }
-  }
+
 
   function checkDuplicates(newRows, existingRows) {
     const duplicates = [];
@@ -694,7 +685,6 @@ export default function App() {
             onAddRow={openAddRowModal}
             onPasteText={handlePaste}
             onExportCSV={exportCSV}
-            onClearAll={clearAll}
             onImportExcel={() => setShowExcelUpload(true)}
             onRefresh={fetchPrices}
             loading={loading}
@@ -710,6 +700,7 @@ export default function App() {
             onRemoveRow={removeRow}
             showHighestPrice={showHighestPrice}
             searchToken={searchToken}
+            ref={highlightRowRef}
           />
         </div>
 

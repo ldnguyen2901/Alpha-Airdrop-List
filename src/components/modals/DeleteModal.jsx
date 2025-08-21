@@ -1,4 +1,5 @@
 import { formatAmount } from '../../utils/helpers';
+import { useState } from 'react';
 
 export default function DeleteModal({
   deleteModal,
@@ -7,6 +8,8 @@ export default function DeleteModal({
   rowDrafts,
   rows
 }) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   if (!deleteModal || !deleteModal.open || deleteModal.idx === -1) {
     return null;
   }
@@ -96,12 +99,35 @@ export default function DeleteModal({
              >
                Cancel
              </button>
-             <button
-               onClick={confirmDelete}
-               className='px-3 py-2 rounded-xl bg-rose-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
-             >
-               Confirm Delete
-             </button>
+                         <button
+              onClick={async () => {
+                setIsDeleting(true);
+                try {
+                  await confirmDelete();
+                  // Add success animation
+                  const button = event.target;
+                  button.classList.add('button-success');
+                  setTimeout(() => {
+                    button.classList.remove('button-success');
+                  }, 800);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              disabled={isDeleting}
+              className={`px-3 py-2 rounded-xl bg-rose-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md ${
+                isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isDeleting ? (
+                <span className="flex items-center gap-2">
+                  <span className="spin">🔄</span>
+                  Deleting...
+                </span>
+              ) : (
+                'Confirm Delete'
+              )}
+            </button>
            </div>
         </div>
       </div>

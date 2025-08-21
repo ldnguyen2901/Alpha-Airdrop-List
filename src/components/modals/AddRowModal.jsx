@@ -1,4 +1,5 @@
 import { normalizeDateTime } from '../../utils/helpers';
+import { useState } from 'react';
 
 export default function AddRowModal({
   showAddModal,
@@ -8,6 +9,8 @@ export default function AddRowModal({
   addErrors,
   handleAddRowSubmit
 }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   if (!showAddModal) {
     return null;
   }
@@ -48,9 +51,20 @@ export default function AddRowModal({
         </div>
 
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            handleAddRowSubmit(addForm);
+            setIsSubmitting(true);
+            try {
+              await handleAddRowSubmit(addForm);
+              // Add success animation
+              const form = e.target;
+              form.classList.add('modal-success');
+              setTimeout(() => {
+                form.classList.remove('modal-success');
+              }, 500);
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
         >
           <div className='grid grid-cols-1 gap-3'>
@@ -152,12 +166,22 @@ export default function AddRowModal({
              >
                Cancel
              </button>
-             <button
-               type='submit'
-               className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
-             >
-               Add to table
-             </button>
+                           <button
+                type='submit'
+                disabled={isSubmitting}
+                className={`px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="spin">🔄</span>
+                    Adding...
+                  </span>
+                ) : (
+                  'Add to table'
+                )}
+              </button>
            </div>
         </form>
       </div>

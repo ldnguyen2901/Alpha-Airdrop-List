@@ -4,7 +4,6 @@ export default function ActionButtons({
   onAddRow,
   onPasteText,
   onExportCSV,
-  onClearAll,
   onImportExcel,
   onRefresh,
   loading,
@@ -34,12 +33,6 @@ export default function ActionButtons({
           className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
         >
           ⬇️ Export CSV
-        </button>
-        <button
-          onClick={onClearAll}
-          className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
-        >
-          🗑️ Clear All
         </button>
         <div className='w-full sm:w-auto'>
           <input

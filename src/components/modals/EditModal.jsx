@@ -1,4 +1,5 @@
 import { normalizeDateTime } from '../../utils/helpers';
+import { useState } from 'react';
 
 export default function EditModal({
   editingModal,
@@ -7,6 +8,8 @@ export default function EditModal({
   setEditingModal,
   saveRow
 }) {
+  const [isSaving, setIsSaving] = useState(false);
+  
   if (!editingModal || !editingModal.open || editingModal.idx === -1) {
     return null;
   }
@@ -149,12 +152,35 @@ export default function EditModal({
              >
                Cancel
              </button>
-             <button
-               onClick={() => saveRow(editingModal.idx)}
-               className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
-             >
-               Save changes
-             </button>
+                         <button
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  await saveRow(editingModal.idx);
+                  // Add success animation
+                  const button = event.target;
+                  button.classList.add('button-success');
+                  setTimeout(() => {
+                    button.classList.remove('button-success');
+                  }, 800);
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving}
+              className={`px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md ${
+                isSaving ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <span className="spin">🔄</span>
+                  Saving...
+                </span>
+              ) : (
+                'Save changes'
+              )}
+            </button>
            </div>
         </div>
       </div>

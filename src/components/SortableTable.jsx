@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { TABLE_HEADERS } from '../utils/constants';
 import { getCountdownText } from '../utils/dateTimeUtils';
 import { useTableSort } from '../hooks/useTableSort';
@@ -8,15 +8,16 @@ import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
 import DeleteModal from './modals/DeleteModal';
 
-export default function SortableTable({
+const SortableTable = forwardRef(({
   rows,
   onUpdateRow,
   onRemoveRow,
   showHighestPrice: showHighestPriceProp,
   searchToken,
-}) {
+}, ref) => {
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
+  const [highlightedRows, setHighlightedRows] = useState(new Set());
   
   const { sortConfig, requestSort, getSortIcon, sortRows } = useTableSort();
   const {
@@ -64,6 +65,23 @@ export default function SortableTable({
     return getCountdownText(launchAt, now);
   };
 
+  // Function to highlight a row after successful action
+  const highlightRow = (rowIndex) => {
+    setHighlightedRows(prev => new Set([...prev, rowIndex]));
+    setTimeout(() => {
+      setHighlightedRows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rowIndex);
+        return newSet;
+      });
+    }, 2000);
+  };
+
+  // Expose highlightRow function to parent component
+  useImperativeHandle(ref, () => ({
+    highlightRow
+  }));
+
   return (
     <div className='overflow-auto rounded-2xl border bg-white dark:bg-gray-800 shadow max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-170px)] lg:max-h-[calc(100vh-200px)]'>
       <table className='w-full text-sm'>
@@ -74,23 +92,24 @@ export default function SortableTable({
           showHighestPrice={showHighestPrice}
         />
         <tbody>
-          {sortedRows.map((row, idx) => (
-            <TableRow
-              key={idx}
-              row={row}
-              index={idx}
-              isEditing={(index) => isEditing(index, sortedRows, rows)}
-              getDraftField={(index, field) => getDraftField(index, field, sortedRows, rows)}
-              onStartEdit={handleStartEdit}
-              onDelete={handleDelete}
-              showHighestPrice={showHighestPrice}
-              getActualIndex={getActualIndex}
-              setRowDrafts={setRowDrafts}
-              getCountdownText={getCountdownTextForRow}
-              sortedRows={sortedRows}
-              rows={rows}
-            />
-          ))}
+                      {sortedRows.map((row, idx) => (
+              <TableRow
+                key={idx}
+                row={row}
+                index={idx}
+                isEditing={(index) => isEditing(index, sortedRows, rows)}
+                getDraftField={(index, field) => getDraftField(index, field, sortedRows, rows)}
+                onStartEdit={handleStartEdit}
+                onDelete={handleDelete}
+                showHighestPrice={showHighestPrice}
+                getActualIndex={getActualIndex}
+                setRowDrafts={setRowDrafts}
+                getCountdownText={getCountdownTextForRow}
+                sortedRows={sortedRows}
+                rows={rows}
+                isHighlighted={highlightedRows.has(idx)}
+              />
+            ))}
           {sortedRows.length === 0 && (
             <tr>
               <td
@@ -128,4 +147,6 @@ export default function SortableTable({
       />
     </div>
   );
-}
+});
+
+export default SortableTable;

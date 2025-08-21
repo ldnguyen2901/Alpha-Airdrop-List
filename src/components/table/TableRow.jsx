@@ -12,7 +12,8 @@ export default function TableRow({
   setRowDrafts,
   getCountdownText,
   sortedRows,
-  rows
+  rows,
+  isHighlighted
 }) {
   const handleNameChange = (e) => {
     if (!isEditing(index)) return;
@@ -129,7 +130,9 @@ export default function TableRow({
           : index % 2 === 0
           ? 'bg-white dark:bg-gray-800'
           : 'bg-gray-50 dark:bg-gray-700'
-      } hover:bg-gray-100 dark:hover:bg-gray-600`}
+      } hover:bg-gray-100 dark:hover:bg-gray-600 ${
+        isHighlighted ? 'row-highlight' : ''
+      }`}
       style={
         typeof document !== 'undefined' &&
         document.documentElement.classList.contains('dark') &&
