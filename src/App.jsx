@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { newRow, CSV_HEADERS } from './utils/constants';
 import { splitCSV, normalizeDateTime } from './utils/helpers';
-import { fetchCryptoPrices } from './services/api';
+import { fetchCryptoPrices, fetchTokenLogos } from './services/api';
 import { saveDataToStorage, loadDataFromStorage } from './utils/storage';
 import {
   ensureAnonymousLogin,
@@ -57,6 +57,7 @@ export default function App() {
   const [btcPrice, setBtcPrice] = useState(0);
   const [ethPrice, setEthPrice] = useState(0);
   const [bnbPrice, setBnbPrice] = useState(0);
+  const [tokenLogos, setTokenLogos] = useState({});
 
   const [showHighestPrice, setShowHighestPrice] = useState(false);
   const [searchToken, setSearchToken] = useState('');
@@ -80,6 +81,17 @@ export default function App() {
       new Set(rows.map((r) => (r.apiId || '').trim()).filter(Boolean)),
     );
   }, [rows]);
+
+  // Fetch token logos from CoinGecko
+  async function fetchLogos() {
+    if (!ids.length) return;
+    try {
+      const logosMap = await fetchTokenLogos(ids);
+      setTokenLogos(logosMap);
+    } catch (e) {
+      console.error('fetchLogos error', e);
+    }
+  }
 
   // Fetch prices and update rows' price/value/highestPrice
   async function fetchPrices() {
@@ -232,6 +244,8 @@ export default function App() {
     }, 60 * 1000);
     // Trigger an immediate debounced fetch when ids set changes so prices show up right away
     requestFetchPrices(100);
+    // Fetch logos when ids change
+    fetchLogos();
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(',')]);
@@ -700,6 +714,7 @@ export default function App() {
             onRemoveRow={removeRow}
             showHighestPrice={showHighestPrice}
             searchToken={searchToken}
+            tokenLogos={tokenLogos}
             ref={highlightRowRef}
           />
         </div>

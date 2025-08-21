@@ -15,6 +15,7 @@ const SortableTable = forwardRef(({
   onRemoveRow,
   showHighestPrice: showHighestPriceProp,
   searchToken,
+  tokenLogos,
 }, ref) => {
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
@@ -106,46 +107,41 @@ const SortableTable = forwardRef(({
             getSortIcon={getSortIcon}
             showHighestPrice={showHighestPrice}
           />
-          <tbody>
+        <tbody>
             {currentRows.map((row, idx) => (
               <TableRow
                 key={startIndex + idx}
                 row={row}
                 index={startIndex + idx}
-                isEditing={(index) => isEditing(index, sortedRows, rows)}
-                getDraftField={(index, field) => getDraftField(index, field, sortedRows, rows)}
                 onStartEdit={handleStartEdit}
                 onDelete={handleDelete}
                 showHighestPrice={showHighestPrice}
-                getActualIndex={(index) => getActualIndex(index, sortedRows, rows)}
-                setRowDrafts={setRowDrafts}
                 getCountdownText={getCountdownTextForRow}
-                sortedRows={sortedRows}
-                rows={rows}
                 isHighlighted={highlightedRows.has(startIndex + idx)}
+                tokenLogos={tokenLogos}
               />
             ))}
             {currentRows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={
-                    TABLE_HEADERS.filter((h) => {
-                      if (h === 'API ID') return false;
-                      if (h === 'Highest Price' && !showHighestPrice)
-                        return false;
-                      return true;
-                    }).length
-                  }
-                  className='px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm'
-                >
-                  No data. Click Add Row or Paste from Sheet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      
+            <tr>
+              <td
+                colSpan={
+                  TABLE_HEADERS.filter((h) => {
+                    if (h === 'API ID') return false;
+                    if (h === 'Highest Price' && !showHighestPrice)
+                      return false;
+                    return true;
+                  }).length
+                }
+                className='px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm'
+              >
+                No data. Click Add Row or Paste from Sheet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+            </div>
+
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
@@ -169,9 +165,9 @@ const SortableTable = forwardRef(({
         confirmDelete={handleConfirmDelete}
         rowDrafts={rowDrafts}
         rows={rows}
-      />
-    </div>
-  );
+                      />
+                    </div>
+                  );
 });
 
 export default SortableTable;

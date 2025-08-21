@@ -54,7 +54,10 @@ export default function TableHeader({
                 className={`flex items-center gap-1 ${
                   h === 'Token Price' ||
                   h === 'Reward' ||
-                  h === 'Highest Price'
+                  h === 'Highest Price' ||
+                  h === 'Listing time' ||
+                  h === 'Point (Priority)' ||
+                  h === 'Point (FCFS)'
                     ? 'justify-center'
                     : ''
                 }`}

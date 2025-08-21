@@ -3,82 +3,14 @@ import { formatAmount, formatPrice, normalizeDateTime } from '../../utils/helper
 export default function TableRow({
   row,
   index,
-  isEditing,
-  getDraftField,
   onStartEdit,
   onDelete,
   showHighestPrice,
-  getActualIndex,
-  setRowDrafts,
   getCountdownText,
-  sortedRows,
-  rows,
-  isHighlighted
+  isHighlighted,
+  tokenLogos
 }) {
-  const handleNameChange = (e) => {
-    if (!isEditing(index)) return;
-    const actual = getActualIndex(index, sortedRows, rows);
-    setRowDrafts((prev) => ({
-      ...prev,
-      [actual]: { ...prev[actual], name: e.target.value.toUpperCase() },
-    }));
-  };
 
-  const handleAmountChange = (e) => {
-    if (!isEditing(index)) return;
-    const actual = getActualIndex(index, sortedRows, rows);
-    setRowDrafts((prev) => ({
-      ...prev,
-      [actual]: { ...prev[actual], amount: e.target.value },
-    }));
-  };
-
-  const handleLaunchAtChange = (e) => {
-    if (!isEditing(index)) return;
-    const value = e.target.value;
-    const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
-    const actual = getActualIndex(index, sortedRows, rows);
-    setRowDrafts((prev) => ({
-      ...prev,
-      [actual]: { ...prev[actual], launchAt: sanitizedValue },
-    }));
-  };
-
-  const handleLaunchAtBlur = (e) => {
-    if (!isEditing(index)) return;
-    const value = e.target.value.trim();
-    if (value) {
-      const normalized = normalizeDateTime(value);
-      if (normalized && normalized !== value) {
-        const actual = getActualIndex(index, sortedRows, rows);
-        setRowDrafts((prev) => ({
-          ...prev,
-          [actual]: { ...prev[actual], launchAt: normalized },
-        }));
-      }
-    }
-  };
-
-  const handlePointPriorityChange = (e) => {
-    if (!isEditing(index)) return;
-    const actual = getActualIndex(index, sortedRows, rows);
-    setRowDrafts((prev) => ({
-      ...prev,
-      [actual]: {
-        ...prev[actual],
-        pointPriority: e.target.value,
-      },
-    }));
-  };
-
-  const handlePointFCFSChange = (e) => {
-    if (!isEditing(index)) return;
-    const actual = getActualIndex(index, sortedRows, rows);
-    setRowDrafts((prev) => ({
-      ...prev,
-      [actual]: { ...prev[actual], pointFCFS: e.target.value },
-    }));
-  };
 
     const renderPriceAndReward = () => {
     const cd = getCountdownText(row.launchAt, Date.now());
@@ -152,115 +84,50 @@ export default function TableRow({
           boxShadow: '2px 0 8px rgb(0,0,0)',
         }}
       >
-        <input
-          className={`w-20 sm:w-24 lg:w-28 xl:w-32 border rounded-lg px-2 py-1 text-[11px] sm:text-sm ${
-            isEditing(index)
-              ? 'bg-white dark:bg-gray-700 dark:text-white'
-              : 'bg-transparent dark:bg-transparent dark:text-white'
-          }`}
-                     value={
-             isEditing(index) ? getDraftField(index, 'name', sortedRows, rows) ?? '' : row.name
-           }
-          onChange={handleNameChange}
-          maxLength={20}
-          disabled={!isEditing(index)}
-          style={
-            isEditing(index)
-              ? undefined
-              : { backgroundColor: 'transparent' }
-          }
-        />
+                 <div className="flex items-center gap-2">
+           {/* Token Logo */}
+           {row.apiId && tokenLogos[row.apiId] && (
+             <img
+               src={tokenLogos[row.apiId].logo}
+               alt={`${row.name} logo`}
+               className="w-6 h-6 rounded-full flex-shrink-0"
+               onError={(e) => {
+                 e.target.style.display = 'none';
+               }}
+             />
+           )}
+           <span className="text-sm dark:text-white font-medium">
+             {row.name}
+           </span>
+         </div>
       </td>
 
       {/* Amount */}
-      <td
-        className='px-1 py-2'
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <input
-          className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-[11px] sm:text-sm ${
-            isEditing(index)
-              ? 'bg-white dark:bg-gray-700 dark:text-white'
-              : 'bg-transparent dark:bg-transparent dark:text-white'
-          }`}
-          type={isEditing(index) ? 'number' : 'text'}
-                     value={
-             isEditing(index)
-               ? getDraftField(index, 'amount', sortedRows, rows) ?? ''
-               : formatAmount(row.amount)
-           }
-          onChange={handleAmountChange}
-          step='0.000001'
-          maxLength={10}
-          disabled={!isEditing(index)}
-        />
+      <td className='px-3 py-3 text-left'>
+        <span className="text-sm dark:text-white">
+          {formatAmount(row.amount)}
+        </span>
       </td>
 
       {/* Listing Time */}
-      <td
-        className='px-1 py-2'
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <input
-          className={`w-24 sm:w-28 lg:w-32 xl:w-36 border rounded-lg px-2 py-1 text-[11px] sm:text-sm ${
-            isEditing(index)
-              ? 'bg-white dark:bg-gray-700 dark:text-white'
-              : 'bg-transparent dark:bg-transparent dark:text-white'
-          }`}
-                     value={
-             isEditing(index)
-               ? getDraftField(index, 'launchAt', sortedRows, rows) ?? ''
-               : row.launchAt || ''
-           }
-          onChange={handleLaunchAtChange}
-          onBlur={handleLaunchAtBlur}
-          maxLength={19}
-          disabled={!isEditing(index)}
-        />
+      <td className='px-3 py-3 text-center'>
+        <span className="text-sm dark:text-white">
+          {row.launchAt || ''}
+        </span>
       </td>
 
       {/* Point Priority */}
-      <td
-        className='px-1 py-2'
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <input
-          className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-[11px] sm:text-sm ${
-            isEditing(index)
-              ? 'bg-white dark:bg-gray-700 dark:text-white'
-              : 'bg-transparent dark:bg-transparent dark:text-white'
-          }`}
-                     value={
-             isEditing(index)
-               ? getDraftField(index, 'pointPriority', sortedRows, rows) ?? ''
-               : row.pointPriority
-           }
-          onChange={handlePointPriorityChange}
-          maxLength={8}
-          disabled={!isEditing(index)}
-        />
+      <td className='px-3 py-3 text-center'>
+        <span className="text-sm dark:text-white">
+          {row.pointPriority}
+        </span>
       </td>
 
       {/* Point FCFS */}
-      <td
-        className='px-1 py-2'
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <input
-          className={`w-16 sm:w-20 lg:w-24 xl:w-28 border rounded-lg px-2 py-1 text-[11px] sm:text-sm ${
-            isEditing(index)
-              ? 'bg-white dark:bg-gray-700 dark:text-white'
-              : 'bg-transparent dark:bg-transparent dark:text-white'
-          }`}
-                     value={
-             isEditing(index)
-               ? getDraftField(index, 'pointFCFS', sortedRows, rows) ?? ''
-               : row.pointFCFS
-           }
-          onChange={handlePointFCFSChange}
-          maxLength={8}
-          disabled={!isEditing(index)}
-        />
+      <td className='px-3 py-3 text-center'>
+        <span className="text-sm dark:text-white">
+          {row.pointFCFS}
+        </span>
       </td>
 
       {/* Price and Reward */}
@@ -274,7 +141,7 @@ export default function TableRow({
       )}
 
              {/* Actions */}
-       <td className='px-3 py-3 text-right'>
+       <td className='px-3 py-3 text-right sticky right-0 bg-inherit z-10'>
          <div className='flex items-center justify-end gap-2'>
            <button
              onClick={() => onStartEdit(index)}

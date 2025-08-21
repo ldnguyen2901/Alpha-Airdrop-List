@@ -60,7 +60,15 @@ export default function EditModal({
             Edit Row
           </h3>
           <button
-            onClick={() => setEditingModal({ open: false, idx: -1 })}
+            onClick={() => {
+              setEditingModal({ open: false, idx: -1 });
+              // Xóa draft để thoát hoàn toàn khỏi chế độ edit
+              setRowDrafts((prev) => {
+                const next = { ...prev };
+                delete next[editingModal.idx];
+                return next;
+              });
+            }}
             className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
           >
             ✕
@@ -146,12 +154,20 @@ export default function EditModal({
           />
 
                      <div className='flex justify-end gap-2 mt-2'>
-             <button
-               onClick={() => setEditingModal({ open: false, idx: -1 })}
-               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
-             >
-               Cancel
-             </button>
+                           <button
+                onClick={() => {
+                  setEditingModal({ open: false, idx: -1 });
+                  // Xóa draft để thoát hoàn toàn khỏi chế độ edit
+                  setRowDrafts((prev) => {
+                    const next = { ...prev };
+                    delete next[editingModal.idx];
+                    return next;
+                  });
+                }}
+                className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+              >
+                Cancel
+              </button>
                          <button
               onClick={async () => {
                 setIsSaving(true);
