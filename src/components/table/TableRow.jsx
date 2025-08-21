@@ -10,11 +10,13 @@ export default function TableRow({
   showHighestPrice,
   getActualIndex,
   setRowDrafts,
-  getCountdownText
+  getCountdownText,
+  sortedRows,
+  rows
 }) {
   const handleNameChange = (e) => {
     if (!isEditing(index)) return;
-    const actual = getActualIndex(index);
+    const actual = getActualIndex(index, sortedRows, rows);
     setRowDrafts((prev) => ({
       ...prev,
       [actual]: { ...prev[actual], name: e.target.value.toUpperCase() },
@@ -23,7 +25,7 @@ export default function TableRow({
 
   const handleAmountChange = (e) => {
     if (!isEditing(index)) return;
-    const actual = getActualIndex(index);
+    const actual = getActualIndex(index, sortedRows, rows);
     setRowDrafts((prev) => ({
       ...prev,
       [actual]: { ...prev[actual], amount: e.target.value },
@@ -34,7 +36,7 @@ export default function TableRow({
     if (!isEditing(index)) return;
     const value = e.target.value;
     const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
-    const actual = getActualIndex(index);
+    const actual = getActualIndex(index, sortedRows, rows);
     setRowDrafts((prev) => ({
       ...prev,
       [actual]: { ...prev[actual], launchAt: sanitizedValue },
@@ -47,7 +49,7 @@ export default function TableRow({
     if (value) {
       const normalized = normalizeDateTime(value);
       if (normalized && normalized !== value) {
-        const actual = getActualIndex(index);
+        const actual = getActualIndex(index, sortedRows, rows);
         setRowDrafts((prev) => ({
           ...prev,
           [actual]: { ...prev[actual], launchAt: normalized },
@@ -58,7 +60,7 @@ export default function TableRow({
 
   const handlePointPriorityChange = (e) => {
     if (!isEditing(index)) return;
-    const actual = getActualIndex(index);
+    const actual = getActualIndex(index, sortedRows, rows);
     setRowDrafts((prev) => ({
       ...prev,
       [actual]: {
@@ -70,7 +72,7 @@ export default function TableRow({
 
   const handlePointFCFSChange = (e) => {
     if (!isEditing(index)) return;
-    const actual = getActualIndex(index);
+    const actual = getActualIndex(index, sortedRows, rows);
     setRowDrafts((prev) => ({
       ...prev,
       [actual]: { ...prev[actual], pointFCFS: e.target.value },
@@ -78,7 +80,7 @@ export default function TableRow({
   };
 
   const renderPriceAndReward = () => {
-    const cd = getCountdownText(row.launchAt);
+    const cd = getCountdownText(row.launchAt, Date.now());
     const priceNum = Number(row.price) || 0;
     
     if (priceNum > 0) {
@@ -153,9 +155,9 @@ export default function TableRow({
               ? 'bg-white dark:bg-gray-700 dark:text-white'
               : 'bg-transparent dark:bg-transparent dark:text-white'
           }`}
-          value={
-            isEditing(index) ? getDraftField(index, 'name') ?? '' : row.name
-          }
+                     value={
+             isEditing(index) ? getDraftField(index, 'name', sortedRows, rows) ?? '' : row.name
+           }
           onChange={handleNameChange}
           maxLength={20}
           disabled={!isEditing(index)}
@@ -179,11 +181,11 @@ export default function TableRow({
               : 'bg-transparent dark:bg-transparent dark:text-white'
           }`}
           type={isEditing(index) ? 'number' : 'text'}
-          value={
-            isEditing(index)
-              ? getDraftField(index, 'amount') ?? ''
-              : formatAmount(row.amount)
-          }
+                     value={
+             isEditing(index)
+               ? getDraftField(index, 'amount', sortedRows, rows) ?? ''
+               : formatAmount(row.amount)
+           }
           onChange={handleAmountChange}
           step='0.000001'
           maxLength={10}
@@ -202,11 +204,11 @@ export default function TableRow({
               ? 'bg-white dark:bg-gray-700 dark:text-white'
               : 'bg-transparent dark:bg-transparent dark:text-white'
           }`}
-          value={
-            isEditing(index)
-              ? getDraftField(index, 'launchAt') ?? ''
-              : row.launchAt || ''
-          }
+                     value={
+             isEditing(index)
+               ? getDraftField(index, 'launchAt', sortedRows, rows) ?? ''
+               : row.launchAt || ''
+           }
           onChange={handleLaunchAtChange}
           onBlur={handleLaunchAtBlur}
           maxLength={19}
@@ -225,11 +227,11 @@ export default function TableRow({
               ? 'bg-white dark:bg-gray-700 dark:text-white'
               : 'bg-transparent dark:bg-transparent dark:text-white'
           }`}
-          value={
-            isEditing(index)
-              ? getDraftField(index, 'pointPriority') ?? ''
-              : row.pointPriority
-          }
+                     value={
+             isEditing(index)
+               ? getDraftField(index, 'pointPriority', sortedRows, rows) ?? ''
+               : row.pointPriority
+           }
           onChange={handlePointPriorityChange}
           maxLength={8}
           disabled={!isEditing(index)}
@@ -247,11 +249,11 @@ export default function TableRow({
               ? 'bg-white dark:bg-gray-700 dark:text-white'
               : 'bg-transparent dark:bg-transparent dark:text-white'
           }`}
-          value={
-            isEditing(index)
-              ? getDraftField(index, 'pointFCFS') ?? ''
-              : row.pointFCFS
-          }
+                     value={
+             isEditing(index)
+               ? getDraftField(index, 'pointFCFS', sortedRows, rows) ?? ''
+               : row.pointFCFS
+           }
           onChange={handlePointFCFSChange}
           maxLength={8}
           disabled={!isEditing(index)}

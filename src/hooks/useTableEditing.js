@@ -12,28 +12,31 @@ export function useTableEditing() {
     error: '',
   });
 
-  const isEditing = (sortedIndex) => {
-    const actual = getActualIndex(sortedIndex);
+  const getActualIndex = (sortedIndex, sortedRows, rows) => {
+    const rowRef = sortedRows[sortedIndex];
+    return rows.findIndex((r) => r === rowRef);
+  };
+
+  const getDraftField = (sortedIndex, field, sortedRows, rows) => {
+    const actual = getActualIndex(sortedIndex, sortedRows, rows);
+    const draft = rowDrafts[actual];
+    return draft ? draft[field] : undefined;
+  };
+
+  const isEditing = (sortedIndex, sortedRows, rows) => {
+    const actual = getActualIndex(sortedIndex, sortedRows, rows);
     return rowDrafts[actual] !== undefined;
   };
 
-  const startEditRow = (sortedIndex) => {
-    const actual = getActualIndex(sortedIndex);
+  const startEditRow = (sortedIndex, sortedRows, rows) => {
+    const actual = getActualIndex(sortedIndex, sortedRows, rows);
     if (actual === -1) return;
     setRowDrafts((prev) => ({ ...prev, [actual]: { ...rows[actual] } }));
     setEditingModal({ open: true, idx: actual });
   };
 
   const saveRow = (sortedIndex, rows, onUpdateRow) => {
-    let actual = getActualIndex(sortedIndex);
-    if (
-      actual === -1 &&
-      Number.isInteger(sortedIndex) &&
-      sortedIndex >= 0 &&
-      sortedIndex < rows.length
-    ) {
-      actual = sortedIndex;
-    }
+    let actual = sortedIndex;
     if (actual === -1) return;
     const draft = rowDrafts[actual];
     if (!draft) return;
@@ -57,7 +60,7 @@ export function useTableEditing() {
     );
   };
 
-  const handleDeleteRow = (rowIndex, sortedRows, rows, onRemoveRow) => {
+  const handleDeleteRow = (rowIndex, sortedRows, rows) => {
     const rowToDelete = sortedRows[rowIndex];
     const actualIndex = rows.findIndex((r) => r === rowToDelete);
     if (actualIndex === -1) return;
@@ -76,17 +79,6 @@ export function useTableEditing() {
     if (actual === -1) return;
     onRemoveRow(actual);
     setDeleteModal({ open: false, idx: -1, token: '', input: '', error: '' });
-  };
-
-  const getActualIndex = (sortedIndex) => {
-    const rowRef = sortedRows[sortedIndex];
-    return rows.findIndex((r) => r === rowRef);
-  };
-
-  const getDraftField = (sortedIndex, field) => {
-    const actual = getActualIndex(sortedIndex);
-    const draft = rowDrafts[actual];
-    return draft ? draft[field] : undefined;
   };
 
   return {

@@ -30,7 +30,9 @@ export default function SortableTable({
     startEditRow,
     saveRow,
     handleDeleteRow,
-    confirmDelete
+    confirmDelete,
+    getActualIndex,
+    getDraftField
   } = useTableEditing();
 
   useEffect(() => {
@@ -43,67 +45,19 @@ export default function SortableTable({
   }, [rows, sortConfig, searchToken, sortRows]);
 
   const handleStartEdit = (index) => {
-    const actual = getActualIndex(index, sortedRows, rows);
-    if (actual === -1) return;
-    setRowDrafts((prev) => ({ ...prev, [actual]: { ...rows[actual] } }));
-    setEditingModal({ open: true, idx: actual });
+    startEditRow(index, sortedRows, rows);
   };
 
   const handleSaveRow = (index) => {
-    let actual = getActualIndex(index, sortedRows, rows);
-    if (
-      actual === -1 &&
-      Number.isInteger(index) &&
-      index >= 0 &&
-      index < rows.length
-    ) {
-      actual = index;
-    }
-    if (actual === -1) return;
-    const draft = rowDrafts[actual];
-    if (!draft) return;
-    
-    onUpdateRow(actual, draft);
-    setRowDrafts((prev) => {
-      const next = { ...prev };
-      delete next[actual];
-      return next;
-    });
-    setEditingModal((m) =>
-      m && m.idx === actual ? { open: false, idx: -1 } : m,
-    );
+    saveRow(index, rows, onUpdateRow);
   };
 
   const handleDelete = (index) => {
-    const rowToDelete = sortedRows[index];
-    const actualIndex = rows.findIndex((r) => r === rowToDelete);
-    if (actualIndex === -1) return;
-    const tokenName = String(rows[actualIndex].name || '').trim();
-    setDeleteModal({
-      open: true,
-      idx: actualIndex,
-      token: tokenName,
-      input: '',
-      error: '',
-    });
+    handleDeleteRow(index, sortedRows, rows);
   };
 
   const handleConfirmDelete = () => {
-    const actual = deleteModal.idx;
-    if (actual === -1) return;
-    onRemoveRow(actual);
-    setDeleteModal({ open: false, idx: -1, token: '', input: '', error: '' });
-  };
-
-  const getActualIndex = (sortedIndex, sortedRows, rows) => {
-    const rowRef = sortedRows[sortedIndex];
-    return rows.findIndex((r) => r === rowRef);
-  };
-
-  const getDraftField = (sortedIndex, field) => {
-    const actual = getActualIndex(sortedIndex, sortedRows, rows);
-    const draft = rowDrafts[actual];
-    return draft ? draft[field] : undefined;
+    confirmDelete(onRemoveRow);
   };
 
   const getCountdownTextForRow = (launchAt) => {
@@ -125,8 +79,8 @@ export default function SortableTable({
               key={idx}
               row={row}
               index={idx}
-              isEditing={isEditing}
-              getDraftField={getDraftField}
+              isEditing={(index) => isEditing(index, sortedRows, rows)}
+              getDraftField={(index, field) => getDraftField(index, field, sortedRows, rows)}
               onStartEdit={handleStartEdit}
               onDelete={handleDelete}
               showHighestPrice={showHighestPrice}
