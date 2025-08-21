@@ -21,7 +21,10 @@ const SortableTable = forwardRef(({
   const [now, setNow] = useState(Date.now());
   const [highlightedRows, setHighlightedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Responsive items per page: 15 for mobile, 10 for desktop
+  const itemsPerPage = isMobile ? 15 : 10;
   
   const { sortConfig, requestSort, getSortIcon, sortRows } = useTableSort();
   const {
@@ -43,6 +46,17 @@ const SortableTable = forwardRef(({
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const sortedRows = useMemo(() => {

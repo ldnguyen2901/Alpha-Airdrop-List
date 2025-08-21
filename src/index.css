@@ -79,8 +79,41 @@ tbody tr {
   transition: all 0.3s ease;
 }
 
-tbody tr:hover {
-  transform: translateX(2px);
+/* Desktop hover effects */
+@media (min-width: 1024px) {
+  tbody tr:hover {
+    transform: translateX(2px);
+  }
+  
+  /* Light theme hover */
+  tbody tr:hover {
+    background-color: rgb(243, 244, 246) !important; /* gray-100 */
+  }
+  
+  /* Dark theme hover */
+  .dark tbody tr:hover {
+    background-color: rgb(75, 85, 99) !important; /* gray-600 */
+  }
+  
+  /* Ensure sticky columns match row background on hover */
+  tbody tr:hover td[style*="backgroundColor"] {
+    background-color: inherit !important;
+  }
+}
+
+/* Table sticky columns background fix - ensure they inherit row colors */
+tbody tr td[style*="backgroundColor"] {
+  background-color: inherit !important;
+}
+
+/* Specific fix for Actions column */
+tbody tr td.actions-column {
+  background-color: inherit !important;
+}
+
+/* Fix for Token sticky column */
+tbody tr td.sticky.left-0 {
+  background-color: inherit !important;
 }
 
 /* Modal transitions */

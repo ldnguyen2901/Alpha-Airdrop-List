@@ -62,7 +62,7 @@ export default function TableRow({
            : index % 2 === 0
            ? 'bg-white dark:bg-gray-800'
            : 'bg-gray-50 dark:bg-gray-700'
-       } hover:bg-blue-50 dark:hover:bg-blue-900 ${
+       } hover:bg-gray-100 dark:hover:bg-gray-600 ${
          isHighlighted ? 'row-highlight' : ''
        }`}
       style={
@@ -141,11 +141,11 @@ export default function TableRow({
       )}
 
              {/* Actions */}
-       <td className='px-3 py-3 text-right sticky right-0 bg-inherit z-10'>
+       <td className='px-3 py-3 text-right sticky right-0 z-10 actions-column' style={{ backgroundColor: 'inherit' }}>
          <div className='flex items-center justify-end gap-2'>
            <button
              onClick={() => onStartEdit(index)}
-             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md'
+             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md dark:hover:bg-indigo-700'
              title='Edit'
            >
              <svg className='w-3 h-3 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -155,7 +155,7 @@ export default function TableRow({
            </button>
            <button
              onClick={() => onDelete(index)}
-             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900 border border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md'
+             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900 border border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md'
              title='Delete'
            >
              <svg className='w-3 h-3 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
