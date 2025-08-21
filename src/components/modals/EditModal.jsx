@@ -142,20 +142,20 @@ export default function EditModal({
             placeholder='Point (FCFS)'
           />
 
-          <div className='flex justify-end gap-2 mt-2'>
-            <button
-              onClick={() => setEditingModal({ open: false, idx: -1 })}
-              className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => saveRow(editingModal.idx)}
-              className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm'
-            >
-              Save changes
-            </button>
-          </div>
+                     <div className='flex justify-end gap-2 mt-2'>
+             <button
+               onClick={() => setEditingModal({ open: false, idx: -1 })}
+               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Cancel
+             </button>
+             <button
+               onClick={() => saveRow(editingModal.idx)}
+               className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Save changes
+             </button>
+           </div>
         </div>
       </div>
     </div>

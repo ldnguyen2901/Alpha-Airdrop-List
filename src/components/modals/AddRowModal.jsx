@@ -144,21 +144,21 @@ export default function AddRowModal({
             </div>
           </div>
 
-          <div className='mt-4 flex justify-end gap-2'>
-            <button
-              type='button'
-              onClick={() => setShowAddModal(false)}
-              className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
-            >
-              Cancel
-            </button>
-            <button
-              type='submit'
-              className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm'
-            >
-              Add to table
-            </button>
-          </div>
+                     <div className='mt-4 flex justify-end gap-2'>
+             <button
+               type='button'
+               onClick={() => setShowAddModal(false)}
+               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Cancel
+             </button>
+             <button
+               type='submit'
+               className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Add to table
+             </button>
+           </div>
         </form>
       </div>
     </div>

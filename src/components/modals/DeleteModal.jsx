@@ -81,28 +81,28 @@ export default function DeleteModal({
             />
           </div>
 
-          <div className='flex justify-end gap-2 mt-2'>
-            <button
-              onClick={() =>
-                setDeleteModal({
-                  open: false,
-                  idx: -1,
-                  token: '',
-                  input: '',
-                  error: '',
-                })
-              }
-              className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
-            >
-              Cancel
-            </button>
-            <button
-              onClick={confirmDelete}
-              className='px-3 py-2 rounded-xl bg-rose-600 text-white text-sm'
-            >
-              Confirm Delete
-            </button>
-          </div>
+                     <div className='flex justify-end gap-2 mt-2'>
+             <button
+               onClick={() =>
+                 setDeleteModal({
+                   open: false,
+                   idx: -1,
+                   token: '',
+                   input: '',
+                   error: '',
+                 })
+               }
+               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Cancel
+             </button>
+             <button
+               onClick={confirmDelete}
+               className='px-3 py-2 rounded-xl bg-rose-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+             >
+               Confirm Delete
+             </button>
+           </div>
         </div>
       </div>
     </div>

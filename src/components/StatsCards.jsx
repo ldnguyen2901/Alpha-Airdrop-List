@@ -12,48 +12,85 @@ export default function StatsCards({
 }) {
   return (
     <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6'>
-      <Card>
-        <div className='text-xs sm:text-sm text-gray-500'>BTC Price</div>
+      <Card className="card-hover">
+        <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300'>BTC Price</div>
         <div
-          className='text-xl sm:text-2xl font-semibold'
+          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(247, 147, 26)' }}
         >
-          {formatNumber(btcPrice)} USD
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="spin">🔄</span>
+              {formatNumber(btcPrice)} USD
+            </span>
+          ) : (
+            `${formatNumber(btcPrice)} USD`
+          )}
         </div>
       </Card>
-      <Card>
-        <div className='text-xs sm:text-sm text-gray-500'>ETH Price</div>
+      <Card className="card-hover">
+        <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300'>ETH Price</div>
         <div
-          className='text-xl sm:text-2xl font-semibold'
+          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(140,140,140)' }}
         >
-          {formatNumber(ethPrice)} USD
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="spin">🔄</span>
+              {formatNumber(ethPrice)} USD
+            </span>
+          ) : (
+            `${formatNumber(ethPrice)} USD`
+          )}
         </div>
       </Card>
-      <Card>
-        <div className='text-xs sm:text-sm text-gray-500'>BNB Price</div>
+      <Card className="card-hover">
+        <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300'>BNB Price</div>
         <div
-          className='text-xl sm:text-2xl font-semibold'
+          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(240,185,11)' }}
         >
-          {formatNumber(bnbPrice)} USD
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="spin">🔄</span>
+              {formatNumber(bnbPrice)} USD
+            </span>
+          ) : (
+            `${formatNumber(bnbPrice)} USD`
+          )}
         </div>
       </Card>
-      <Card>
-        <div className='text-xs sm:text-sm text-gray-500'>Status</div>
+      <Card className="card-hover">
+        <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300'>Status</div>
         <div
-          className={`text-2xl font-semibold ${
+          className={`text-2xl font-semibold transition-all duration-300 ease-in-out ${
             syncing ? 'text-blue-500' : 'text-emerald-600'
           }`}
         >
-          {syncing ? 'Syncing…' : 'Synced'}
+          {syncing ? (
+            <span className="flex items-center gap-2">
+              <span className="spin">🔄</span>
+              Syncing…
+            </span>
+          ) : (
+            'Synced'
+          )}
         </div>
       </Card>
-      <Card>
-        <div className='text-xs sm:text-sm text-gray-500'>Airdrop Alpha Projects</div>
-        <div className='text-xl sm:text-2xl font-semibold'>{rowsCount}</div>
-        <div className='mt-1 text-[11px] text-gray-500'>
-          {loading ? 'Updating…' : lastUpdated ? `Updated: ${new Date(lastUpdated).toLocaleTimeString()}` : 'Ready'}
+      <Card className="card-hover">
+        <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300'>Airdrop Alpha Projects</div>
+        <div className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'>{rowsCount}</div>
+        <div className='mt-1 text-[11px] text-gray-500 transition-colors duration-300'>
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <span className="spin">🔄</span>
+              Updating…
+            </span>
+          ) : lastUpdated ? (
+            `Updated: ${new Date(lastUpdated).toLocaleTimeString()}`
+          ) : (
+            'Ready'
+          )}
         </div>
       </Card>
     </div>

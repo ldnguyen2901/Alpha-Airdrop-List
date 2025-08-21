@@ -270,23 +270,23 @@ export default function TableRow({
         </td>
       )}
 
-      {/* Actions */}
-      <td className='px-1 py-2 text-right'>
-        <div className='flex items-center justify-end gap-2'>
-          <button
-            onClick={() => onStartEdit(index)}
-            className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-[11px] sm:text-xs'
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => onDelete(index)}
-            className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-[11px] sm:text-xs'
-          >
-            Delete
-          </button>
-        </div>
-      </td>
+             {/* Actions */}
+       <td className='px-1 py-2 text-right'>
+         <div className='flex items-center justify-end gap-2'>
+           <button
+             onClick={() => onStartEdit(index)}
+             className='px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-[11px] sm:text-xs transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+           >
+             Edit
+           </button>
+           <button
+             onClick={() => onDelete(index)}
+             className='px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-900 border text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-800 text-[11px] sm:text-xs transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+           >
+             Delete
+           </button>
+         </div>
+       </td>
     </tr>
   );
 }
