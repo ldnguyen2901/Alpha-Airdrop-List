@@ -7,6 +7,7 @@ import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
 import DeleteModal from './modals/DeleteModal';
+import Pagination from './Pagination';
 
 const SortableTable = forwardRef(({
   rows,
@@ -18,6 +19,8 @@ const SortableTable = forwardRef(({
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
   const [highlightedRows, setHighlightedRows] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const { sortConfig, requestSort, getSortIcon, sortRows } = useTableSort();
   const {
@@ -44,6 +47,17 @@ const SortableTable = forwardRef(({
   const sortedRows = useMemo(() => {
     return sortRows(rows, searchToken);
   }, [rows, sortConfig, searchToken, sortRows]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedRows.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRows = sortedRows.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchToken]);
 
   const handleStartEdit = (index) => {
     startEditRow(index, sortedRows, rows);
@@ -83,52 +97,63 @@ const SortableTable = forwardRef(({
   }));
 
   return (
-    <div className='overflow-auto rounded-2xl border bg-white dark:bg-gray-800 shadow max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-170px)] lg:max-h-[calc(100vh-200px)]'>
-      <table className='w-full text-sm'>
-        <TableHeader
-          sortConfig={sortConfig}
-          requestSort={requestSort}
-          getSortIcon={getSortIcon}
-          showHighestPrice={showHighestPrice}
-        />
-        <tbody>
-                      {sortedRows.map((row, idx) => (
+    <div className='rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg'>
+      <div className='table-container overflow-auto max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-180px)]'>
+        <table className='w-full text-sm lg:min-w-0'>
+          <TableHeader
+            sortConfig={sortConfig}
+            requestSort={requestSort}
+            getSortIcon={getSortIcon}
+            showHighestPrice={showHighestPrice}
+          />
+          <tbody>
+            {currentRows.map((row, idx) => (
               <TableRow
-                key={idx}
+                key={startIndex + idx}
                 row={row}
-                index={idx}
+                index={startIndex + idx}
                 isEditing={(index) => isEditing(index, sortedRows, rows)}
                 getDraftField={(index, field) => getDraftField(index, field, sortedRows, rows)}
                 onStartEdit={handleStartEdit}
                 onDelete={handleDelete}
                 showHighestPrice={showHighestPrice}
-                getActualIndex={getActualIndex}
+                getActualIndex={(index) => getActualIndex(index, sortedRows, rows)}
                 setRowDrafts={setRowDrafts}
                 getCountdownText={getCountdownTextForRow}
                 sortedRows={sortedRows}
                 rows={rows}
-                isHighlighted={highlightedRows.has(idx)}
+                isHighlighted={highlightedRows.has(startIndex + idx)}
               />
             ))}
-          {sortedRows.length === 0 && (
-            <tr>
-              <td
-                colSpan={
-                  TABLE_HEADERS.filter((h) => {
-                    if (h === 'API ID') return false;
-                    if (h === 'Highest Price' && !showHighestPrice)
-                      return false;
-                    return true;
-                  }).length
-                }
-                className='px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm'
-              >
-                No data. Click Add Row or Paste from Sheet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            {currentRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={
+                    TABLE_HEADERS.filter((h) => {
+                      if (h === 'API ID') return false;
+                      if (h === 'Highest Price' && !showHighestPrice)
+                        return false;
+                      return true;
+                    }).length
+                  }
+                  className='px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm'
+                >
+                  No data. Click Add Row or Paste from Sheet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={sortedRows.length}
+        itemsPerPage={itemsPerPage}
+      />
 
       <EditModal
         editingModal={editingModal}
