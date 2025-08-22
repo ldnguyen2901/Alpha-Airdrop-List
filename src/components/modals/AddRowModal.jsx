@@ -38,9 +38,32 @@ export default function AddRowModal({
     }
   };
 
+  const isMobile = window.innerWidth < 768;
+  
   return (
-    <div className='fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50'>
-      <div className='bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl'>
+    <>
+      {/* Backdrop */}
+      <div 
+        className='fixed inset-0 bg-black/60 z-50' 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowAddModal(false);
+          }
+        }}
+      />
+      
+      {/* Modal */}
+      <div 
+        className={`fixed z-[99999] bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl ${
+          isMobile ? '' : 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
+        }`}
+        style={isMobile ? {
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          maxWidth: '384px'
+        } : {}}
+      >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>
             Add Row
@@ -192,6 +215,6 @@ export default function AddRowModal({
            </div>
         </form>
       </div>
-    </div>
+    </>
   );
 }

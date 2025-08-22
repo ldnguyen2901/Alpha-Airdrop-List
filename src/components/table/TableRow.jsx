@@ -1,6 +1,7 @@
 import { formatAmount, formatPrice } from '../../utils/helpers';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useRef } from 'react';
 
 export default function TableRow({
   row,
@@ -12,6 +13,7 @@ export default function TableRow({
   isHighlighted,
   tokenLogos
 }) {
+  const deleteButtonRef = useRef(null);
 
 
     const renderPriceAndReward = () => {
@@ -147,18 +149,32 @@ export default function TableRow({
          <div className='flex items-center justify-end gap-2'>
            <button
              onClick={() => onStartEdit(index)}
-             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md dark:hover:bg-indigo-700'
+             className='inline-flex items-center px-3 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md gap-2'
              title='Edit'
            >
-             <EditIcon sx={{ fontSize: 12 }} />
+             <EditIcon sx={{ fontSize: 16 }} />
              Edit
            </button>
            <button
-             onClick={() => onDelete(index)}
-             className='inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900 border border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md'
+             ref={deleteButtonRef}
+             onClick={() => {
+               const buttonElement = deleteButtonRef.current;
+               if (buttonElement) {
+                 const rect = buttonElement.getBoundingClientRect();
+                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                 const position = {
+                   top: rect.bottom + scrollTop + 8,
+                   left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
+                 };
+                 onDelete(index, position);
+               } else {
+                 onDelete(index);
+               }
+             }}
+             className='inline-flex items-center px-3 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md gap-2'
              title='Delete'
            >
-             <DeleteIcon sx={{ fontSize: 12 }} />
+             <DeleteIcon sx={{ fontSize: 16 }} />
              Delete
            </button>
          </div>

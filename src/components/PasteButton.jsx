@@ -19,8 +19,19 @@ export default function PasteButton({ onPasteText }) {
       </button>
 
       {open && (
-        <div className='fixed inset-0 bg-black/30 flex items-center justify-center p-2 sm:p-4 z-50'>
-          <div className='bg-white dark:bg-gray-800 w-full max-w-full sm:max-w-4xl rounded-2xl p-3 sm:p-4 shadow-xl z-50'>
+        <>
+          {/* Backdrop */}
+          <div 
+            className='fixed inset-0 bg-black/60 z-50' 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setOpen(false);
+              }
+            }}
+          />
+          
+          {/* Modal */}
+          <div className='fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 w-full max-w-full sm:max-w-4xl rounded-2xl p-3 sm:p-4 shadow-xl z-[99999]'>
             <div className='font-semibold mb-2 dark:text-white'>
               Paste data (CSV or TSV)
               <span className='ml-2 text-xs text-gray-500 dark:text-gray-400'>
@@ -54,7 +65,7 @@ export default function PasteButton({ onPasteText }) {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

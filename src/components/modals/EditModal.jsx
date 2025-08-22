@@ -9,7 +9,8 @@ export default function EditModal({
   rowDrafts,
   setRowDrafts,
   setEditingModal,
-  saveRow
+  saveRow,
+  modalPosition
 }) {
   const [isSaving, setIsSaving] = useState(false);
   
@@ -55,9 +56,41 @@ export default function EditModal({
     }
   };
 
+  const isMobile = window.innerWidth < 768;
+  
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'>
-      <div className='bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl'>
+    <>
+      {/* Backdrop */}
+      <div 
+        className='fixed inset-0 z-50 bg-black/60' 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setEditingModal({ open: false, idx: -1 });
+            setRowDrafts((prev) => {
+              const next = { ...prev };
+              delete next[editingModal.idx];
+              return next;
+            });
+          }
+        }}
+      />
+      
+      {/* Modal */}
+      <div 
+        className={`fixed z-[99999] bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl ${
+          isMobile ? '' : 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
+        }`}
+        style={isMobile && modalPosition ? {
+          top: `${modalPosition.top}px`,
+          left: `${modalPosition.left}px`,
+          maxWidth: '384px'
+        } : isMobile ? {
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          maxWidth: '384px'
+        } : {}}
+      >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>
             Edit Row
@@ -207,6 +240,6 @@ export default function EditModal({
            </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -9,7 +9,8 @@ export default function DeleteModal({
   setDeleteModal,
   confirmDelete,
   rowDrafts,
-  rows
+  rows,
+  modalPosition
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -19,9 +20,42 @@ export default function DeleteModal({
 
   const row = rowDrafts[deleteModal.idx] || rows[deleteModal.idx] || {};
 
+  const isMobile = window.innerWidth < 768;
+  
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4'>
-      <div className='bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl'>
+    <>
+      {/* Backdrop */}
+      <div 
+        className='fixed inset-0 z-50 bg-black/60' 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setDeleteModal({
+              open: false,
+              idx: -1,
+              token: '',
+              input: '',
+              error: '',
+            });
+          }
+        }}
+      />
+      
+             {/* Modal */}
+       <div 
+         className={`fixed z-[99999] bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl ${
+           isMobile ? '' : 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
+         }`}
+         style={isMobile && modalPosition ? {
+           top: modalPosition.top,
+           left: modalPosition.left,
+           maxWidth: '384px'
+         } : isMobile ? {
+           top: '50%',
+           left: '50%',
+           transform: 'translate(-50%, -50%)',
+           maxWidth: '384px'
+         } : {}}
+       >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>
             Confirm Delete
@@ -138,6 +172,6 @@ export default function DeleteModal({
            </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

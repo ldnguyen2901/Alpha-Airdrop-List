@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { newRow, CSV_HEADERS } from './utils/constants';
 import { splitCSV, normalizeDateTime } from './utils/helpers';
-import { fetchCryptoPrices, fetchTokenLogos } from './services/api';
+import { fetchCryptoPrices, fetchTokenLogos, clearLogoCache } from './services/api';
 import { saveDataToStorage, loadDataFromStorage } from './utils/storage';
 import {
   ensureAnonymousLogin,
@@ -59,7 +59,13 @@ export default function App() {
   const [bnbPrice, setBnbPrice] = useState(0);
   const [tokenLogos, setTokenLogos] = useState({});
 
-  const [showHighestPrice, setShowHighestPrice] = useState(false);
+  const [showHighestPrice, setShowHighestPrice] = useState(() => {
+    // Default to true for mobile, false for desktop
+    return window.innerWidth < 768;
+  });
+  const [isMobile, setIsMobile] = useState(() => {
+    return window.innerWidth < 768;
+  });
   const [searchToken, setSearchToken] = useState('');
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const highlightRowRef = useRef(null);
@@ -82,26 +88,47 @@ export default function App() {
     );
   }, [rows]);
 
-  // Fetch token logos from CoinGecko
-  async function fetchLogos() {
-    if (!ids.length) return;
+
+
+  // Fetch all token logos (main tokens + table tokens)
+  async function fetchAllTokenLogos(forceRefresh = false) {
     try {
-      const logosMap = await fetchTokenLogos(ids);
-      setTokenLogos(logosMap);
+      // Clear cache if force refresh
+      if (forceRefresh) {
+        clearLogoCache();
+      }
+      
+      // Get all unique token IDs from table and main tokens
+      const allTokenIds = Array.from(
+        new Set([...ids, 'bitcoin', 'ethereum', 'binancecoin'])
+      );
+      
+      if (allTokenIds.length > 0) {
+        const allLogos = await fetchTokenLogos(allTokenIds);
+        setTokenLogos(allLogos);
+      }
     } catch (e) {
-      console.error('fetchLogos error', e);
+      console.error('fetchAllTokenLogos error', e);
     }
   }
 
-  // Fetch main token logos (BTC, ETH, BNB)
-  async function fetchMainTokenLogos() {
+  // Refresh logos function (separate from prices)
+  // showToast: whether to show success/error toast notifications
+  async function refreshLogos(showToast = true) {
     try {
-      const mainTokenLogos = await fetchTokenLogos(['bitcoin', 'ethereum', 'binancecoin']);
-      setTokenLogos(prev => ({ ...prev, ...mainTokenLogos }));
+      await fetchAllTokenLogos(true); // Force refresh
+      if (showToast) {
+        toast.success('Logos refreshed successfully!');
+      }
     } catch (e) {
-      console.error('fetchMainTokenLogos error', e);
+      console.error('refreshLogos error', e);
+      if (showToast) {
+        toast.error('Failed to refresh logos');
+      }
     }
   }
+
+
 
   // Fetch prices and update rows' price/value/highestPrice
   async function fetchPrices() {
@@ -116,11 +143,8 @@ export default function App() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
+      // Only fetch prices, not logos
       const priceMap = await fetchCryptoPrices(idsToFetch, 'usd');
-      
-      // Fetch logos for main tokens
-      const mainTokenLogos = await fetchTokenLogos(['bitcoin', 'ethereum', 'binancecoin']);
-      setTokenLogos(prev => ({ ...prev, ...mainTokenLogos }));
 
       setRows((prev) =>
         prev.map((r) => {
@@ -260,20 +284,46 @@ export default function App() {
     timerRef.current = setInterval(() => {
       fetchPrices();
     }, 60 * 1000);
-    // Trigger an immediate debounced fetch when ids set changes so prices show up right away
-    requestFetchPrices(100);
-    // Fetch logos when ids change
-    fetchLogos();
-    // Fetch main token logos
-    fetchMainTokenLogos();
+          // Trigger an immediate debounced fetch when ids set changes so prices show up right away
+      requestFetchPrices(100);
+      // Auto refresh logos when ids change
+      refreshLogos(false); // Don't show toast for auto refresh
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(',')]);
 
+  // Detect mobile screen size and set showHighestPrice accordingly
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Update showHighestPrice based on device type
+      if (mobile && !showHighestPrice) {
+        setShowHighestPrice(true); // Enable on mobile
+      } else if (!mobile && showHighestPrice) {
+        setShowHighestPrice(false); // Disable on desktop
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHighestPrice]);
+
   // Fetch lần đầu
   useEffect(() => {
     fetchPrices();
-    fetchMainTokenLogos();
+    // Auto refresh logos when user visits the page
+    refreshLogos(false); // Don't show toast for initial load
+    
+    // Auto refresh logos every 30 minutes
+    const logoInterval = setInterval(() => {
+      refreshLogos(false); // Don't show toast for auto refresh
+    }, 30 * 60 * 1000); // 30 minutes
+    
+    return () => clearInterval(logoInterval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -377,8 +427,60 @@ export default function App() {
     });
   }
 
-  function openAddRowModal() {
-    setShowAddModal(true);
+  function openAddRowModal(formData = null) {
+    if (formData) {
+      // Handle inline form submission from mobile
+      const errs = validateAddForm(formData);
+      if (Object.keys(errs).length > 0) {
+        // Return errors to be handled by the inline form
+        return { success: false, errors: errs };
+      }
+
+      const normalizedLaunch = formData.launchAt
+        ? (function (v) {
+            const n = normalizeDateTime(v);
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
+            return n;
+          })(formData.launchAt)
+        : '';
+
+      const nr = newRow({
+        name: String(formData.name || '')
+          .trim()
+          .toUpperCase(),
+        amount: Number(formData.amount) || 0,
+        launchAt: normalizedLaunch || '',
+        apiId: formData.apiId || '',
+        pointPriority: formData.pointPriority || '',
+        pointFCFS: formData.pointFCFS || '',
+      });
+
+      setRows((prev) => {
+        const newRows = [nr, ...prev];
+        saveDataToStorage(newRows);
+        if (!isRemoteUpdateRef.current) {
+          setSyncing(true);
+          saveWorkspaceData('global', newRows)
+            .catch((e) => {
+              console.error('Save cloud failed:', e);
+              toast.error('Failed to sync data to cloud. Please try again.');
+            })
+            .finally(() => setSyncing(false));
+        }
+        return newRows;
+      });
+
+      // Fetch logos for new token if it has API ID
+      if (nr.apiId && nr.apiId.trim()) {
+        refreshLogos(false); // Don't show toast for auto refresh
+      }
+      
+      toast.success('New row added successfully!');
+      return { success: true };
+    } else {
+      // Desktop: open modal
+      setShowAddModal(true);
+    }
   }
 
   function validateAddForm(form) {
@@ -458,6 +560,12 @@ export default function App() {
       pointFCFS: '',
     });
     setAddErrors({});
+    
+    // Fetch logos for new token if it has API ID
+    if (nr.apiId && nr.apiId.trim()) {
+      refreshLogos(false); // Don't show toast for auto refresh
+    }
+    
     toast.success('New row added successfully!');
   }
 
@@ -717,7 +825,7 @@ export default function App() {
             tokenLogos={tokenLogos}
           />
 
-          <ActionButtons
+                    <ActionButtons
             onAddRow={openAddRowModal}
             onPasteText={handlePaste}
             onExportCSV={exportCSV}
@@ -728,7 +836,6 @@ export default function App() {
             setShowHighestPrice={setShowHighestPrice}
             searchToken={searchToken}
             setSearchToken={setSearchToken}
-
           />
 
           <SortableTable
@@ -738,6 +845,8 @@ export default function App() {
             showHighestPrice={showHighestPrice}
             searchToken={searchToken}
             tokenLogos={tokenLogos}
+            onRefresh={fetchPrices}
+            loading={loading}
             ref={highlightRowRef}
           />
         </div>

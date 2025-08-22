@@ -8,6 +8,7 @@ export function newRow(partial = {}) {
     pointPriority: '', // Point (Priority)
     pointFCFS: '', // Point (FCFS)
     price: 0, // Current price
+    reward: 0, // Reward
     value: 0, // Value = Amount x Price
     highestPrice: 0, // Highest price reached
     _forceTop: false, // temporary pin to top until saved

@@ -8,6 +8,7 @@ import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
 import DeleteModal from './modals/DeleteModal';
 import Pagination from './Pagination';
+import CardView from './CardView';
 
 const SortableTable = forwardRef(({
   rows,
@@ -16,12 +17,16 @@ const SortableTable = forwardRef(({
   showHighestPrice: showHighestPriceProp,
   searchToken,
   tokenLogos,
+  onRefresh,
+  loading,
 }, ref) => {
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
   const [highlightedRows, setHighlightedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [editModalPosition, setEditModalPosition] = useState({ top: 0, left: 0 });
+  const [deleteModalPosition, setDeleteModalPosition] = useState({ top: 0, left: 0 });
   
   // Responsive items per page: 15 for mobile, 10 for desktop
   const itemsPerPage = isMobile ? 15 : 10;
@@ -51,7 +56,7 @@ const SortableTable = forwardRef(({
   // Detect mobile screen size
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640); // sm breakpoint
+      setIsMobile(window.innerWidth < 768); // md breakpoint for card view
     };
     
     checkMobile();
@@ -74,7 +79,10 @@ const SortableTable = forwardRef(({
     setCurrentPage(1);
   }, [searchToken]);
 
-  const handleStartEdit = (index) => {
+  const handleStartEdit = (index, position = null) => {
+    if (position) {
+      setEditModalPosition(position);
+    }
     startEditRow(index, sortedRows, rows);
   };
 
@@ -82,8 +90,11 @@ const SortableTable = forwardRef(({
     saveRow(index, rows, onUpdateRow);
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = (index, position) => {
     handleDeleteRow(index, sortedRows, rows);
+    if (position) {
+      setDeleteModalPosition(position);
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -111,6 +122,44 @@ const SortableTable = forwardRef(({
     highlightRow
   }));
 
+  // Render card view for mobile
+  if (isMobile) {
+    return (
+      <div>
+        <CardView
+          rows={sortedRows}
+          onEditRow={handleStartEdit}
+          onDeleteRow={handleDelete}
+          searchToken={searchToken}
+          tokenLogos={tokenLogos}
+          highlightRowRef={null}
+          showHighestPrice={showHighestPrice}
+          onRefresh={onRefresh}
+          loading={loading}
+        />
+        
+        <EditModal
+          editingModal={editingModal}
+          rowDrafts={rowDrafts}
+          setRowDrafts={setRowDrafts}
+          setEditingModal={setEditingModal}
+          saveRow={handleSaveRow}
+          modalPosition={editModalPosition}
+        />
+
+        <DeleteModal
+          deleteModal={deleteModal}
+          setDeleteModal={setDeleteModal}
+          confirmDelete={handleConfirmDelete}
+          rowDrafts={rowDrafts}
+          rows={rows}
+          modalPosition={deleteModalPosition}
+        />
+      </div>
+    );
+  }
+
+  // Render table view for desktop
   return (
     <div className='rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg'>
       <div className='table-container overflow-auto max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-180px)]'>
@@ -171,6 +220,7 @@ const SortableTable = forwardRef(({
         setRowDrafts={setRowDrafts}
         setEditingModal={setEditingModal}
         saveRow={handleSaveRow}
+        modalPosition={editModalPosition}
       />
 
       <DeleteModal
@@ -179,7 +229,8 @@ const SortableTable = forwardRef(({
         confirmDelete={handleConfirmDelete}
         rowDrafts={rowDrafts}
         rows={rows}
-                      />
+        modalPosition={deleteModalPosition}
+      />
                     </div>
                   );
 });
