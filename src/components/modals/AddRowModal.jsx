@@ -1,5 +1,8 @@
 import { normalizeDateTime } from '../../utils/helpers';
 import { useState } from 'react';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function AddRowModal({
   showAddModal,
@@ -44,9 +47,9 @@ export default function AddRowModal({
           </h3>
           <button
             onClick={() => setShowAddModal(false)}
-            className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
+            className='w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105'
           >
-            ✕
+            <CloseIcon sx={{ fontSize: 16 }} />
           </button>
         </div>
 
@@ -162,24 +165,28 @@ export default function AddRowModal({
              <button
                type='button'
                onClick={() => setShowAddModal(false)}
-               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
              >
-               Cancel
+                               <CloseIcon sx={{ fontSize: 16 }} />
+                Cancel
              </button>
                            <button
                 type='submit'
                 disabled={isSubmitting}
-                className={`px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md ${
+                className={`px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
-                    <span className="spin">🔄</span>
+                    <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
                     Adding...
                   </span>
                 ) : (
-                  'Add to table'
+                  <>
+                                    <AddIcon sx={{ fontSize: 16 }} />
+                Add to table
+                  </>
                 )}
               </button>
            </div>

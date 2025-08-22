@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { readExcelFile, parseExcelData } from '../utils/excel';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import TableChartIcon from '@mui/icons-material/TableChart';
 
 export default function ExcelUpload({ onImportData }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -70,9 +72,18 @@ export default function ExcelUpload({ onImportData }) {
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
       >
-        <div className='text-3xl sm:text-4xl mb-2'>📊</div>
-        <div className='text-base sm:text-lg font-medium mb-2 dark:text-white'>
-          {isLoading ? 'Reading file...' : 'Upload Excel file'}
+        <div className='text-3xl sm:text-4xl mb-2 flex justify-center'>
+          <TableChartIcon sx={{ fontSize: 48 }} />
+        </div>
+        <div className='text-base sm:text-lg font-medium mb-2 dark:text-white flex items-center justify-center gap-2'>
+          {isLoading ? (
+            <>
+              <AutorenewIcon className="animate-spin" sx={{ fontSize: 20 }} />
+              Reading file...
+            </>
+          ) : (
+            'Upload Excel file'
+          )}
         </div>
         <div className='text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4'>
           Drag & drop file or click to select

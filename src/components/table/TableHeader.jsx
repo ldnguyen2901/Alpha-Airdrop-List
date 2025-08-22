@@ -1,4 +1,5 @@
 import { TABLE_HEADERS } from '../../utils/constants';
+import { SortIcons } from '../SortIcons';
 
 export default function TableHeader({ 
   sortConfig, 
@@ -36,7 +37,7 @@ export default function TableHeader({
           return (
             <th
               key={h}
-              className={`text-left px-3 py-3 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
+              className={`text-left px-3 py-0.5 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
                 isSortable
                   ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 select-none'
                   : ''
@@ -45,6 +46,7 @@ export default function TableHeader({
                   ? 'sticky left-0 top-0 z-30 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700'
                   : ''
               }`}
+
               onClick={
                 isSortable ? () => requestSort(columnKey) : undefined
               }
@@ -71,9 +73,16 @@ export default function TableHeader({
                     ? 'FCFS'
                     : h}
                 </span>
-                {isSortable && (
-                  <span className='text-xs'>{getSortIcon(columnKey)}</span>
-                )}
+                                 {isSortable && (
+                   <div className='text-xs flex items-center'>
+                     <SortIcons 
+                       sortKey={columnKey}
+                       currentSortKey={sortConfig.key}
+                       sortDirection={sortConfig.direction}
+                       onSort={requestSort}
+                     />
+                   </div>
+                 )}
               </div>
             </th>
           );

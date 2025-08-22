@@ -1,4 +1,6 @@
-import { formatAmount, formatPrice, normalizeDateTime } from '../../utils/helpers';
+import { formatAmount, formatPrice } from '../../utils/helpers';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function TableRow({
   row,
@@ -20,10 +22,10 @@ export default function TableRow({
       return (
         <>
           <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-            {formatPrice(priceNum)}
+            ${formatPrice(priceNum)}
           </td>
           <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
-            {formatPrice(row.value)}
+            ${formatPrice(row.value)}
           </td>
         </>
       );
@@ -45,7 +47,7 @@ export default function TableRow({
     return (
       <>
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          {formatPrice(0)}
+          ${formatPrice(0)}
         </td>
         <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
           Wait for listing
@@ -136,7 +138,7 @@ export default function TableRow({
       {/* Highest Price */}
       {showHighestPrice && (
         <td className='px-1 py-2 text-center tabular-nums text-[11px] sm:text-sm dark:text-white'>
-          {formatPrice(row.highestPrice)}
+          ${formatPrice(row.highestPrice)}
         </td>
       )}
 
@@ -148,9 +150,7 @@ export default function TableRow({
              className='inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md dark:hover:bg-indigo-700'
              title='Edit'
            >
-             <svg className='w-3 h-3 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' />
-             </svg>
+             <EditIcon sx={{ fontSize: 12 }} />
              Edit
            </button>
            <button
@@ -158,9 +158,7 @@ export default function TableRow({
              className='inline-flex items-center px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900 border border-rose-200 dark:border-rose-700 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-md'
              title='Delete'
            >
-             <svg className='w-3 h-3 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
-             </svg>
+             <DeleteIcon sx={{ fontSize: 12 }} />
              Delete
            </button>
          </div>

@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function PasteButton({ onPasteText }) {
   const [open, setOpen] = useState(false);
@@ -9,9 +12,10 @@ export default function PasteButton({ onPasteText }) {
       <button
         id='paste-open'
         onClick={() => setOpen(true)}
-        className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white'
+        className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white flex items-center gap-2'
       >
-        📋 Paste from Sheet
+        <ContentPasteIcon sx={{ fontSize: 16 }} />
+        Paste from Sheet
       </button>
 
       {open && (
@@ -31,19 +35,21 @@ export default function PasteButton({ onPasteText }) {
             />
             <div className='flex justify-end gap-2'>
               <button
-                className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white'
+                className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
                 onClick={() => setOpen(false)}
               >
+                <CloseIcon sx={{ fontSize: 16 }} />
                 Close
               </button>
               <button
-                className='px-3 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-sm'
+                className='px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
                 onClick={() => {
                   onPasteText?.(text);
                   setText('');
                   setOpen(false);
                 }}
               >
+                <AddIcon sx={{ fontSize: 16 }} />
                 Add to table
               </button>
             </div>

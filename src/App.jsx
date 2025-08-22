@@ -93,6 +93,16 @@ export default function App() {
     }
   }
 
+  // Fetch main token logos (BTC, ETH, BNB)
+  async function fetchMainTokenLogos() {
+    try {
+      const mainTokenLogos = await fetchTokenLogos(['bitcoin', 'ethereum', 'binancecoin']);
+      setTokenLogos(prev => ({ ...prev, ...mainTokenLogos }));
+    } catch (e) {
+      console.error('fetchMainTokenLogos error', e);
+    }
+  }
+
   // Fetch prices and update rows' price/value/highestPrice
   async function fetchPrices() {
     // Always include common coins so BTC/ETH/BNB cards show even when table ids missing
@@ -100,9 +110,17 @@ export default function App() {
       new Set([...(ids || []), 'bitcoin', 'ethereum', 'binancecoin']),
     );
     if (!idsToFetch.length) return;
+    
+    // Add 1 second delay to show loading animation
     setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     try {
       const priceMap = await fetchCryptoPrices(idsToFetch, 'usd');
+      
+      // Fetch logos for main tokens
+      const mainTokenLogos = await fetchTokenLogos(['bitcoin', 'ethereum', 'binancecoin']);
+      setTokenLogos(prev => ({ ...prev, ...mainTokenLogos }));
 
       setRows((prev) =>
         prev.map((r) => {
@@ -246,6 +264,8 @@ export default function App() {
     requestFetchPrices(100);
     // Fetch logos when ids change
     fetchLogos();
+    // Fetch main token logos
+    fetchMainTokenLogos();
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(',')]);
@@ -253,6 +273,7 @@ export default function App() {
   // Fetch lần đầu
   useEffect(() => {
     fetchPrices();
+    fetchMainTokenLogos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -693,6 +714,7 @@ export default function App() {
             bnbPrice={bnbPrice}
             syncing={syncing}
             lastUpdated={lastUpdated}
+            tokenLogos={tokenLogos}
           />
 
           <ActionButtons
@@ -706,6 +728,7 @@ export default function App() {
             setShowHighestPrice={setShowHighestPrice}
             searchToken={searchToken}
             setSearchToken={setSearchToken}
+
           />
 
           <SortableTable

@@ -1,5 +1,8 @@
 import { formatAmount } from '../../utils/helpers';
 import { useState } from 'react';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function DeleteModal({
   deleteModal,
@@ -33,9 +36,9 @@ export default function DeleteModal({
                 error: '',
               })
             }
-            className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
+            className='w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105'
           >
-            ✕
+            <CloseIcon sx={{ fontSize: 16 }} />
           </button>
         </div>
 
@@ -95,9 +98,10 @@ export default function DeleteModal({
                    error: '',
                  })
                }
-               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+               className='px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
              >
-               Cancel
+                               <CloseIcon sx={{ fontSize: 16 }} />
+                Cancel
              </button>
                          <button
               onClick={async () => {
@@ -115,17 +119,20 @@ export default function DeleteModal({
                 }
               }}
               disabled={isDeleting}
-              className={`px-3 py-2 rounded-xl bg-rose-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md ${
+              className={`px-3 py-2 rounded-xl bg-rose-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 ${
                 isDeleting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               {isDeleting ? (
                 <span className="flex items-center gap-2">
-                  <span className="spin">🔄</span>
+                  <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
                   Deleting...
                 </span>
               ) : (
-                'Confirm Delete'
+                <>
+                                  <DeleteIcon sx={{ fontSize: 16 }} />
+                Confirm Delete
+                </>
               )}
             </button>
            </div>

@@ -11,12 +11,19 @@ export function useTableSort() {
     saveSortConfig(sortConfig);
   }, [sortConfig]);
 
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+  const requestSort = (key, direction = null) => {
+    let newDirection = direction;
+    
+    // If no direction specified, toggle based on current state
+    if (!newDirection) {
+      if (sortConfig.key === key && sortConfig.direction === 'asc') {
+        newDirection = 'desc';
+      } else {
+        newDirection = 'asc';
+      }
     }
-    setSortConfig({ key, direction });
+    
+    setSortConfig({ key, direction: newDirection });
   };
 
   const getSortIcon = (key) => {
