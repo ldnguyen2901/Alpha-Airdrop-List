@@ -93,3 +93,28 @@ export async function fetchTokenLogos(ids) {
     return result;
   }
 }
+
+// Fetch single token info by API ID
+export async function fetchTokenInfo(apiId) {
+  if (!apiId || !apiId.trim()) return null;
+  
+  try {
+    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(apiId.trim())}`;
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      throw new Error(`API lỗi ${res.status}`);
+    }
+    
+    const data = await res.json();
+    return {
+      id: data.id,
+      name: data.name,
+      symbol: data.symbol.toUpperCase(),
+      logo: data.image?.large || data.image?.small || data.image?.thumb
+    };
+  } catch (error) {
+    console.error('Error fetching token info:', error);
+    return null;
+  }
+}

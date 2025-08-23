@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
+import { fetchTokenInfo } from '../../services/api';
 
 export default function EditModal({
   editingModal,
@@ -13,6 +14,7 @@ export default function EditModal({
   modalPosition
 }) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingToken, setIsFetchingToken] = useState(false);
   
   if (!editingModal || !editingModal.open || editingModal.idx === -1) {
     return null;
@@ -55,6 +57,48 @@ export default function EditModal({
       }
     }
   };
+
+  // Auto fetch token info when API ID is changed
+  const handleApiIdChange = async (e) => {
+    const apiId = e.target.value;
+    setRowDrafts((p) => ({
+      ...p,
+      [editingModal.idx]: {
+        ...p[editingModal.idx],
+        apiId,
+      },
+    }));
+    
+    // Auto fetch token info if API ID is valid
+    if (apiId && apiId.trim() && apiId.trim().length > 2) {
+      setIsFetchingToken(true);
+      try {
+        const tokenInfo = await fetchTokenInfo(apiId.trim());
+        if (tokenInfo) {
+          setRowDrafts((p) => ({
+            ...p,
+            [editingModal.idx]: {
+              ...p[editingModal.idx],
+              name: tokenInfo.name,
+              apiId: tokenInfo.id, // Use the correct ID from API
+              logo: tokenInfo.logo,
+              symbol: tokenInfo.symbol
+            },
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch token info:', error);
+      } finally {
+        setIsFetchingToken(false);
+      }
+    }
+  };
+
+  // Check if token name is auto-filled from API
+  const isTokenNameFromAPI = rowDrafts[editingModal.idx]?.apiId && 
+                            rowDrafts[editingModal.idx]?.name && 
+                            rowDrafts[editingModal.idx]?.apiId.trim().length > 2 &&
+                            rowDrafts[editingModal.idx]?.name.trim().length > 0;
 
   const isMobile = window.innerWidth < 768;
   
@@ -112,12 +156,24 @@ export default function EditModal({
         </div>
 
         <div className='grid grid-cols-1 gap-3'>
-          <input
-            value={rowDrafts[editingModal.idx].name}
-            onChange={handleNameChange}
-            className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-            placeholder='Token (required)'
-          />
+          <div>
+            <input
+              value={rowDrafts[editingModal.idx].name}
+              onChange={handleNameChange}
+              placeholder={isTokenNameFromAPI ? 'Symbol (auto-filled from API)' : 'Token symbol/name (required)'}
+              className={`border rounded px-3 py-2 w-full ${
+                isTokenNameFromAPI 
+                  ? 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed' 
+                  : 'bg-white dark:bg-gray-700 dark:text-white'
+              }`}
+              disabled={isTokenNameFromAPI}
+            />
+            {isTokenNameFromAPI && (
+              <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
+                ✓ Auto-filled from API
+              </div>
+            )}
+          </div>
 
           <input
             value={rowDrafts[editingModal.idx].amount}
@@ -144,20 +200,30 @@ export default function EditModal({
             placeholder='Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss'
           />
 
-          <input
-            value={rowDrafts[editingModal.idx].apiId}
-            onChange={(e) =>
-              setRowDrafts((p) => ({
-                ...p,
-                [editingModal.idx]: {
-                  ...p[editingModal.idx],
-                  apiId: e.target.value,
-                },
-              }))
-            }
-            className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-            placeholder='API ID'
-          />
+          <div>
+            <input
+              value={rowDrafts[editingModal.idx].apiId}
+              onChange={handleApiIdChange}
+              placeholder={isTokenNameFromAPI ? 'API ID (auto-filled)' : 'API ID (required if no token name)'}
+              className={`border rounded px-3 py-2 w-full ${
+                isTokenNameFromAPI 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' 
+                  : 'bg-white dark:bg-gray-700 dark:text-white'
+              }`}
+              disabled={isFetchingToken}
+            />
+            {isFetchingToken && (
+              <div className='text-blue-600 dark:text-blue-400 text-sm mt-1 flex items-center gap-2'>
+                <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
+                Fetching token info...
+              </div>
+            )}
+            {isTokenNameFromAPI && (
+              <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
+                ✓ API ID provided - Token name auto-filled
+              </div>
+            )}
+          </div>
 
           <input
             value={rowDrafts[editingModal.idx].pointPriority}

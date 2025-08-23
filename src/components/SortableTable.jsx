@@ -136,6 +136,8 @@ const SortableTable = forwardRef(({
           showHighestPrice={showHighestPrice}
           onRefresh={onRefresh}
           loading={loading}
+          sortConfig={sortConfig}
+          requestSort={requestSort}
         />
         
         <EditModal

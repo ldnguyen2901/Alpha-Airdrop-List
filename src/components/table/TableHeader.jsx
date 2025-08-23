@@ -65,7 +65,9 @@ export default function TableHeader({
                 }`}
               >
                 <span className='text-[10px] xs:text-xs sm:text-sm'>
-                  {h === 'Token Price'
+                  {h === 'Token'
+                    ? 'Token'
+                    : h === 'Token Price'
                     ? 'Price'
                     : h === 'Point (Priority)'
                     ? 'Priority'

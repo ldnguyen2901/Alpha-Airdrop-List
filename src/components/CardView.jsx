@@ -4,6 +4,9 @@ import Delete from '@mui/icons-material/Delete';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SortIcon from '@mui/icons-material/Sort';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { formatPrice } from '../utils/helpers';
 import { formatDateTime } from '../utils/dateTimeUtils';
 
@@ -15,14 +18,45 @@ export default function CardView({
   tokenLogos,
   highlightRowRef,
   showHighestPrice,
+  setShowHighestPrice,
   onRefresh,
   loading,
+  sortConfig,
+  requestSort,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [editButtonPosition, setEditButtonPosition] = useState({ top: 0, left: 0 });
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const editButtonRefs = useRef({});
   const deleteButtonRefs = useRef({});
+  const sortButtonRef = useRef(null);
   const itemsPerPage = 6;
+  
+  // Handle sort change
+  const handleSortChange = (sortKey) => {
+    if (sortKey && requestSort) {
+      // Keep current direction if same key, otherwise use desc as default
+      const newDirection = (sortConfig?.key === sortKey) ? sortConfig.direction : 'desc';
+      requestSort(sortKey, newDirection);
+    }
+    // Don't close menu - let user continue selecting
+  };
+
+  // Handle direction change
+  const handleDirectionChange = (direction) => {
+    if (sortConfig?.key && requestSort) {
+      requestSort(sortConfig.key, direction);
+    }
+    // Don't close menu - let user continue selecting
+  };
+
+  // Toggle sort direction
+  const toggleSortDirection = () => {
+    if (sortConfig?.key && requestSort) {
+      const newDirection = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+      requestSort(sortConfig.key, newDirection);
+    }
+  };
   
   const filteredRows = rows.filter((row) =>
     row.name.toLowerCase().includes(searchToken.toLowerCase())
@@ -128,13 +162,105 @@ export default function CardView({
               Refresh
             </button>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
-              <select className="text-sm bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1">
-                <option value="name">Name</option>
-                <option value="amount">Amount</option>
-                <option value="launchAt">Launch Date</option>
-                <option value="price">Price</option>
-              </select>
+              {/* Show Highest Price Toggle for Mobile */}
+              <button
+                onClick={() => setShowHighestPrice(!showHighestPrice)}
+                className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+              >
+                <div className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out flex items-center justify-center ${
+                  showHighestPrice 
+                    ? 'bg-blue-500 border-blue-500' 
+                    : 'bg-transparent border-gray-400 dark:border-gray-500'
+                }`}>
+                  {showHighestPrice && (
+                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                  )}
+                </div>
+                <span className="text-xs">Highest</span>
+              </button>
+              <div className="relative">
+                <button
+                  ref={sortButtonRef}
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
+                >
+                  <SortIcon sx={{ fontSize: 16 }} />
+                  <span className="text-xs">
+                    {sortConfig?.key === 'name' && 'Name'}
+                    {sortConfig?.key === 'amount' && 'Amount'}
+                    {sortConfig?.key === 'launchAt' && 'Date'}
+                    {sortConfig?.key === 'price' && 'Price'}
+                    {sortConfig?.key === 'value' && 'Reward'}
+                    {sortConfig?.key === 'highestPrice' && 'High'}
+                    {!sortConfig?.key && 'Date'}
+                  </span>
+                  {sortConfig?.direction === 'asc' ? (
+                    <KeyboardArrowUpIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <KeyboardArrowDownIcon sx={{ fontSize: 16 }} />
+                  )}
+                </button>
+
+                {/* Sort Menu */}
+                {showSortMenu && (
+                  <>
+                    {/* Backdrop */}
+                    <div 
+                      className="fixed inset-0 z-[99998]"
+                      onClick={() => setShowSortMenu(false)}
+                    />
+                    
+                    {/* Menu */}
+                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg z-[99999] min-w-[160px]">
+                      <div className="p-2">
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-2">Sort by:</div>
+                        {[
+                          { key: 'name', label: 'Name' },
+                          { key: 'amount', label: 'Amount' },
+                          { key: 'launchAt', label: 'Launch Date' },
+                          { key: 'price', label: 'Price' },
+                          { key: 'value', label: 'Reward' },
+                          { key: 'highestPrice', label: 'Highest Price' }
+                        ].map((item) => (
+                          <button
+                            key={item.key}
+                            onClick={() => handleSortChange(item.key)}
+                            className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                              sortConfig?.key === item.key ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                        
+                        <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                        
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 px-2">Direction:</div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleDirectionChange('asc')}
+                            className={`flex-1 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 ${
+                              sortConfig?.direction === 'asc' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <KeyboardArrowUpIcon sx={{ fontSize: 14 }} />
+                            A-Z
+                          </button>
+                          <button
+                            onClick={() => handleDirectionChange('desc')}
+                            className={`flex-1 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 ${
+                              sortConfig?.direction === 'desc' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
+                            Z-A
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -151,7 +277,17 @@ export default function CardView({
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  {tokenLogos[row.apiId]?.logo ? (
+                  {row.logo ? (
+                    <img
+                      src={row.logo}
+                      alt={row.name}
+                      className="w-6 h-6 rounded-full shadow-sm"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : tokenLogos[row.apiId]?.logo ? (
                     <img
                       src={tokenLogos[row.apiId].logo}
                       alt={row.name}
@@ -166,7 +302,7 @@ export default function CardView({
                     {row.name.charAt(0)}
                   </span>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {row.name}
+                    {row.symbol || row.name}
                   </h3>
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -201,6 +337,7 @@ export default function CardView({
 
           {/* Details */}
           <div className="p-4 space-y-3">
+            {/* Row 1: Amount | Reward */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Amount:</span>
@@ -214,6 +351,13 @@ export default function CardView({
                   {row.value && row.value > 0 ? `$${formatPrice(row.value)}` : 'N/A'}
                 </div>
               </div>
+            </div>
+
+            {/* Divider line */}
+            <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+            {/* Row 2: Points Priority | Launch Date */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Points Priority:</span>
                 <div className="font-medium text-gray-900 dark:text-white">
@@ -228,7 +372,7 @@ export default function CardView({
               </div>
             </div>
 
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
@@ -248,7 +392,7 @@ export default function CardView({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex gap-2 pt-3">
               <button
                 ref={el => editButtonRefs.current[index] = el}
                 onClick={(e) => {

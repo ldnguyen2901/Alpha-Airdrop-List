@@ -11,13 +11,15 @@ export function newRow(partial = {}) {
     reward: 0, // Reward
     value: 0, // Value = Amount x Price
     highestPrice: 0, // Highest price reached
+    logo: '', // Token logo URL
+    symbol: '', // Token symbol
     _forceTop: false, // temporary pin to top until saved
     ...partial,
   };
 }
 
 export const TABLE_HEADERS = [
-  'Token',
+  'Token', // Will be displayed as "Symbol" in TableHeader
   'Amount',
   'Listing time',
   'API ID',
@@ -39,4 +41,6 @@ export const CSV_HEADERS = [
   'Token Price',
   'Reward',
   'Highest Price',
+  'Logo',
+  'Symbol',
 ];

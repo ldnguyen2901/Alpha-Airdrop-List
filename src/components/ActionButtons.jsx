@@ -13,6 +13,7 @@ export default function ActionButtons({
   onExportCSV,
   onImportExcel,
   onRefresh,
+  onCheckLogos,
   loading,
   showHighestPrice,
   setShowHighestPrice,
@@ -60,7 +61,7 @@ export default function ActionButtons({
     try {
       // Validate form
       const errors = {};
-      if (!addForm.name.trim()) errors.name = 'Token name is required';
+              if (!addForm.name.trim()) errors.name = 'Token symbol/name is required';
       if (!addForm.launchAt.trim()) errors.launchAt = 'Launch date is required';
       
       if (Object.keys(errors).length > 0) {
@@ -149,9 +150,10 @@ export default function ActionButtons({
           </div>
         </div>
         <div className='flex items-center justify-between gap-2 sm:gap-4'>
+          {/* Show Highest Price button - only on desktop */}
           <button
             onClick={() => setShowHighestPrice(!showHighestPrice)}
-            className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+            className='hidden sm:flex px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
           >
             <div className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out flex items-center justify-center ${
               showHighestPrice 
@@ -167,7 +169,7 @@ export default function ActionButtons({
           <button
             onClick={onRefresh}
             className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 sm:flex-shrink flex items-center gap-2'
-            title='Refresh prices'
+            title='Refresh prices and token info'
           >
             <AutorenewIcon 
               className={`${loading ? 'animate-spin' : ''}`}
@@ -175,6 +177,16 @@ export default function ActionButtons({
             />
             Refresh
           </button>
+          {onCheckLogos && (
+            <button
+              onClick={onCheckLogos}
+              className='hidden sm:flex px-3 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow hover:opacity-90 text-xs transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 flex items-center gap-2'
+              title='Check missing logos'
+            >
+              <span className="text-xs">🔍</span>
+              <span className="text-xs">Check Logo</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -90,7 +90,16 @@ export default function TableRow({
       >
                  <div className="flex items-center gap-2">
            {/* Token Logo */}
-           {row.apiId && tokenLogos[row.apiId] && (
+           {row.logo ? (
+             <img
+               src={row.logo}
+               alt={`${row.name} logo`}
+               className="w-6 h-6 rounded-full flex-shrink-0"
+               onError={(e) => {
+                 e.target.style.display = 'none';
+               }}
+             />
+           ) : row.apiId && tokenLogos[row.apiId] && (
              <img
                src={tokenLogos[row.apiId].logo}
                alt={`${row.name} logo`}
@@ -100,9 +109,9 @@ export default function TableRow({
                }}
              />
            )}
-           <span className="text-sm dark:text-white font-medium">
-             {row.name}
-           </span>
+                     <span className="text-sm dark:text-white font-medium">
+            {row.symbol || row.name}
+          </span>
          </div>
       </td>
 
