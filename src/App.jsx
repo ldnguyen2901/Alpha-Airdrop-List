@@ -93,6 +93,7 @@ export default function App() {
   const [showExcelUpload, setShowExcelUpload] = useState(false);
   const highlightRowRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalPosition, setAddModalPosition] = useState(null);
 
   const [addForm, setAddForm] = useState({
     name: '',
@@ -580,7 +581,7 @@ export default function App() {
           }
         }
         
-        if (showToast) {
+      if (showToast) {
           if (updatedCount > 0) {
             toast.success(`Updated ${updatedCount} token(s) with missing logos!`);
           } else {
@@ -662,8 +663,8 @@ export default function App() {
     
     // Add 1 second delay to show loading animation (only when tab is visible)
     if (isPageVisible) {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     try {
@@ -724,7 +725,7 @@ export default function App() {
       console.error('fetchPrices error', e);
     } finally {
       if (isPageVisible) {
-        setLoading(false);
+      setLoading(false);
       }
     }
   }
@@ -768,56 +769,56 @@ export default function App() {
       : '';
 
     try {
-      const nr = newRow({
+    const nr = newRow({
         name: String(form.name || form.apiId || '')
-          .trim()
-          .toUpperCase(),
-        amount: Number(form.amount) || 0,
-        launchAt: normalizedLaunch || '',
-        apiId: form.apiId || '',
-        pointPriority: form.pointPriority || '',
-        pointFCFS: form.pointFCFS || '',
+        .trim()
+        .toUpperCase(),
+      amount: Number(form.amount) || 0,
+      launchAt: normalizedLaunch || '',
+      apiId: form.apiId || '',
+      pointPriority: form.pointPriority || '',
+      pointFCFS: form.pointFCFS || '',
         logo: form.logo || '',
         symbol: form.symbol || '',
-      });
+    });
 
-      setRows((prev) => {
-        const newRows = [nr, ...prev];
-        saveDataToStorage(newRows);
-        if (!isRemoteUpdateRef.current) {
-          setSyncing(true);
-          saveWorkspaceData('global', newRows)
-            .catch((e) => {
-              console.error('Save cloud failed:', e);
-              toast.error('Failed to sync data to cloud. Please try again.');
-            })
-            .finally(() => setSyncing(false));
-        }
-        return newRows;
-      });
+    setRows((prev) => {
+      const newRows = [nr, ...prev];
+      saveDataToStorage(newRows);
+      if (!isRemoteUpdateRef.current) {
+        setSyncing(true);
+        saveWorkspaceData('global', newRows)
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
+          .finally(() => setSyncing(false));
+      }
+      return newRows;
+    });
 
-      setShowAddModal(false);
-      setAddForm({
-        name: '',
-        amount: '',
-        launchAt: '',
+    setShowAddModal(false);
+    setAddForm({
+      name: '',
+      amount: '',
+      launchAt: '',
         launchDate: '',
         launchTime: '',
-        apiId: '',
-        pointPriority: '',
-        pointFCFS: '',
-      });
-      setAddErrors({});
-      toast.success(`New ${nr.name || 'token'} added successfully!`);
+      apiId: '',
+      pointPriority: '',
+      pointFCFS: '',
+    });
+    setAddErrors({});
+    toast.success(`New ${nr.name || 'token'} added successfully!`);
       
       // Auto fetch token info if API ID is provided
       if (nr.apiId && nr.apiId.trim()) {
         fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
       }
-      
-      // Highlight the newly added row
-      if (highlightRowRef.current) {
-        highlightRowRef.current(rows.length); // Highlight the last row (newly added)
+    
+    // Highlight the newly added row
+    if (highlightRowRef.current) {
+      highlightRowRef.current(rows.length); // Highlight the last row (newly added)
       }
     } catch (error) {
       console.error('Error creating new row:', error);
@@ -833,8 +834,8 @@ export default function App() {
       fetchPrices();
     }, 60 * 1000);
     
-    // Trigger an immediate debounced fetch when ids set changes so prices show up right away
-    requestFetchPrices(100);
+          // Trigger an immediate debounced fetch when ids set changes so prices show up right away
+      requestFetchPrices(100);
     
     return () => {
       if (timerRef.current) {
@@ -1082,22 +1083,13 @@ export default function App() {
       }
     }
 
-    // Check if either launchAt (legacy) or launchDate (new) is provided
-    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
-    const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
+    // Check if launchDate is provided
+    const hasLaunchDate = form.launchDate && String(form.launchDate).trim();
     
-    if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
-      errs.launchAt = 'Listing date is required';
-    } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
-      // Only validate legacy format if using legacy input (not new date picker)
-      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-              const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
-      const val = String(form.launchAt).trim();
-      if (!(regexDate.test(val) || regexDateTime.test(val))) {
-        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
-      }
+    if (!hasLaunchDate) {
+      errs.launchDate = 'Listing date is required';
     }
-    // If using new date picker (hasNewLaunchDate), no additional validation needed
+    // No additional validation needed for date picker
 
     if (form.amount !== undefined && String(form.amount).trim() !== '') {
       const n = Number(form.amount);
@@ -1135,51 +1127,51 @@ export default function App() {
       : '';
 
     try {
-      const nr = newRow({
+    const nr = newRow({
         name: String(addForm.name || addForm.apiId || '')
-          .trim()
-          .toUpperCase(),
-        amount: Number(addForm.amount) || 0,
-        launchAt: normalizedLaunch || '',
-        apiId: addForm.apiId || '',
-        pointPriority: addForm.pointPriority || '',
-        pointFCFS: addForm.pointFCFS || '',
+        .trim()
+        .toUpperCase(),
+      amount: Number(addForm.amount) || 0,
+      launchAt: normalizedLaunch || '',
+      apiId: addForm.apiId || '',
+      pointPriority: addForm.pointPriority || '',
+      pointFCFS: addForm.pointFCFS || '',
         logo: addForm.logo || '',
         symbol: addForm.symbol || '',
-      });
+    });
 
       // Auto fetch token info if API ID is provided
       if (nr.apiId && nr.apiId.trim()) {
         fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
       }
 
-      setRows((prev) => {
-        const newRows = [nr, ...prev];
-        saveDataToStorage(newRows);
-        if (!isRemoteUpdateRef.current) {
-          setSyncing(true);
-          saveWorkspaceData('global', newRows)
-            .catch((e) => {
-              console.error('Save cloud failed:', e);
-              toast.error('Failed to sync data to cloud. Please try again.');
-            })
-            .finally(() => setSyncing(false));
-        }
-        return newRows;
-      });
+    setRows((prev) => {
+      const newRows = [nr, ...prev];
+      saveDataToStorage(newRows);
+      if (!isRemoteUpdateRef.current) {
+        setSyncing(true);
+        saveWorkspaceData('global', newRows)
+          .catch((e) => {
+            console.error('Save cloud failed:', e);
+            toast.error('Failed to sync data to cloud. Please try again.');
+          })
+          .finally(() => setSyncing(false));
+      }
+      return newRows;
+    });
 
-      setShowAddModal(false);
-      setAddForm({
-        name: '',
-        amount: '',
-        launchAt: '',
+    setShowAddModal(false);
+    setAddForm({
+      name: '',
+      amount: '',
+      launchAt: '',
         launchDate: '',
         launchTime: '',
-        apiId: '',
-        pointPriority: '',
-        pointFCFS: '',
-      });
-      setAddErrors({});
+      apiId: '',
+      pointPriority: '',
+      pointFCFS: '',
+    });
+    setAddErrors({});
       toast.success(`New ${nr.name || 'token'} added successfully!`);
     } catch (error) {
       console.error('Error creating new row:', error);

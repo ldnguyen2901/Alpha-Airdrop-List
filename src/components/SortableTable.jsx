@@ -102,7 +102,7 @@ const SortableTable = forwardRef(({
   };
 
   const getCountdownTextForRow = (launchAt) => {
-    return getCountdownText(launchAt, now);
+    return getCountdownText(launchAt, now, false); // Desktop = false
   };
 
   // Function to highlight a row after successful action

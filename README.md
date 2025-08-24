@@ -32,7 +32,7 @@
 | --- | ---------------- | --------------------------------------- |
 | A   | Token            | Tên hiển thị của token                  |
 | B   | Amount           | Số lượng token sở hữu                   |
-| C   | Listing time     | Ngày ra mắt token (DD/MM/YYYY HH:mm:ss) |
+| C   | Listing time     | Ngày ra mắt token (DD/MM/YYYY HH:mm) |
 | D   | API ID           | ID CoinGecko (quan trọng để lấy giá)    |
 | E   | Point (Priority) | Điểm ưu tiên                            |
 | F   | Point (FCFS)     | Điểm FCFS                               |
@@ -64,7 +64,7 @@ npm run dev
 1. Click "Add Row" (desktop) hoặc "Add Row" (mobile)
 2. Nhập tên token (cột A) - bắt buộc
 3. Nhập số lượng token (cột B)
-4. Nhập ngày listing (cột C) - bắt buộc, định dạng DD/MM/YYYY hoặc DD/MM/YYYY HH:mm:ss
+4. Nhập ngày listing (cột C) - bắt buộc, định dạng DD/MM/YYYY hoặc DD/MM/YYYY HH:mm
 5. **Quan trọng**: Nhập API ID chính xác (cột D)
    - Ví dụ: `bitcoin`, `ethereum`, `binancecoin`
    - Xem danh sách API ID tại: https://api.coingecko.com/api/v3/coins/list

@@ -18,7 +18,7 @@ export default function TableRow({
 
 
     const renderPriceAndReward = () => {
-    const cd = getCountdownText(row.launchAt, Date.now());
+    const cd = getCountdownText(row.launchAt, Date.now(), false); // Desktop = false
     const priceNum = Number(row.price) || 0;
     
     if (priceNum > 0) {
@@ -38,7 +38,7 @@ export default function TableRow({
       return (
         <>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-            {cd}
+            <span dangerouslySetInnerHTML={{ __html: cd }} />
           </td>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
             Wait for listing

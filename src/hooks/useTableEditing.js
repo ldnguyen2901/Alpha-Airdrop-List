@@ -41,8 +41,8 @@ export function useTableEditing() {
       const launchAtStr = String(row.launchAt).trim();
       console.log('🔍 Parsing launchAt for edit:', launchAtStr);
       
-      // Handle DD/MM/YYYY HH:mm format
-      if (/^\d{2}\/\d{2}\/\d{4}(\s+\d{2}:\d{2})?$/.test(launchAtStr)) {
+      // Handle DD/MM/YYYY HH:mm format (more flexible)
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}(\s+\d{1,2}:\d{1,2})?$/.test(launchAtStr)) {
         const parts = launchAtStr.split(' ');
         const datePart = parts[0]; // DD/MM/YYYY
         const timePart = parts[1] || ''; // HH:mm or empty
@@ -69,6 +69,7 @@ export function useTableEditing() {
       }
     }
     
+    console.log('🔍 Final draft values:', { launchDate, launchTime, originalLaunchAt: row.launchAt });
     setRowDrafts((prev) => ({ 
       ...prev, 
       [actual]: { 
@@ -86,13 +87,27 @@ export function useTableEditing() {
     const draft = rowDrafts[actual];
     if (!draft) return;
     
-    // normalize launchAt before saving and ensure date-only gets 00:00:00
-    let normalizedLaunch = draft.launchAt
-      ? normalizeDateTime(draft.launchAt) || draft.launchAt
-      : draft.launchAt;
-    if (normalizedLaunch && /^\d{2}\/\d{2}\/\d{4}$/.test(normalizedLaunch)) {
-      normalizedLaunch = normalizedLaunch + ' 00:00';
+    // Create launchAt from date and time pickers
+    let normalizedLaunch = '';
+    if (draft.launchDate) {
+      // Convert YYYY-MM-DD to DD/MM/YYYY
+      const [year, month, day] = draft.launchDate.split('-');
+      const formattedDate = `${day}/${month}/${year}`;
+      
+      // Add time if available
+      if (draft.launchTime) {
+        normalizedLaunch = `${formattedDate} ${draft.launchTime}`;
+      } else {
+        normalizedLaunch = `${formattedDate} 00:00`;
+      }
+    } else if (draft.launchAt) {
+      // Fallback to existing launchAt if no date picker
+      normalizedLaunch = normalizeDateTime(draft.launchAt) || draft.launchAt;
+      if (normalizedLaunch && /^\d{2}\/\d{2}\/\d{4}$/.test(normalizedLaunch)) {
+        normalizedLaunch = normalizedLaunch + ' 00:00';
+      }
     }
+    
     const toSave = { ...draft, launchAt: normalizedLaunch, _forceTop: false };
     onUpdateRow(actual, toSave);
     setRowDrafts((prev) => {

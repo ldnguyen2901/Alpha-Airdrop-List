@@ -17,6 +17,54 @@ export default function EditModal({
   const [isSaving, setIsSaving] = useState(false);
   const [editErrors, setEditErrors] = useState({});
 
+  // Validate edit form
+  const validateEditForm = (form) => {
+    const errs = {};
+    
+    // API ID is required
+    const hasApiId = form.apiId && String(form.apiId).trim();
+    if (!hasApiId) {
+      errs.apiId = 'API ID is required';
+    } else {
+      // Validate API ID format
+      const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+      if (!validApiIdPattern.test(form.apiId.trim())) {
+        errs.apiId = 'API ID can only contain letters, numbers, hyphens, underscores, and ? for hidden tokens';
+      }
+      
+      // Check for invalid characters (but allow ? for hidden tokens)
+      const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+      if (invalidInputs.some(char => form.apiId.includes(char))) {
+        errs.apiId = 'API ID contains invalid characters';
+      }
+    }
+
+    // Check if either launchAt (legacy) or launchDate (new) is provided
+    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
+    const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
+    
+    if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
+      errs.launchAt = 'Listing date is required';
+    } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
+      // Only validate legacy format if using legacy input (not new date picker)
+      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+      const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
+      const val = String(form.launchAt).trim();
+      if (!(regexDate.test(val) || regexDateTime.test(val))) {
+        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
+      }
+    }
+    // If using new date picker (hasNewLaunchDate), no additional validation needed
+
+    if (form.amount !== undefined && String(form.amount).trim() !== '') {
+      const n = Number(form.amount);
+      if (isNaN(n) || n < 0)
+        errs.amount = 'Amount (B) must be a non-negative number';
+    }
+
+    return errs;
+  };
+
   
   if (!editingModal || !editingModal.open || editingModal.idx === -1) {
     return null;
@@ -32,33 +80,7 @@ export default function EditModal({
     }));
   };
 
-  const handleLaunchAtChange = (e) => {
-    const value = e.target.value;
-    const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
-    setRowDrafts((p) => ({
-      ...p,
-      [editingModal.idx]: {
-        ...p[editingModal.idx],
-        launchAt: sanitizedValue,
-      },
-    }));
-  };
 
-  const handleLaunchAtBlur = (e) => {
-    const value = e.target.value.trim();
-    if (value) {
-      const normalized = normalizeDateTime(value);
-      if (normalized && normalized !== value) {
-        setRowDrafts((p) => ({
-          ...p,
-          [editingModal.idx]: {
-            ...p[editingModal.idx],
-            launchAt: normalized,
-          },
-        }));
-      }
-    }
-  };
 
   // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
@@ -125,42 +147,7 @@ export default function EditModal({
     }
   };
 
-  // Validation function for edit form
-  const validateEditForm = (form) => {
-    const errs = {};
-    
-    // API ID is required
-    const hasApiId = form.apiId && String(form.apiId).trim();
-    if (!hasApiId) {
-      errs.apiId = 'API ID is required';
-    }
 
-    // Check if either launchAt (legacy) or launchDate (new) is provided
-    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
-    const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
-    
-    if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
-      errs.launchAt = 'Listing date is required';
-    } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
-      // Only validate legacy format if using legacy input (not new date picker)
-      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-              const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
-      const val = String(form.launchAt).trim();
-      if (!(regexDate.test(val) || regexDateTime.test(val))) {
-        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
-      }
-    }
-    // If using new date picker (hasNewLaunchDate), no additional validation needed
-
-    if (form.amount !== undefined && String(form.amount).trim() !== '') {
-      const n = Number(form.amount);
-      if (isNaN(n) || n < 0) {
-        errs.amount = 'Amount must be a non-negative number';
-      }
-    }
-
-    return errs;
-  };
 
 
 
@@ -191,13 +178,21 @@ export default function EditModal({
         style={isMobile && modalPosition ? {
           top: `${modalPosition.top}px`,
           left: `${modalPosition.left}px`,
-          maxWidth: '384px'
+          maxWidth: '384px',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         } : isMobile ? {
-          top: '50%',
+          top: '60px', // Fallback position
           left: '50%',
-          transform: 'translate(-50%, -50%)',
-          maxWidth: '384px'
-        } : {}}
+          transform: 'translateX(-50%)',
+          maxWidth: '384px',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        } : {
+          maxWidth: '384px',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
       >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>
@@ -261,17 +256,13 @@ export default function EditModal({
             <div className='flex gap-2'>
               <input
                 type='date'
-                value={rowDrafts[editingModal.idx].launchDate || ''}
+                value={rowDrafts[editingModal.idx]?.launchDate || ''}
                 onChange={(e) => {
-                  const date = e.target.value;
-                  // Convert YYYY-MM-DD to DD/MM/YYYY
-                  const formattedDate = date ? date.split('-').reverse().join('/') : '';
                   setRowDrafts((p) => ({
                     ...p,
                     [editingModal.idx]: {
                       ...p[editingModal.idx],
-                      launchDate: date,
-                      launchAt: formattedDate && p[editingModal.idx].launchTime ? `${formattedDate} ${p[editingModal.idx].launchTime}` : formattedDate || p[editingModal.idx].launchAt
+                      launchDate: e.target.value,
                     },
                   }));
                 }}
@@ -279,17 +270,13 @@ export default function EditModal({
               />
               <input
                 type='time'
-                value={rowDrafts[editingModal.idx].launchTime || ''}
+                value={rowDrafts[editingModal.idx]?.launchTime || ''}
                 onChange={(e) => {
-                  const time = e.target.value;
-                  // Convert YYYY-MM-DD to DD/MM/YYYY for launchDate
-                  const formattedDate = rowDrafts[editingModal.idx].launchDate ? rowDrafts[editingModal.idx].launchDate.split('-').reverse().join('/') : '';
                   setRowDrafts((p) => ({
                     ...p,
                     [editingModal.idx]: {
                       ...p[editingModal.idx],
-                      launchTime: time,
-                      launchAt: formattedDate && time ? `${formattedDate} ${time}` : p[editingModal.idx].launchAt
+                      launchTime: e.target.value,
                     },
                   }));
                 }}

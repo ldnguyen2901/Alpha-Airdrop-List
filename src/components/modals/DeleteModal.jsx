@@ -47,15 +47,23 @@ export default function DeleteModal({
            isMobile ? '' : 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
          }`}
          style={isMobile && modalPosition ? {
-           top: modalPosition.top,
-           left: modalPosition.left,
-           maxWidth: '384px'
+           top: `${modalPosition.top}px`,
+           left: `${modalPosition.left}px`,
+           maxWidth: '384px',
+           maxHeight: '90vh',
+           overflowY: 'auto'
          } : isMobile ? {
-           top: '50%',
+           top: '60px', // Fallback position
            left: '50%',
-           transform: 'translate(-50%, -50%)',
-           maxWidth: '384px'
-         } : {}}
+           transform: 'translateX(-50%)',
+           maxWidth: '384px',
+           maxHeight: '90vh',
+           overflowY: 'auto'
+         } : {
+           maxWidth: '384px',
+           maxHeight: '90vh',
+           overflowY: 'auto'
+         }}
        >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>

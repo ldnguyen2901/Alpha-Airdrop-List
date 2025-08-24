@@ -47,16 +47,21 @@ export function parseLaunchAt(value) {
   return null;
 }
 
-export function getCountdownText(launchAt, now) {
+export function getCountdownText(launchAt, now, isMobile = false) {
   const dt = parseLaunchAt(launchAt);
   if (!dt) return null;
   const diff = dt.getTime() - now;
   if (diff <= 0) return null;
+  
   const sec = Math.floor(diff / 1000);
-  const hh = String(Math.floor(sec / 3600)).padStart(2, '0');
-  const mm = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-  const ss = String(sec % 60).padStart(2, '0');
-  return `⏳ ${hh}:${mm}:${ss}`;
+  const days = Math.floor(sec / (24 * 3600));
+  const hours = Math.floor((sec % (24 * 3600)) / 3600);
+  const minutes = Math.floor((sec % 3600) / 60);
+  const seconds = sec % 60;
+  
+  // Both desktop and mobile: d:h:m:s format, hide 0d
+  const dayPart = days > 0 ? `${days}<span class="opacity-50">d</span> ` : '';
+  return `${dayPart}${String(hours).padStart(2, '0')}<span class="opacity-50">h</span> ${String(minutes).padStart(2, '0')}<span class="opacity-50">m</span> ${String(seconds).padStart(2, '0')}<span class="opacity-50">s</span>`;
 }
 
 export function formatDateTime(value) {

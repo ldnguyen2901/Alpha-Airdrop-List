@@ -39,22 +39,8 @@ export default function ActionButtons({
 
 
   const handleAddRowClick = () => {
-    // Mobile: show modal form
-    if (window.innerWidth < 768) {
-      // Calculate button position relative to document
-      if (addRowButtonRef.current) {
-        const rect = addRowButtonRef.current.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        setFormPosition({
-          top: rect.bottom + scrollTop + 8,
-          left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
-        });
-      }
-      setShowInlineForm(true);
-    } else {
-      // Desktop: use original modal
-      onAddRow();
-    }
+    // Always use modal form for both mobile and desktop
+    onAddRow();
   };
 
   const handleCheckDuplicates = async () => {
@@ -211,136 +197,7 @@ export default function ActionButtons({
       </div>
 
       {/* Mobile Modal Add Row Form */}
-      {showInlineForm && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="sm:hidden fixed inset-0 bg-black/60 z-[99998]"
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-            onClick={() => setShowInlineForm(false)}
-          />
-          
-          {/* Form */}
-          <div 
-            className="sm:hidden bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-4 shadow-2xl fixed" 
-            style={{ 
-              zIndex: 99999,
-              top: `${formPosition.top}px`,
-              left: `${formPosition.left}px`,
-              right: `${formPosition.left}px`
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold dark:text-white">Add New Token</h3>
-              <button
-                onClick={() => setShowInlineForm(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center transition-all duration-200 hover:scale-105"
-              >
-                <CloseIcon sx={{ fontSize: 16 }} />
-              </button>
-            </div>
-          
-            <form onSubmit={handleInlineSubmit} className="space-y-3">
-              <div>
-                <input
-                  name="name"
-                  value={addForm.name}
-                  onChange={handleNameChange}
-                  placeholder="Token (required)"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-                {addErrors.name && (
-                  <div className="text-red-500 text-xs mt-1">{addErrors.name}</div>
-                )}
-              </div>
-
-              <div>
-                <input
-                  name="amount"
-                  value={addForm.amount}
-                  onChange={(e) => setAddForm(prev => ({ ...prev, amount: e.target.value }))}
-                  placeholder="Amount"
-                  type="number"
-                  step="0.000001"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <input
-                  name="launchAt"
-                  value={addForm.launchAt}
-                  onChange={handleLaunchAtChange}
-                  placeholder="Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-                {addErrors.launchAt && (
-                  <div className="text-red-500 text-xs mt-1">{addErrors.launchAt}</div>
-                )}
-              </div>
-
-              <div>
-                <input
-                  name="apiId"
-                  value={addForm.apiId}
-                  onChange={(e) => setAddForm(prev => ({ ...prev, apiId: e.target.value }))}
-                  placeholder="API ID"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <input
-                  name="pointPriority"
-                  value={addForm.pointPriority}
-                  onChange={(e) => setAddForm(prev => ({ ...prev, pointPriority: e.target.value }))}
-                  placeholder="Point (Priority)"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <input
-                  name="pointFCFS"
-                  value={addForm.pointFCFS}
-                  onChange={(e) => setAddForm(prev => ({ ...prev, pointFCFS: e.target.value }))}
-                  placeholder="Point (FCFS)"
-                  className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowInlineForm(false)}
-                  className="flex-1 px-3 py-2 rounded-xl border dark:border-gray-600 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`flex-1 px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center justify-center gap-2 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <AddIcon sx={{ fontSize: 16 }} />
-                      Add Token
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </>
-      )}
+      {/* Inline form disabled - using modal for both mobile and desktop */}
     </>
   );
 }

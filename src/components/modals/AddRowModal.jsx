@@ -24,21 +24,7 @@ export default function AddRowModal({
     setAddForm((p) => ({ ...p, name: e.target.value.toUpperCase() }));
   };
 
-  const handleLaunchAtChange = (e) => {
-    const value = e.target.value;
-    const sanitizedValue = value.replace(/[^0-9/\s:]/g, '');
-    setAddForm((p) => ({ ...p, launchAt: sanitizedValue }));
-  };
 
-  const handleLaunchAtBlur = (e) => {
-    const value = e.target.value.trim();
-    if (value) {
-      const normalized = normalizeDateTime(value);
-      if (normalized && normalized !== value) {
-        setAddForm((p) => ({ ...p, launchAt: normalized }));
-      }
-    }
-  };
 
   // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
@@ -96,7 +82,7 @@ export default function AddRowModal({
 
 
 
-  const isMobile = window.innerWidth < 768;
+
   
   return (
     <>
@@ -112,15 +98,12 @@ export default function AddRowModal({
       
       {/* Modal */}
       <div 
-        className={`fixed z-[99999] bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl ${
-          isMobile ? '' : 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
-        }`}
-        style={isMobile ? {
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          maxWidth: '384px'
-        } : {}}
+        className='fixed z-[99999] bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
+        style={{
+          maxWidth: '384px',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
       >
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold dark:text-white'>
@@ -190,45 +173,46 @@ export default function AddRowModal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Listing date (required) & time (optional)
+                Listing date & time
               </label>
-              <div className='flex gap-2'>
-                <input
-                  name='launchDate'
-                  type='date'
-                  value={addForm.launchDate || ''}
-                  onChange={(e) => {
-                    const date = e.target.value;
-                    // Convert YYYY-MM-DD to DD/MM/YYYY
-                    const formattedDate = date ? date.split('-').reverse().join('/') : '';
-                    setAddForm((p) => ({ 
-                      ...p, 
-                      launchDate: date,
-                      launchAt: formattedDate && addForm.launchTime ? `${formattedDate} ${addForm.launchTime}` : formattedDate || addForm.launchAt
-                    }));
-                  }}
-                  className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
-                />
-                <input
-                  name='launchTime'
-                  type='time'
-                  value={addForm.launchTime || ''}
-                  onChange={(e) => {
-                    const time = e.target.value;
-                    // Convert YYYY-MM-DD to DD/MM/YYYY for launchDate
-                    const formattedDate = addForm.launchDate ? addForm.launchDate.split('-').reverse().join('/') : '';
-                    setAddForm((p) => ({ 
-                      ...p, 
-                      launchTime: time,
-                      launchAt: formattedDate && time ? `${formattedDate} ${time}` : addForm.launchAt
-                    }));
-                  }}
-                  className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
-                />
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+                <div>
+                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date (required)</label>
+                  <input
+                    name='launchDate'
+                    type='date'
+                    value={addForm.launchDate || ''}
+                    onChange={(e) => {
+                      console.log('📅 Date changed:', e.target.value);
+                      setAddForm((p) => ({
+                        ...p,
+                        launchDate: e.target.value,
+                      }));
+                    }}
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                    required
+                  />
+                </div>
+                <div>
+                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Time (optional)</label>
+                  <input
+                    name='launchTime'
+                    type='time'
+                    value={addForm.launchTime || ''}
+                    onChange={(e) => {
+                      console.log('⏰ Time changed:', e.target.value);
+                      setAddForm((p) => ({
+                        ...p,
+                        launchTime: e.target.value,
+                      }));
+                    }}
+                    className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+                  />
+                </div>
               </div>
-              {addErrors.launchAt && (
+              {addErrors.launchDate && (
                 <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
-                  {addErrors.launchAt}
+                  {addErrors.launchDate}
                 </div>
               )}
             </div>

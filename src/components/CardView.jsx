@@ -8,7 +8,7 @@ import SortIcon from '@mui/icons-material/Sort';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { formatPrice } from '../utils/helpers';
-import { formatDateTime } from '../utils/dateTimeUtils';
+import { formatDateTime, getCountdownText } from '../utils/dateTimeUtils';
 
 export default function CardView({
   rows,
@@ -150,6 +150,10 @@ export default function CardView({
       };
     }
     return null;
+  };
+
+  const getCountdownTextForRow = (row) => {
+    return getCountdownText(row.launchAt, Date.now(), true); // Mobile = true
   };
 
   return (
@@ -320,22 +324,9 @@ export default function CardView({
                 <span className={`px-3 py-1.5 rounded-full text-xs font-medium border shadow-sm ${getStatusColor(row)}`}>
                   {getStatusText(row)}
                 </span>
-                {getCountdown(row) && (
+                {getCountdownTextForRow(row) && (
                   <div className="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs font-mono text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {getCountdown(row).days > 0 && (
-                        <>
-                          <span className="font-bold">{getCountdown(row).days}</span>
-                          <span className="text-gray-500">d</span>
-                        </>
-                      )}
-                      <span className="font-bold">{getCountdown(row).hours.toString().padStart(2, '0')}</span>
-                      <span className="text-gray-500">h</span>
-                      <span className="font-bold">{getCountdown(row).minutes.toString().padStart(2, '0')}</span>
-                      <span className="text-gray-500">m</span>
-                      <span className="font-bold">{getCountdown(row).seconds.toString().padStart(2, '0')}</span>
-                      <span className="text-gray-500">s</span>
-                    </div>
+                    <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                   </div>
                 )}
               </div>
