@@ -1,9 +1,10 @@
 import { normalizeDateTime } from '../../utils/helpers';
 import { useState } from 'react';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
-import { fetchTokenInfo } from '../../services/api';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+
 
 export default function EditModal({
   editingModal,
@@ -14,7 +15,8 @@ export default function EditModal({
   modalPosition
 }) {
   const [isSaving, setIsSaving] = useState(false);
-  const [isFetchingToken, setIsFetchingToken] = useState(false);
+  const [editErrors, setEditErrors] = useState({});
+
   
   if (!editingModal || !editingModal.open || editingModal.idx === -1) {
     return null;
@@ -58,7 +60,7 @@ export default function EditModal({
     }
   };
 
-  // Auto fetch token info when API ID is changed
+  // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
     const apiId = e.target.value;
     setRowDrafts((p) => ({
@@ -66,20 +68,50 @@ export default function EditModal({
       [editingModal.idx]: {
         ...p[editingModal.idx],
         apiId,
+        name: apiId.trim() || '' // Set API ID as temporary token name
       },
     }));
     
     // Auto fetch token info if API ID is valid
     if (apiId && apiId.trim() && apiId.trim().length > 2) {
-      setIsFetchingToken(true);
+      // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
+      const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+      if (!validApiIdPattern.test(apiId.trim())) {
+        console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
+        return;
+      }
+      
+      // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
+      const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+      if (invalidInputs.some(char => apiId.includes(char))) {
+        console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+        return;
+      }
+      
+      // Special handling for hidden tokens (containing ?)
+      if (apiId.includes('?')) {
+        console.log('🔍 Hidden token detected, skipping API fetch:', apiId);
+        // For hidden tokens, keep the API ID as the name
+        setRowDrafts((p) => ({
+          ...p,
+          [editingModal.idx]: {
+            ...p[editingModal.idx],
+            name: apiId.trim(),
+            apiId: apiId.trim()
+          },
+        }));
+        return;
+      }
+      
       try {
+        const { fetchTokenInfo } = await import('../../services/api');
         const tokenInfo = await fetchTokenInfo(apiId.trim());
         if (tokenInfo) {
           setRowDrafts((p) => ({
             ...p,
             [editingModal.idx]: {
               ...p[editingModal.idx],
-              name: tokenInfo.name,
+              name: tokenInfo.symbol || tokenInfo.name,
               apiId: tokenInfo.id, // Use the correct ID from API
               logo: tokenInfo.logo,
               symbol: tokenInfo.symbol
@@ -88,17 +120,49 @@ export default function EditModal({
         }
       } catch (error) {
         console.error('Failed to fetch token info:', error);
-      } finally {
-        setIsFetchingToken(false);
+        // Keep API ID as token name if fetch fails
       }
     }
   };
 
-  // Check if token name is auto-filled from API
-  const isTokenNameFromAPI = rowDrafts[editingModal.idx]?.apiId && 
-                            rowDrafts[editingModal.idx]?.name && 
-                            rowDrafts[editingModal.idx]?.apiId.trim().length > 2 &&
-                            rowDrafts[editingModal.idx]?.name.trim().length > 0;
+  // Validation function for edit form
+  const validateEditForm = (form) => {
+    const errs = {};
+    
+    // API ID is required
+    const hasApiId = form.apiId && String(form.apiId).trim();
+    if (!hasApiId) {
+      errs.apiId = 'API ID is required';
+    }
+
+    // Check if either launchAt (legacy) or launchDate (new) is provided
+    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
+    const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
+    
+    if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
+      errs.launchAt = 'Listing date is required';
+    } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
+      // Only validate legacy format if using legacy input (not new date picker)
+      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+              const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
+      const val = String(form.launchAt).trim();
+      if (!(regexDate.test(val) || regexDateTime.test(val))) {
+        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
+      }
+    }
+    // If using new date picker (hasNewLaunchDate), no additional validation needed
+
+    if (form.amount !== undefined && String(form.amount).trim() !== '') {
+      const n = Number(form.amount);
+      if (isNaN(n) || n < 0) {
+        errs.amount = 'Amount must be a non-negative number';
+      }
+    }
+
+    return errs;
+  };
+
+
 
   const isMobile = window.innerWidth < 768;
   
@@ -157,70 +221,97 @@ export default function EditModal({
 
         <div className='grid grid-cols-1 gap-3'>
           <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Token symbol/name (auto-filled from API)
+            </label>
             <input
               value={rowDrafts[editingModal.idx].name}
               onChange={handleNameChange}
-              placeholder={isTokenNameFromAPI ? 'Symbol (auto-filled from API)' : 'Token symbol/name (required)'}
-              className={`border rounded px-3 py-2 w-full ${
-                isTokenNameFromAPI 
-                  ? 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed' 
-                  : 'bg-white dark:bg-gray-700 dark:text-white'
-              }`}
-              disabled={isTokenNameFromAPI}
+              placeholder='Will be auto-filled from API ID'
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              disabled
             />
-            {isTokenNameFromAPI && (
-              <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
-                ✓ Auto-filled from API
-              </div>
-            )}
           </div>
 
-          <input
-            value={rowDrafts[editingModal.idx].amount}
-            onChange={(e) =>
-              setRowDrafts((p) => ({
-                ...p,
-                [editingModal.idx]: {
-                  ...p[editingModal.idx],
-                  amount: e.target.value,
-                },
-              }))
-            }
-            className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-            placeholder='Amount'
-            type='number'
-            step='0.000001'
-          />
+                      <input
+              value={rowDrafts[editingModal.idx].amount}
+              onChange={(e) =>
+                setRowDrafts((p) => ({
+                  ...p,
+                  [editingModal.idx]: {
+                    ...p[editingModal.idx],
+                    amount: e.target.value,
+                  },
+                }))
+              }
+              className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+              placeholder='Amount'
+              type='number'
+              step='0.000001'
+            />
+            {editErrors.amount && (
+              <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                {editErrors.amount}
+              </div>
+            )}
 
-          <input
-            value={rowDrafts[editingModal.idx].launchAt}
-            onChange={handleLaunchAtChange}
-            onBlur={handleLaunchAtBlur}
-            className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-            placeholder='Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss'
-          />
+                      <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Listing date (required) & time (optional)
+            </label>
+            <div className='flex gap-2'>
+              <input
+                type='date'
+                value={rowDrafts[editingModal.idx].launchDate || ''}
+                onChange={(e) => {
+                  const date = e.target.value;
+                  // Convert YYYY-MM-DD to DD/MM/YYYY
+                  const formattedDate = date ? date.split('-').reverse().join('/') : '';
+                  setRowDrafts((p) => ({
+                    ...p,
+                    [editingModal.idx]: {
+                      ...p[editingModal.idx],
+                      launchDate: date,
+                      launchAt: formattedDate && p[editingModal.idx].launchTime ? `${formattedDate} ${p[editingModal.idx].launchTime}` : formattedDate || p[editingModal.idx].launchAt
+                    },
+                  }));
+                }}
+                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
+              />
+              <input
+                type='time'
+                value={rowDrafts[editingModal.idx].launchTime || ''}
+                onChange={(e) => {
+                  const time = e.target.value;
+                  // Convert YYYY-MM-DD to DD/MM/YYYY for launchDate
+                  const formattedDate = rowDrafts[editingModal.idx].launchDate ? rowDrafts[editingModal.idx].launchDate.split('-').reverse().join('/') : '';
+                  setRowDrafts((p) => ({
+                    ...p,
+                    [editingModal.idx]: {
+                      ...p[editingModal.idx],
+                      launchTime: time,
+                      launchAt: formattedDate && time ? `${formattedDate} ${time}` : p[editingModal.idx].launchAt
+                    },
+                  }));
+                }}
+                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
+              />
+            </div>
+            {editErrors.launchAt && (
+              <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                {editErrors.launchAt}
+              </div>
+            )}
 
           <div>
             <input
               value={rowDrafts[editingModal.idx].apiId}
               onChange={handleApiIdChange}
-              placeholder={isTokenNameFromAPI ? 'API ID (auto-filled)' : 'API ID (required if no token name)'}
-              className={`border rounded px-3 py-2 w-full ${
-                isTokenNameFromAPI 
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' 
-                  : 'bg-white dark:bg-gray-700 dark:text-white'
-              }`}
-              disabled={isFetchingToken}
+              placeholder='API ID (required) - e.g., bitcoin, ethereum'
+              className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
             />
-            {isFetchingToken && (
-              <div className='text-blue-600 dark:text-blue-400 text-sm mt-1 flex items-center gap-2'>
-                <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
-                Fetching token info...
-              </div>
-            )}
-            {isTokenNameFromAPI && (
-              <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
-                ✓ API ID provided - Token name auto-filled
+            {editErrors.apiId && (
+              <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                {editErrors.apiId}
               </div>
             )}
           </div>
@@ -273,6 +364,15 @@ export default function EditModal({
               </button>
                          <button
               onClick={async () => {
+                // Validate form before saving
+                const currentForm = rowDrafts[editingModal.idx];
+                const errs = validateEditForm(currentForm);
+                setEditErrors(errs);
+                
+                if (Object.keys(errs).length > 0) {
+                  return; // Don't save if there are validation errors
+                }
+                
                 setIsSaving(true);
                 try {
                   await saveRow(editingModal.idx);

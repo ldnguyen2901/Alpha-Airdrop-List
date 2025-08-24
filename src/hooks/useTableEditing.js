@@ -31,7 +31,52 @@ export function useTableEditing() {
   const startEditRow = (sortedIndex, sortedRows, rows) => {
     const actual = getActualIndex(sortedIndex, sortedRows, rows);
     if (actual === -1) return;
-    setRowDrafts((prev) => ({ ...prev, [actual]: { ...rows[actual] } }));
+    
+    const row = rows[actual];
+    let launchDate = '';
+    let launchTime = '';
+    
+    // Parse launchAt to extract date and time for date/time pickers
+    if (row.launchAt) {
+      const launchAtStr = String(row.launchAt).trim();
+      console.log('🔍 Parsing launchAt for edit:', launchAtStr);
+      
+      // Handle DD/MM/YYYY HH:mm format
+      if (/^\d{2}\/\d{2}\/\d{4}(\s+\d{2}:\d{2})?$/.test(launchAtStr)) {
+        const parts = launchAtStr.split(' ');
+        const datePart = parts[0]; // DD/MM/YYYY
+        const timePart = parts[1] || ''; // HH:mm or empty
+        
+        console.log('🔍 Date part:', datePart, 'Time part:', timePart);
+        
+        // Convert DD/MM/YYYY to YYYY-MM-DD for date picker
+        if (datePart) {
+          const [day, month, year] = datePart.split('/');
+          launchDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          console.log('🔍 Converted date:', launchDate);
+        }
+        
+        // Extract time for time picker (HH:mm format)
+        if (timePart) {
+          const timeMatch = timePart.match(/^(\d{2}):(\d{2})$/);
+          if (timeMatch) {
+            launchTime = `${timeMatch[1]}:${timeMatch[2]}`;
+            console.log('🔍 Extracted time:', launchTime);
+          }
+        }
+      } else {
+        console.log('🔍 launchAt format not recognized:', launchAtStr);
+      }
+    }
+    
+    setRowDrafts((prev) => ({ 
+      ...prev, 
+      [actual]: { 
+        ...row,
+        launchDate,
+        launchTime
+      } 
+    }));
     setEditingModal({ open: true, idx: actual });
   };
 
@@ -46,7 +91,7 @@ export function useTableEditing() {
       ? normalizeDateTime(draft.launchAt) || draft.launchAt
       : draft.launchAt;
     if (normalizedLaunch && /^\d{2}\/\d{2}\/\d{4}$/.test(normalizedLaunch)) {
-      normalizedLaunch = normalizedLaunch + ' 00:00:00';
+      normalizedLaunch = normalizedLaunch + ' 00:00';
     }
     const toSave = { ...draft, launchAt: normalizedLaunch, _forceTop: false };
     onUpdateRow(actual, toSave);

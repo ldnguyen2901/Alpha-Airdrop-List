@@ -1,5 +1,6 @@
 import PasteButton from './PasteButton';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import AddIcon from '@mui/icons-material/Add';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -13,7 +14,8 @@ export default function ActionButtons({
   onExportCSV,
   onImportExcel,
   onRefresh,
-  onCheckLogos,
+  onCheckDuplicates,
+
   loading,
   showHighestPrice,
   setShowHighestPrice,
@@ -32,6 +34,7 @@ export default function ActionButtons({
   const [addErrors, setAddErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formPosition, setFormPosition] = useState({ top: 60, left: 16 });
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const addRowButtonRef = useRef(null);
 
 
@@ -51,6 +54,18 @@ export default function ActionButtons({
     } else {
       // Desktop: use original modal
       onAddRow();
+    }
+  };
+
+  const handleCheckDuplicates = async () => {
+    setIsCheckingDuplicates(true);
+    try {
+      await onCheckDuplicates();
+    } finally {
+      // Stop spinning after 2 seconds regardless of completion
+      setTimeout(() => {
+        setIsCheckingDuplicates(false);
+      }, 2000);
     }
   };
 
@@ -135,6 +150,19 @@ export default function ActionButtons({
             <FileDownloadIcon sx={{ fontSize: 16 }} />
             Export CSV
           </button>
+          <button
+            onClick={handleCheckDuplicates}
+            className='px-3 py-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+            title='Check for duplicate logos and token names'
+          >
+            <SyncProblemIcon 
+              sx={{ 
+                fontSize: 16,
+                animation: isCheckingDuplicates ? 'spin 1s linear infinite' : 'none'
+              }} 
+            />
+            Check Duplicates
+          </button>
           <div className='w-full sm:w-auto relative'>
             <input
               type='text'
@@ -164,8 +192,9 @@ export default function ActionButtons({
                 <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
               )}
             </div>
-            Show Highest Price
+            Highest Price
           </button>
+
           <button
             onClick={onRefresh}
             className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 sm:flex-shrink flex items-center gap-2'
@@ -177,16 +206,7 @@ export default function ActionButtons({
             />
             Refresh
           </button>
-          {onCheckLogos && (
-            <button
-              onClick={onCheckLogos}
-              className='hidden sm:flex px-3 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow hover:opacity-90 text-xs transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 flex items-center gap-2'
-              title='Check missing logos'
-            >
-              <span className="text-xs">🔍</span>
-              <span className="text-xs">Check Logo</span>
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -251,7 +271,7 @@ export default function ActionButtons({
                   name="launchAt"
                   value={addForm.launchAt}
                   onChange={handleLaunchAtChange}
-                  placeholder="Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss"
+                  placeholder="Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm"
                   className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white text-sm"
                 />
                 {addErrors.launchAt && (
@@ -324,3 +344,17 @@ export default function ActionButtons({
     </>
   );
 }
+
+// Add CSS animation for spinning
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+document.head.appendChild(style);

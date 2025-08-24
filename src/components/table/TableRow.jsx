@@ -1,4 +1,5 @@
 import { formatAmount, formatPrice } from '../../utils/helpers';
+import { formatDateTime } from '../../utils/dateTimeUtils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useRef } from 'react';
@@ -93,7 +94,7 @@ export default function TableRow({
            {row.logo ? (
              <img
                src={row.logo}
-               alt={`${row.name} logo`}
+               alt={`${row.symbol || row.name || row.apiId} logo`}
                className="w-6 h-6 rounded-full flex-shrink-0"
                onError={(e) => {
                  e.target.style.display = 'none';
@@ -102,7 +103,7 @@ export default function TableRow({
            ) : row.apiId && tokenLogos[row.apiId] && (
              <img
                src={tokenLogos[row.apiId].logo}
-               alt={`${row.name} logo`}
+               alt={`${row.symbol || row.name || row.apiId} logo`}
                className="w-6 h-6 rounded-full flex-shrink-0"
                onError={(e) => {
                  e.target.style.display = 'none';
@@ -110,7 +111,7 @@ export default function TableRow({
              />
            )}
                      <span className="text-sm dark:text-white font-medium">
-            {row.symbol || row.name}
+            {row.symbol || row.name || row.apiId}
           </span>
          </div>
       </td>
@@ -125,7 +126,7 @@ export default function TableRow({
       {/* Listing Time */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
-          {row.launchAt || ''}
+          {formatDateTime(row.launchAt) || ''}
         </span>
       </td>
 

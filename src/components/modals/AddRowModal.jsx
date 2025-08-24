@@ -1,9 +1,10 @@
 import { normalizeDateTime } from '../../utils/helpers';
 import { useState } from 'react';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
-import { fetchTokenInfo } from '../../services/api';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+
 
 export default function AddRowModal({
   showAddModal,
@@ -14,7 +15,6 @@ export default function AddRowModal({
   handleAddRowSubmit
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetchingToken, setIsFetchingToken] = useState(false);
   
   if (!showAddModal) {
     return null;
@@ -40,33 +40,61 @@ export default function AddRowModal({
     }
   };
 
-  // Auto fetch token info when API ID is entered
+  // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
     const apiId = e.target.value;
-    setAddForm((p) => ({ ...p, apiId }));
+    setAddForm((p) => ({ 
+      ...p, 
+      apiId,
+      name: apiId.trim() || '' // Set API ID as temporary token name
+    }));
     
     // Auto fetch token info if API ID is valid
     if (apiId && apiId.trim() && apiId.trim().length > 2) {
-      setIsFetchingToken(true);
+      // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
+      const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+      if (!validApiIdPattern.test(apiId.trim())) {
+        console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
+        return;
+      }
+      
+      // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
+      const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+      if (invalidInputs.some(char => apiId.includes(char))) {
+        console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+        return;
+      }
+      
+      // Special handling for hidden tokens (containing ?)
+      if (apiId.includes('?')) {
+        console.log('🔍 Hidden token detected, skipping API fetch:', apiId);
+        // For hidden tokens, keep the API ID as the name
+        setAddForm((p) => ({
+          ...p,
+          name: apiId.trim(),
+          apiId: apiId.trim()
+        }));
+        return;
+      }
+      
       try {
+        const { fetchTokenInfo } = await import('../../services/api');
         const tokenInfo = await fetchTokenInfo(apiId.trim());
         if (tokenInfo) {
           setAddForm((p) => ({
             ...p,
-            name: tokenInfo.name,
+            name: tokenInfo.symbol || tokenInfo.name,
             apiId: tokenInfo.id // Use the correct ID from API
           }));
         }
       } catch (error) {
         console.error('Failed to fetch token info:', error);
-      } finally {
-        setIsFetchingToken(false);
+        // Keep API ID as token name if fetch fails
       }
     }
   };
 
-  // Check if token name is auto-filled from API
-  const isTokenNameFromAPI = addForm.apiId && addForm.name && addForm.apiId.trim().length > 2 && addForm.name.trim().length > 0;
+
 
   const isMobile = window.innerWidth < 768;
   
@@ -118,6 +146,9 @@ export default function AddRowModal({
               setTimeout(() => {
                 form.classList.remove('modal-success');
               }, 500);
+            } catch (error) {
+              console.error('Form submission error:', error);
+              // Don't show error toast here as handleAddRowSubmit will handle it
             } finally {
               setIsSubmitting(false);
             }
@@ -125,28 +156,17 @@ export default function AddRowModal({
         >
           <div className='grid grid-cols-1 gap-3'>
             <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Token symbol/name (auto-filled from API)
+              </label>
               <input
                 name='name'
                 value={addForm.name}
                 onChange={handleNameChange}
-                placeholder={isTokenNameFromAPI ? 'Symbol (auto-filled from API)' : 'Token symbol/name (or provide API ID)'}
-                className={`border rounded px-3 py-2 w-full ${
-                  isTokenNameFromAPI 
-                    ? 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 cursor-not-allowed' 
-                    : 'bg-white dark:bg-gray-700 dark:text-white'
-                }`}
-                disabled={isTokenNameFromAPI}
+                placeholder='Will be auto-filled from API ID'
+                className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+                disabled
               />
-              {isTokenNameFromAPI && (
-                <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
-                  ✓ Auto-filled from API
-                </div>
-              )}
-              {addErrors.name && (
-                <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
-                  {addErrors.name}
-                </div>
-              )}
             </div>
 
             <div>
@@ -169,14 +189,43 @@ export default function AddRowModal({
             </div>
 
             <div>
-              <input
-                name='launchAt'
-                value={addForm.launchAt}
-                onChange={handleLaunchAtChange}
-                onBlur={handleLaunchAtBlur}
-                placeholder='Listing time (required): DD/MM/YYYY or DD/MM/YYYY HH:mm:ss'
-                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-              />
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Listing date (required) & time (optional)
+              </label>
+              <div className='flex gap-2'>
+                <input
+                  name='launchDate'
+                  type='date'
+                  value={addForm.launchDate || ''}
+                  onChange={(e) => {
+                    const date = e.target.value;
+                    // Convert YYYY-MM-DD to DD/MM/YYYY
+                    const formattedDate = date ? date.split('-').reverse().join('/') : '';
+                    setAddForm((p) => ({ 
+                      ...p, 
+                      launchDate: date,
+                      launchAt: formattedDate && addForm.launchTime ? `${formattedDate} ${addForm.launchTime}` : formattedDate || addForm.launchAt
+                    }));
+                  }}
+                  className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
+                />
+                <input
+                  name='launchTime'
+                  type='time'
+                  value={addForm.launchTime || ''}
+                  onChange={(e) => {
+                    const time = e.target.value;
+                    // Convert YYYY-MM-DD to DD/MM/YYYY for launchDate
+                    const formattedDate = addForm.launchDate ? addForm.launchDate.split('-').reverse().join('/') : '';
+                    setAddForm((p) => ({ 
+                      ...p, 
+                      launchTime: time,
+                      launchAt: formattedDate && time ? `${formattedDate} ${time}` : addForm.launchAt
+                    }));
+                  }}
+                  className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white flex-1'
+                />
+              </div>
               {addErrors.launchAt && (
                 <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
                   {addErrors.launchAt}
@@ -189,23 +238,12 @@ export default function AddRowModal({
                 name='apiId'
                 value={addForm.apiId}
                 onChange={handleApiIdChange}
-                placeholder={isTokenNameFromAPI ? 'API ID (auto-filled)' : 'API ID (e.g., bitcoin, ethereum)'}
-                className={`border rounded px-3 py-2 w-full ${
-                  isTokenNameFromAPI 
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' 
-                    : 'bg-white dark:bg-gray-700 dark:text-white'
-                }`}
-                disabled={isFetchingToken}
+                placeholder='API ID (required) - e.g., bitcoin, ethereum'
+                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
-              {isFetchingToken && (
-                <div className='text-blue-600 dark:text-blue-400 text-sm mt-1 flex items-center gap-2'>
-                  <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
-                  Fetching token info...
-                </div>
-              )}
-              {isTokenNameFromAPI && (
-                <div className='text-green-600 dark:text-green-400 text-sm mt-1 flex items-center gap-2'>
-                  ✓ API ID provided - Token name auto-filled
+              {addErrors.apiId && (
+                <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
+                  {addErrors.apiId}
                 </div>
               )}
             </div>

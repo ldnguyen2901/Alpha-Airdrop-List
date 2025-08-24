@@ -59,7 +59,7 @@ export default function CardView({
   };
   
   const filteredRows = rows.filter((row) =>
-    row.name.toLowerCase().includes(searchToken.toLowerCase())
+                (row.symbol || row.name || row.apiId).toLowerCase().includes(searchToken.toLowerCase())
   );
   
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -75,11 +75,18 @@ export default function CardView({
   const parseDate = (dateString) => {
     if (!dateString) return null;
     
-    // Handle DD/MM/YYYY HH:mm:ss format
-    const match = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
-    if (match) {
-      const [, day, month, year, hour = '0', minute = '0', second = '0'] = match;
+    // Handle DD/MM/YYYY HH:mm:ss format (legacy)
+    const match1 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
+    if (match1) {
+      const [, day, month, year, hour = '0', minute = '0', second = '0'] = match1;
       return new Date(year, month - 1, day, hour, minute, second);
+    }
+    
+    // Handle DD/MM/YYYY HH:mm format (new)
+    const match2 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
+    if (match2) {
+      const [, day, month, year, hour = '0', minute = '0'] = match2;
+      return new Date(year, month - 1, day, hour, minute, 0);
     }
     
     // Fallback to standard Date constructor
@@ -280,7 +287,7 @@ export default function CardView({
                   {row.logo ? (
                     <img
                       src={row.logo}
-                      alt={row.name}
+                      alt={row.symbol || row.name || row.apiId}
                       className="w-6 h-6 rounded-full shadow-sm"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -290,7 +297,7 @@ export default function CardView({
                   ) : tokenLogos[row.apiId]?.logo ? (
                     <img
                       src={tokenLogos[row.apiId].logo}
-                      alt={row.name}
+                      alt={row.symbol || row.name || row.apiId}
                       className="w-6 h-6 rounded-full shadow-sm"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -299,10 +306,10 @@ export default function CardView({
                     />
                   ) : null}
                   <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded hidden">
-                    {row.name.charAt(0)}
+                    {(row.symbol || row.name || row.apiId).charAt(0)}
                   </span>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {row.symbol || row.name}
+                    {row.symbol || row.name || row.apiId}
                   </h3>
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">

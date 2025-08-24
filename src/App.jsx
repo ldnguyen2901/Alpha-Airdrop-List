@@ -98,6 +98,8 @@ export default function App() {
     name: '',
     amount: '',
     launchAt: '',
+    launchDate: '',
+    launchTime: '',
     apiId: '',
     pointPriority: '',
     pointFCFS: '',
@@ -129,34 +131,38 @@ export default function App() {
         }
       });
       
-      // Fetch missing logos for main tokens (BTC, ETH, BNB)
-      const mainTokens = ['bitcoin', 'ethereum', 'binancecoin'];
-      const missingMainTokens = mainTokens.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
-      
-      if (missingMainTokens.length > 0) {
-        try {
-          const fetchedLogos = await fetchTokenLogos(missingMainTokens);
-          
-          // Update database with fetched logos for main tokens
-          for (const tokenId of missingMainTokens) {
-            if (fetchedLogos[tokenId]) {
-              const rowIndex = rows.findIndex(row => row.apiId === tokenId);
-              if (rowIndex !== -1) {
-                updateRow(rowIndex, {
-                  logo: fetchedLogos[tokenId].logo,
-                  symbol: fetchedLogos[tokenId].symbol,
-                  name: fetchedLogos[tokenId].name
-                });
-              }
-            }
-          }
-          
-          // Merge fetched logos into logosFromDB
-          Object.assign(logosFromDB, fetchedLogos);
-        } catch (error) {
-          console.error('Failed to fetch main token logos:', error);
-        }
-      }
+             // Fetch missing logos for main tokens (BTC, ETH, BNB)
+       const mainTokens = ['bitcoin', 'ethereum', 'binancecoin'];
+       const missingMainTokens = mainTokens.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
+       
+       if (missingMainTokens.length > 0) {
+         try {
+           const fetchedLogos = await fetchTokenLogos(missingMainTokens);
+           
+           // Update database with fetched logos for main tokens
+           for (const tokenId of missingMainTokens) {
+             if (fetchedLogos[tokenId]) {
+               // Update row if it exists in table
+               const rowIndex = rows.findIndex(row => row.apiId === tokenId);
+               if (rowIndex !== -1) {
+                 updateRow(rowIndex, {
+                   logo: fetchedLogos[tokenId].logo,
+                   symbol: fetchedLogos[tokenId].symbol,
+                   name: fetchedLogos[tokenId].name
+                 });
+               }
+               
+               // Always save to database even if not in table
+               await saveTokenLogoToDatabase(tokenId, fetchedLogos[tokenId]);
+             }
+           }
+           
+           // Merge fetched logos into logosFromDB
+           Object.assign(logosFromDB, fetchedLogos);
+         } catch (error) {
+           console.error('Failed to fetch main token logos:', error);
+         }
+       }
       
       setTokenLogos(logosFromDB);
     } catch (e) {
@@ -164,26 +170,55 @@ export default function App() {
     }
   }
 
-  // Auto fetch token info when API ID is entered
+    // Auto fetch token info when API ID is entered
   async function fetchAndUpdateTokenInfo(apiId, rowIndex) {
     if (!apiId || !apiId.trim()) return;
     
-    // Check if we already have logo and name for this token
-    const currentRow = rows[rowIndex];
-    if (currentRow && currentRow.logo && currentRow.name && currentRow.name.trim()) {
-      // Already have logo and name, no need to fetch
+    // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
+    const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+    if (!validApiIdPattern.test(apiId.trim())) {
+      console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
       return;
+    }
+    
+    // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
+    const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+    if (invalidInputs.some(char => apiId.includes(char))) {
+      console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+      return;
+    }
+    
+    // Special handling for hidden tokens (containing ?)
+    if (apiId.includes('?')) {
+      console.log('🔍 Hidden token detected, skipping API fetch:', apiId);
+      return; // Don't fetch API for hidden tokens
     }
     
     try {
       const tokenInfo = await fetchTokenInfo(apiId.trim());
       if (tokenInfo) {
-        // Update the row with token info
-        updateRow(rowIndex, {
-          name: tokenInfo.name,
-          logo: tokenInfo.logo,
-          symbol: tokenInfo.symbol
-        });
+        const currentRow = rows[rowIndex];
+        const updates = {};
+        
+        // Always update name with official symbol from API, fallback to API ID
+        updates.name = tokenInfo.symbol || tokenInfo.name || apiId;
+        
+        // Always update symbol if available
+        if (tokenInfo.symbol) {
+          updates.symbol = tokenInfo.symbol;
+        }
+        // Only update logo if it exists and is valid
+        if (tokenInfo.logo && tokenInfo.logo.trim()) {
+          updates.logo = tokenInfo.logo;
+        }
+        
+        // Update the row if there are changes
+        if (Object.keys(updates).length > 0) {
+          updateRow(rowIndex, updates);
+        }
+        
+        // Always save to database for future use
+        await saveTokenLogoToDatabase(apiId.trim(), tokenInfo);
         
         // Also update tokenLogos state for immediate display
         setTokenLogos(prev => ({
@@ -203,13 +238,333 @@ export default function App() {
     }
   }
 
+  // Function to save token logo to database
+  async function saveTokenLogoToDatabase(apiId, tokenInfo) {
+    try {
+      // Save to localStorage
+      const existingLogos = JSON.parse(localStorage.getItem('tokenLogos') || '{}');
+      existingLogos[apiId] = {
+        logo: tokenInfo.logo,
+        symbol: tokenInfo.symbol,
+        name: tokenInfo.name
+      };
+      localStorage.setItem('tokenLogos', JSON.stringify(existingLogos));
+      
+      // Save to Firebase if available
+      if (typeof window !== 'undefined' && window.firebase) {
+        const db = window.firebase.firestore();
+        await db.collection('tokenLogos').doc(apiId).set({
+          logo: tokenInfo.logo,
+          symbol: tokenInfo.symbol,
+          name: tokenInfo.name,
+          updatedAt: new Date()
+        });
+      }
+      
+      console.log(`Saved token logo to database: ${apiId}`);
+    } catch (e) {
+      console.error('saveTokenLogoToDatabase error', e);
+    }
+  }
+
+  // Function to check for duplicate logos and token names
+  async function checkDuplicateLogosAndNames() {
+    console.log('🔍 === CHECKING DUPLICATES ===');
+    
+    const duplicates = {
+      logos: {},
+      names: {},
+      symbols: {},
+      apiIds: {}
+    };
+    
+    // Check for duplicates
+    rows.forEach((row, index) => {
+      // Check logo duplicates
+      if (row.logo && row.logo.trim()) {
+        if (!duplicates.logos[row.logo]) {
+          duplicates.logos[row.logo] = [];
+        }
+        duplicates.logos[row.logo].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol
+        });
+      }
+      
+      // Check name duplicates
+      if (row.name && row.name.trim()) {
+        if (!duplicates.names[row.name]) {
+          duplicates.names[row.name] = [];
+        }
+        duplicates.names[row.name].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+      
+      // Check symbol duplicates
+      if (row.symbol && row.symbol.trim()) {
+        if (!duplicates.symbols[row.symbol]) {
+          duplicates.symbols[row.symbol] = [];
+        }
+        duplicates.symbols[row.symbol].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+      
+      // Check API ID duplicates
+      if (row.apiId && row.apiId.trim()) {
+        if (!duplicates.apiIds[row.apiId]) {
+          duplicates.apiIds[row.apiId] = [];
+        }
+        duplicates.apiIds[row.apiId].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+    });
+    
+    // Filter only actual duplicates (more than 1 occurrence)
+    const actualDuplicates = {
+      logos: Object.entries(duplicates.logos).filter(([logo, items]) => items.length > 1),
+      names: Object.entries(duplicates.names).filter(([name, items]) => items.length > 1),
+      symbols: Object.entries(duplicates.symbols).filter(([symbol, items]) => items.length > 1),
+      apiIds: Object.entries(duplicates.apiIds).filter(([apiId, items]) => items.length > 1)
+    };
+    
+    // Log results
+    console.log('🔍 Duplicate Analysis Results:');
+    
+    if (actualDuplicates.logos.length > 0) {
+      console.log('⚠️ DUPLICATE LOGOS:', actualDuplicates.logos);
+      actualDuplicates.logos.forEach(([logo, items]) => {
+        console.log(`   Logo "${logo}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol || item.apiId} (API: ${item.apiId})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.names.length > 0) {
+      console.log('⚠️ DUPLICATE NAMES:', actualDuplicates.names);
+      actualDuplicates.names.forEach(([name, items]) => {
+        console.log(`   Name "${name}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: API ${item.apiId} (Symbol: ${item.symbol})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.symbols.length > 0) {
+      console.log('⚠️ DUPLICATE SYMBOLS:', actualDuplicates.symbols);
+      actualDuplicates.symbols.forEach(([symbol, items]) => {
+        console.log(`   Symbol "${symbol}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name} (API: ${item.apiId})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.apiIds.length > 0) {
+      console.log('⚠️ DUPLICATE API IDs:', actualDuplicates.apiIds);
+      actualDuplicates.apiIds.forEach(([apiId, items]) => {
+        console.log(`   API ID "${apiId}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol}`);
+        });
+      });
+    }
+    
+    const totalDuplicates = actualDuplicates.logos.length + 
+                           actualDuplicates.names.length + 
+                           actualDuplicates.symbols.length + 
+                           actualDuplicates.apiIds.length;
+    
+    if (totalDuplicates === 0) {
+      console.log('✅ No duplicates found! All tokens have unique data.');
+      toast.success('No duplicates found! All tokens have unique data.', {
+        autoClose: 3000
+      });
+      return actualDuplicates;
+    }
+    
+    console.log(`⚠️ Found ${totalDuplicates} types of duplicates!`);
+    toast.info(`Found ${totalDuplicates} types of duplicates! Fetching fresh data for duplicate rows...`, {
+      autoClose: 3000
+    });
+    
+    // Collect all unique API IDs from duplicate rows
+    const duplicateApiIds = new Set();
+    
+    // Add API IDs from all duplicate types
+    actualDuplicates.logos.forEach(([logo, items]) => {
+      items.forEach(item => {
+        if (item.apiId && item.apiId.trim() && !item.apiId.includes('?')) {
+          duplicateApiIds.add(item.apiId);
+        }
+      });
+    });
+    
+    actualDuplicates.names.forEach(([name, items]) => {
+      items.forEach(item => {
+        if (item.apiId && item.apiId.trim() && !item.apiId.includes('?')) {
+          duplicateApiIds.add(item.apiId);
+        }
+      });
+    });
+    
+    actualDuplicates.symbols.forEach(([symbol, items]) => {
+      items.forEach(item => {
+        if (item.apiId && item.apiId.trim() && !item.apiId.includes('?')) {
+          duplicateApiIds.add(item.apiId);
+        }
+      });
+    });
+    
+    actualDuplicates.apiIds.forEach(([apiId, items]) => {
+      items.forEach(item => {
+        if (item.apiId && item.apiId.trim() && !item.apiId.includes('?')) {
+          duplicateApiIds.add(item.apiId);
+        }
+      });
+    });
+    
+    const uniqueApiIds = Array.from(duplicateApiIds);
+    
+    if (uniqueApiIds.length > 0) {
+      console.log(`🔄 Fetching fresh data for ${uniqueApiIds.length} duplicate API IDs:`, uniqueApiIds);
+      
+      try {
+        // Fetch fresh data for all duplicate API IDs
+        const { fetchTokenLogos } = await import('./services/api.js');
+        const freshData = await fetchTokenLogos(uniqueApiIds);
+        
+        console.log('📥 Fresh data received:', freshData);
+        
+        // Update rows with fresh data
+        const updatedRows = [...rows];
+        let updateCount = 0;
+        
+        updatedRows.forEach((row, index) => {
+          if (row.apiId && uniqueApiIds.includes(row.apiId)) {
+            const freshToken = freshData[row.apiId]; // Use object key instead of find()
+            if (freshToken) {
+              const oldName = row.name;
+              const oldSymbol = row.symbol;
+              const oldLogo = row.logo;
+              
+              // Update with fresh data
+              updatedRows[index] = {
+                ...row,
+                name: freshToken.symbol || freshToken.name || row.apiId,
+                symbol: freshToken.symbol || row.symbol,
+                logo: freshToken.logo || row.logo // Use freshToken.logo instead of freshToken.image
+              };
+              
+              const newName = updatedRows[index].name;
+              const newSymbol = updatedRows[index].symbol;
+              const newLogo = updatedRows[index].logo;
+              
+              // Log changes
+              if (oldName !== newName || oldSymbol !== newSymbol || oldLogo !== newLogo) {
+                console.log(`🔄 Updated Row ${index + 1} (${row.apiId}):`);
+                if (oldName !== newName) console.log(`   Name: "${oldName}" → "${newName}"`);
+                if (oldSymbol !== newSymbol) console.log(`   Symbol: "${oldSymbol}" → "${newSymbol}"`);
+                if (oldLogo !== newLogo) console.log(`   Logo: "${oldLogo}" → "${newLogo}"`);
+                updateCount++;
+              }
+            }
+          }
+        });
+        
+        // Update state
+        setRows(updatedRows);
+        
+        // Save to storage
+        localStorage.setItem('airdropData', JSON.stringify(updatedRows));
+        
+        // Sync to Firebase
+        if (firebaseInitialized) {
+          try {
+            await updateDoc(doc(db, 'airdrops', 'main'), {
+              data: updatedRows,
+              lastUpdated: serverTimestamp()
+            });
+            console.log('✅ Duplicate data synced to Firebase');
+          } catch (error) {
+            console.error('❌ Error syncing duplicate data to Firebase:', error);
+          }
+        }
+        
+        console.log(`✅ Successfully updated ${updateCount} rows with fresh data`);
+        toast.success(`✅ Updated ${updateCount} duplicate rows with fresh data!`, {
+          autoClose: 4000
+        });
+        
+        // Run duplicate check again to verify fixes
+        setTimeout(() => {
+          console.log('🔍 Running duplicate check again to verify fixes...');
+          checkDuplicateLogosAndNames();
+        }, 2000);
+        
+      } catch (error) {
+        console.error('❌ Error fetching fresh data for duplicates:', error);
+        toast.error('Failed to fetch fresh data for duplicates. Please try again.', {
+          autoClose: 4000
+        });
+      }
+    } else {
+      console.log('⚠️ No valid API IDs found in duplicates to fetch');
+      toast.warning('No valid API IDs found in duplicates to fetch.', {
+        autoClose: 3000
+      });
+    }
+    
+    console.log('🔍 === END DUPLICATE CHECK ===');
+    
+    return actualDuplicates;
+  }
+
   // Function to check and update all tokens missing logos
   async function checkAndUpdateMissingLogos(showToast = true) {
     try {
-      const rowsToUpdate = rows.filter(row => 
-        row.apiId && row.apiId.trim() && 
-        (!row.logo || !row.name || row.name.trim() === '')
-      );
+      const rowsToUpdate = rows.filter(row => {
+        if (!row.apiId || !row.apiId.trim()) return false;
+        
+        // Validate API ID format
+        const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+        if (!validApiIdPattern.test(row.apiId.trim())) {
+          console.log('🔍 Skipping invalid API ID format:', row.apiId);
+          return false;
+        }
+        
+        // Check for invalid characters (but allow ? for hidden tokens)
+        const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+        if (invalidInputs.some(char => row.apiId.includes(char))) {
+          console.log('🔍 Skipping API ID with invalid characters:', row.apiId);
+          return false;
+        }
+        
+        // Skip hidden tokens (containing ?) from logo refresh
+        if (row.apiId.includes('?')) {
+          console.log('🔍 Skipping hidden token from logo refresh:', row.apiId);
+          return false;
+        }
+        
+        return (!row.logo || !row.name || row.name.trim() === '');
+      });
       
       if (rowsToUpdate.length > 0) {
         let updatedCount = 0;
@@ -387,6 +742,13 @@ export default function App() {
 
   // Form submit wrapper used by the Add Row modal form (form object passed)
   function handleAddRowSubmit(form) {
+    // Add safety check for form
+    if (!form) {
+      console.error('form is undefined or null');
+      toast.error('Form data is invalid. Please try again.');
+      return;
+    }
+
     // validate and insert immediately (mirror addRowFromForm behavior)
     const errs = validateAddForm(form);
     setAddErrors(errs);
@@ -405,54 +767,61 @@ export default function App() {
         })(form.launchAt)
       : '';
 
-    const nr = newRow({
-      name: String(form.name || '')
-        .trim()
-        .toUpperCase(),
-      amount: Number(form.amount) || 0,
-      launchAt: normalizedLaunch || '',
-      apiId: form.apiId || '',
-      pointPriority: form.pointPriority || '',
-      pointFCFS: form.pointFCFS || '',
-      logo: form.logo || '',
-      symbol: form.symbol || '',
-    });
+    try {
+      const nr = newRow({
+        name: String(form.name || form.apiId || '')
+          .trim()
+          .toUpperCase(),
+        amount: Number(form.amount) || 0,
+        launchAt: normalizedLaunch || '',
+        apiId: form.apiId || '',
+        pointPriority: form.pointPriority || '',
+        pointFCFS: form.pointFCFS || '',
+        logo: form.logo || '',
+        symbol: form.symbol || '',
+      });
 
-    setRows((prev) => {
-      const newRows = [nr, ...prev];
-      saveDataToStorage(newRows);
-      if (!isRemoteUpdateRef.current) {
-        setSyncing(true);
-        saveWorkspaceData('global', newRows)
-          .catch((e) => {
-            console.error('Save cloud failed:', e);
-            toast.error('Failed to sync data to cloud. Please try again.');
-          })
-          .finally(() => setSyncing(false));
+      setRows((prev) => {
+        const newRows = [nr, ...prev];
+        saveDataToStorage(newRows);
+        if (!isRemoteUpdateRef.current) {
+          setSyncing(true);
+          saveWorkspaceData('global', newRows)
+            .catch((e) => {
+              console.error('Save cloud failed:', e);
+              toast.error('Failed to sync data to cloud. Please try again.');
+            })
+            .finally(() => setSyncing(false));
+        }
+        return newRows;
+      });
+
+      setShowAddModal(false);
+      setAddForm({
+        name: '',
+        amount: '',
+        launchAt: '',
+        launchDate: '',
+        launchTime: '',
+        apiId: '',
+        pointPriority: '',
+        pointFCFS: '',
+      });
+      setAddErrors({});
+      toast.success(`New ${nr.name || 'token'} added successfully!`);
+      
+      // Auto fetch token info if API ID is provided
+      if (nr.apiId && nr.apiId.trim()) {
+        fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
       }
-      return newRows;
-    });
-
-    setShowAddModal(false);
-    setAddForm({
-      name: '',
-      amount: '',
-      launchAt: '',
-      apiId: '',
-      pointPriority: '',
-      pointFCFS: '',
-    });
-    setAddErrors({});
-    toast.success(`New ${nr.name || 'token'} added successfully!`);
-    
-    // Auto fetch token info if API ID is provided
-    if (nr.apiId && nr.apiId.trim()) {
-      fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
-    }
-    
-    // Highlight the newly added row
-    if (highlightRowRef.current) {
-      highlightRowRef.current(rows.length); // Highlight the last row (newly added)
+      
+      // Highlight the newly added row
+      if (highlightRowRef.current) {
+        highlightRowRef.current(rows.length); // Highlight the last row (newly added)
+      }
+    } catch (error) {
+      console.error('Error creating new row:', error);
+      toast.error('Failed to create new row. Please check your input and try again.');
     }
   }
 
@@ -681,7 +1050,7 @@ export default function App() {
 
       // Fetch logos for new token if it has API ID
       if (nr.apiId && nr.apiId.trim()) {
-        refreshLogos(false); // Don't show toast for auto refresh
+        fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
       }
       
       toast.success('New row added successfully!');
@@ -695,29 +1064,40 @@ export default function App() {
   function validateAddForm(form) {
     const errs = {};
     
-    // Check if we have either token name OR API ID
-    const hasTokenName = form.name && String(form.name).trim();
+    // API ID is required
     const hasApiId = form.apiId && String(form.apiId).trim();
-    
-    // Require either token name OR API ID
-    if (!hasTokenName && !hasApiId) {
-      errs.name = 'Token symbol/name is required (or provide API ID to auto-fill)';
-      errs.apiId = 'API ID is required when no token symbol/name is provided';
-    }
-
-    if (!form.launchAt || !String(form.launchAt).trim()) {
-      errs.launchAt = 'Listing time (C) is required';
+    if (!hasApiId) {
+      errs.apiId = 'API ID is required';
     } else {
-      // accept DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
-      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-      const regexDateTime =
-        /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/;
-      const val = String(form.launchAt).trim();
-      if (!(regexDate.test(val) || regexDateTime.test(val))) {
-        errs.launchAt =
-          'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm:ss';
+      // Validate API ID format
+      const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
+      if (!validApiIdPattern.test(form.apiId.trim())) {
+        errs.apiId = 'API ID can only contain letters, numbers, hyphens, underscores, and ? for hidden tokens';
+      }
+      
+      // Check for invalid characters (but allow ? for hidden tokens)
+      const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
+      if (invalidInputs.some(char => form.apiId.includes(char))) {
+        errs.apiId = 'API ID contains invalid characters';
       }
     }
+
+    // Check if either launchAt (legacy) or launchDate (new) is provided
+    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
+    const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
+    
+    if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
+      errs.launchAt = 'Listing date is required';
+    } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
+      // Only validate legacy format if using legacy input (not new date picker)
+      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+              const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
+      const val = String(form.launchAt).trim();
+      if (!(regexDate.test(val) || regexDateTime.test(val))) {
+        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
+      }
+    }
+    // If using new date picker (hasNewLaunchDate), no additional validation needed
 
     if (form.amount !== undefined && String(form.amount).trim() !== '') {
       const n = Number(form.amount);
@@ -729,6 +1109,13 @@ export default function App() {
   }
 
   function addRowFromForm() {
+    // Add safety check for addForm
+    if (!addForm) {
+      console.error('addForm is undefined or null');
+      toast.error('Form data is invalid. Please try again.');
+      return;
+    }
+
     const errs = validateAddForm(addForm);
     setAddErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -739,52 +1126,65 @@ export default function App() {
           if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
           return n;
         })(addForm.launchAt)
+      : addForm.launchDate
+      ? (function() {
+          // Convert YYYY-MM-DD to DD/MM/YYYY
+          const formattedDate = addForm.launchDate.split('-').reverse().join('/');
+          return formattedDate + (addForm.launchTime ? ` ${addForm.launchTime}` : ' 00:00');
+        })()
       : '';
 
-    const nr = newRow({
-      name: String(addForm.name || '')
-        .trim()
-        .toUpperCase(),
-      amount: Number(addForm.amount) || 0,
-      launchAt: normalizedLaunch || '',
-      apiId: addForm.apiId || '',
-      pointPriority: addForm.pointPriority || '',
-      pointFCFS: addForm.pointFCFS || '',
-      logo: addForm.logo || '',
-      symbol: addForm.symbol || '',
-    });
+    try {
+      const nr = newRow({
+        name: String(addForm.name || addForm.apiId || '')
+          .trim()
+          .toUpperCase(),
+        amount: Number(addForm.amount) || 0,
+        launchAt: normalizedLaunch || '',
+        apiId: addForm.apiId || '',
+        pointPriority: addForm.pointPriority || '',
+        pointFCFS: addForm.pointFCFS || '',
+        logo: addForm.logo || '',
+        symbol: addForm.symbol || '',
+      });
 
-    // Auto fetch token info if API ID is provided but no token name
-    if (nr.apiId && nr.apiId.trim() && !nr.name.trim()) {
-      fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
-    }
-
-    setRows((prev) => {
-      const newRows = [nr, ...prev];
-      saveDataToStorage(newRows);
-      if (!isRemoteUpdateRef.current) {
-        setSyncing(true);
-        saveWorkspaceData('global', newRows)
-          .catch((e) => {
-            console.error('Save cloud failed:', e);
-            toast.error('Failed to sync data to cloud. Please try again.');
-          })
-          .finally(() => setSyncing(false));
+      // Auto fetch token info if API ID is provided
+      if (nr.apiId && nr.apiId.trim()) {
+        fetchAndUpdateTokenInfo(nr.apiId, 0); // 0 is the index of newly added row
       }
-      return newRows;
-    });
 
-    setShowAddModal(false);
-    setAddForm({
-      name: '',
-      amount: '',
-      launchAt: '',
-      apiId: '',
-      pointPriority: '',
-      pointFCFS: '',
-    });
-    setAddErrors({});
-    toast.success(`New ${nr.name || 'token'} added successfully!`);
+      setRows((prev) => {
+        const newRows = [nr, ...prev];
+        saveDataToStorage(newRows);
+        if (!isRemoteUpdateRef.current) {
+          setSyncing(true);
+          saveWorkspaceData('global', newRows)
+            .catch((e) => {
+              console.error('Save cloud failed:', e);
+              toast.error('Failed to sync data to cloud. Please try again.');
+            })
+            .finally(() => setSyncing(false));
+        }
+        return newRows;
+      });
+
+      setShowAddModal(false);
+      setAddForm({
+        name: '',
+        amount: '',
+        launchAt: '',
+        launchDate: '',
+        launchTime: '',
+        apiId: '',
+        pointPriority: '',
+        pointFCFS: '',
+      });
+      setAddErrors({});
+      toast.success(`New ${nr.name || 'token'} added successfully!`);
+    } catch (error) {
+      console.error('Error creating new row:', error);
+      toast.error('Failed to create new row. Please check your input and try again.');
+    }
   }
 
   function removeRow(idx) {
@@ -937,7 +1337,7 @@ export default function App() {
           /^(\d{1,2})\/(\d{1,2})\/(\d{4})(\s+\d{1,2}:\d{1,2}:\d{1,2})?$/;
         if (!regex.test(launchAt.trim()))
           rowErrors.push(
-            'listing time (C) should be DD/MM/YYYY or DD/MM/YYYY HH:mm:ss',
+            'listing time (C) should be DD/MM/YYYY or DD/MM/YYYY HH:mm',
           );
       }
 
@@ -1051,7 +1451,8 @@ export default function App() {
             onExportCSV={exportCSV}
             onImportExcel={() => setShowExcelUpload(true)}
             onRefresh={refreshData}
-            onCheckLogos={checkAndUpdateMissingLogos}
+            onCheckDuplicates={checkDuplicateLogosAndNames}
+
             loading={loading}
             showHighestPrice={showHighestPrice}
             setShowHighestPrice={setShowHighestPrice}

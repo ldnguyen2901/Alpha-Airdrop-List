@@ -1,4 +1,5 @@
 import { formatAmount } from '../../utils/helpers';
+import { formatDateTime } from '../../utils/dateTimeUtils';
 import { useState } from 'react';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CloseIcon from '@mui/icons-material/Close';
@@ -84,7 +85,7 @@ export default function DeleteModal({
 
           <div className='grid grid-cols-1 gap-2'>
             <input
-              value={row.name || ''}
+                              value={row.symbol || row.name || row.apiId || ''}
               readOnly
               className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
               placeholder='Token'
@@ -96,7 +97,7 @@ export default function DeleteModal({
               placeholder='Amount'
             />
             <input
-              value={row.launchAt || ''}
+              value={formatDateTime(row.launchAt) || ''}
               readOnly
               className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
               placeholder='Listing time'
