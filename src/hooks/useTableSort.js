@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { saveSortConfig, loadSortConfig } from '../utils/storage';
+import { saveSortConfig, loadSortConfig } from '../utils';
 
 export function useTableSort() {
   const [sortConfig, setSortConfig] = useState(() => {

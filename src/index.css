@@ -447,18 +447,53 @@ tbody tr td.sticky.left-0 {
   fill: var(--ray);
 }
 
-/* Loading spinner animation */
+/* Loading spinner animation - optimized for smooth 1-second rotation */
 @keyframes spin {
-  from {
+  0% {
     transform: rotate(0deg);
   }
-  to {
+  100% {
     transform: rotate(360deg);
   }
 }
 
 .spin {
   animation: spin 1s linear infinite;
+  /* Hardware acceleration for smooth rotation */
+  will-change: transform;
+  transform: translateZ(0);
+  /* Ensure smooth animation on all browsers */
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  /* Prevent animation glitches */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Optimized refresh icon animation - completes full rotation in exactly 1 second */
+.refresh-spin {
+  animation: spin 1s linear infinite;
+  /* Enhanced hardware acceleration */
+  will-change: transform;
+  /* Cross-browser compatibility */
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  /* Ensure smooth 60fps animation */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Optimize for mobile devices */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent animation stuttering */
+  transform-origin: center;
+  -webkit-transform-origin: center;
+  /* Smooth animation curve */
+  animation-timing-function: linear;
+  /* Prevent layout shifts */
+  contain: layout style paint;
 }
 
 /* Hourglass rotation animation */

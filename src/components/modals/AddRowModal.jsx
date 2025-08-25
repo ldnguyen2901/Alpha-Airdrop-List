@@ -1,5 +1,5 @@
-import { normalizeDateTime } from '../../utils/helpers';
-import { useState } from 'react';
+import { normalizeDateTime } from '../../utils';
+import { useState, useEffect } from 'react';
 
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,7 +14,25 @@ export default function AddRowModal({
   addErrors,
   handleAddRowSubmit
 }) {
+  console.log('📝 AddRowModal render - handleAddRowSubmit:', typeof handleAddRowSubmit);
+  console.log('📝 AddRowModal render - addForm:', addForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (isSubmitting && !isRefreshing) {
+      setIsRefreshing(true);
+    }
+  }, [isSubmitting]);
+
+  useEffect(() => {
+    if (!isSubmitting && isRefreshing) {
+      // Ensure animation completes full rotation
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 1000);
+    }
+  }, [isSubmitting, isRefreshing]);
   
   if (!showAddModal) {
     return null;
@@ -119,16 +137,24 @@ export default function AddRowModal({
 
         <form
           onSubmit={async (e) => {
+            console.log('📝 Form submit triggered');
             e.preventDefault();
             setIsSubmitting(true);
             try {
-              await handleAddRowSubmit(addForm);
-              // Add success animation
-              const form = e.target;
-              form.classList.add('modal-success');
-              setTimeout(() => {
-                form.classList.remove('modal-success');
-              }, 500);
+              console.log('📝 Calling handleAddRowSubmit with form:', addForm);
+              const result = await handleAddRowSubmit(addForm);
+              console.log('📝 handleAddRowSubmit result:', result);
+              
+              if (result && result.success) {
+                // Add success animation
+                const form = e.target;
+                form.classList.add('modal-success');
+                setTimeout(() => {
+                  form.classList.remove('modal-success');
+                }, 500);
+              } else if (result && result.errors) {
+                console.log('📝 Form has validation errors:', result.errors);
+              }
             } catch (error) {
               console.error('Form submission error:', error);
               // Don't show error toast here as handleAddRowSubmit will handle it
@@ -159,38 +185,31 @@ export default function AddRowModal({
                 onChange={(e) =>
                   setAddForm((p) => ({ ...p, amount: e.target.value }))
                 }
-                placeholder='Amount'
+                placeholder='Amount (optional)'
                 type='number'
                 step='0.000001'
                 className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
-              {addErrors.amount && (
-                <div className='text-yellow-800 bg-yellow-50 px-2 py-1 rounded text-sm mt-1'>
-                  {addErrors.amount}
-                </div>
-              )}
             </div>
 
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Listing date & time
+                Listing date & time (optional)
               </label>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                 <div>
-                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date (required)</label>
+                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date (optional)</label>
                   <input
                     name='launchDate'
                     type='date'
                     value={addForm.launchDate || ''}
                     onChange={(e) => {
-                      console.log('📅 Date changed:', e.target.value);
                       setAddForm((p) => ({
                         ...p,
                         launchDate: e.target.value,
                       }));
                     }}
                     className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-                    required
                   />
                 </div>
                 <div>
@@ -200,12 +219,12 @@ export default function AddRowModal({
                     type='time'
                     value={addForm.launchTime || ''}
                     onChange={(e) => {
-                      console.log('⏰ Time changed:', e.target.value);
                       setAddForm((p) => ({
                         ...p,
                         launchTime: e.target.value,
                       }));
                     }}
+                    placeholder='Time (optional)'
                     className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
                   />
                 </div>
@@ -218,6 +237,9 @@ export default function AddRowModal({
             </div>
 
             <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                API ID <span className='text-red-500'>*</span>
+              </label>
               <input
                 name='apiId'
                 value={addForm.apiId}
@@ -242,7 +264,7 @@ export default function AddRowModal({
                     pointPriority: e.target.value,
                   }))
                 }
-                placeholder='Point (Priority)'
+                placeholder='Point (Priority) (optional)'
                 className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
             </div>
@@ -254,11 +276,15 @@ export default function AddRowModal({
                 onChange={(e) =>
                   setAddForm((p) => ({ ...p, pointFCFS: e.target.value }))
                 }
-                placeholder='Point (FCFS)'
+                placeholder='Point (FCFS) (optional)'
                 className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
             </div>
           </div>
+
+                        <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+                <span className='text-red-500'>*</span> Only API ID is required
+              </div>
 
                      <div className='mt-4 flex justify-end gap-2'>
              <button
@@ -272,13 +298,14 @@ export default function AddRowModal({
                            <button
                 type='submit'
                 disabled={isSubmitting}
+                onClick={() => console.log('🔘 Add button clicked')}
                 className={`px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isSubmitting ? (
+                {(isSubmitting || isRefreshing) ? (
                   <span className="flex items-center gap-2">
-                    <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
+                    <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
                     Adding...
                   </span>
                 ) : (

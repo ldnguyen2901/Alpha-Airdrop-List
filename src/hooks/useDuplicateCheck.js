@@ -1,0 +1,139 @@
+import { useCallback } from 'react';
+
+export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModal) => {
+  // Function to check for duplicate logos and token names
+  const checkDuplicateLogosAndNames = useCallback(async () => {
+    console.log('🔍 === CHECKING DUPLICATES ===');
+    
+    const duplicates = {
+      logos: {},
+      names: {},
+      symbols: {},
+      apiIds: {}
+    };
+    
+    // Check for duplicates
+    rows.forEach((row, index) => {
+      // Check logo duplicates
+      if (row.logo && row.logo.trim()) {
+        if (!duplicates.logos[row.logo]) {
+          duplicates.logos[row.logo] = [];
+        }
+        duplicates.logos[row.logo].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol
+        });
+      }
+      
+      // Check name duplicates
+      if (row.name && row.name.trim()) {
+        if (!duplicates.names[row.name]) {
+          duplicates.names[row.name] = [];
+        }
+        duplicates.names[row.name].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+      
+      // Check symbol duplicates
+      if (row.symbol && row.symbol.trim()) {
+        if (!duplicates.symbols[row.symbol]) {
+          duplicates.symbols[row.symbol] = [];
+        }
+        duplicates.symbols[row.symbol].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+      
+      // Check API ID duplicates
+      if (row.apiId && row.apiId.trim()) {
+        if (!duplicates.apiIds[row.apiId]) {
+          duplicates.apiIds[row.apiId] = [];
+        }
+        duplicates.apiIds[row.apiId].push({
+          index,
+          apiId: row.apiId,
+          name: row.name,
+          symbol: row.symbol,
+          logo: row.logo
+        });
+      }
+    });
+    
+    // Filter only actual duplicates (more than 1 occurrence)
+    const actualDuplicates = {
+      logos: Object.entries(duplicates.logos).filter(([logo, items]) => items.length > 1),
+      names: Object.entries(duplicates.names).filter(([name, items]) => items.length > 1),
+      symbols: Object.entries(duplicates.symbols).filter(([symbol, items]) => items.length > 1),
+      apiIds: Object.entries(duplicates.apiIds).filter(([apiId, items]) => items.length > 1)
+    };
+    
+    // Log results
+    console.log('🔍 Duplicate Analysis Results:');
+    
+    if (actualDuplicates.logos.length > 0) {
+      console.log('⚠️ DUPLICATE LOGOS:', actualDuplicates.logos);
+      actualDuplicates.logos.forEach(([logo, items]) => {
+        console.log(`   Logo "${logo}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol || item.apiId} (API: ${item.apiId})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.names.length > 0) {
+      console.log('⚠️ DUPLICATE NAMES:', actualDuplicates.names);
+      actualDuplicates.names.forEach(([name, items]) => {
+        console.log(`   Name "${name}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: API ${item.apiId} (Symbol: ${item.symbol})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.symbols.length > 0) {
+      console.log('⚠️ DUPLICATE SYMBOLS:', actualDuplicates.symbols);
+      actualDuplicates.symbols.forEach(([symbol, items]) => {
+        console.log(`   Symbol "${symbol}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name} (API: ${item.apiId})`);
+        });
+      });
+    }
+    
+    if (actualDuplicates.apiIds.length > 0) {
+      console.log('⚠️ DUPLICATE API IDs:', actualDuplicates.apiIds);
+      actualDuplicates.apiIds.forEach(([apiId, items]) => {
+        console.log(`   API ID "${apiId}" used by ${items.length} tokens:`);
+        items.forEach(item => {
+          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol}`);
+        });
+      });
+    }
+    
+    const totalDuplicates = actualDuplicates.logos.length + 
+                           actualDuplicates.names.length + 
+                           actualDuplicates.symbols.length + 
+                           actualDuplicates.apiIds.length;
+    
+    // Show modal with results
+    setDuplicatesData(actualDuplicates);
+    setShowDuplicatesModal(true);
+    
+    return actualDuplicates;
+  }, [rows, setDuplicatesData, setShowDuplicatesModal]);
+
+  return {
+    checkDuplicateLogosAndNames,
+  };
+};

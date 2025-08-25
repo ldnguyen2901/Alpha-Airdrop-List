@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { normalizeDateTime } from '../utils/helpers';
+import { normalizeDateTime } from '../utils';
 
 export function useTableEditing() {
   const [rowDrafts, setRowDrafts] = useState({});

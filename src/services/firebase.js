@@ -61,3 +61,20 @@ export function subscribeWorkspace(workspaceId, callback) {
     }
   });
 }
+
+// Save token logo to database
+export async function saveTokenLogoToDatabase(tokenId, tokenInfo) {
+  if (!tokenId || !tokenInfo) return;
+  
+  try {
+    const tokenDocRef = doc(db, 'tokenLogos', tokenId);
+    await setDoc(tokenDocRef, {
+      logo: tokenInfo.logo || '',
+      symbol: tokenInfo.symbol || '',
+      name: tokenInfo.name || '',
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error saving token logo to database:', error);
+  }
+}

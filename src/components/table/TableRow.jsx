@@ -1,5 +1,4 @@
-import { formatAmount, formatPrice } from '../../utils/helpers';
-import { formatDateTime } from '../../utils/dateTimeUtils';
+import { formatAmount, formatPrice, formatDateTime } from '../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';

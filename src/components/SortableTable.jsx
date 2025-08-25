@@ -1,8 +1,6 @@
 import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { TABLE_HEADERS } from '../utils/constants';
-import { getCountdownText } from '../utils/dateTimeUtils';
-import { useTableSort } from '../hooks/useTableSort';
-import { useTableEditing } from '../hooks/useTableEditing';
+import { TABLE_HEADERS, getCountdownText } from '../utils';
+import { useTableSort, useTableEditing } from '../hooks';
 import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
@@ -64,9 +62,9 @@ const SortableTable = forwardRef(({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const sortedRows = useMemo(() => {
-    return sortRows(rows, searchToken);
-  }, [rows, sortConfig, searchToken, sortRows]);
+          const sortedRows = useMemo(() => {
+          return sortRows(rows, searchToken);
+        }, [rows, sortConfig, searchToken, sortRows]);
 
   // Pagination logic
   const totalPages = Math.ceil(sortedRows.length / itemsPerPage);

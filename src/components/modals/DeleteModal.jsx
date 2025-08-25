@@ -1,6 +1,5 @@
-import { formatAmount } from '../../utils/helpers';
-import { formatDateTime } from '../../utils/dateTimeUtils';
-import { useState } from 'react';
+import { formatAmount, formatDateTime } from '../../utils';
+import { useState, useEffect } from 'react';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -14,6 +13,22 @@ export default function DeleteModal({
   modalPosition
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (isDeleting && !isRefreshing) {
+      setIsRefreshing(true);
+    }
+  }, [isDeleting]);
+
+  useEffect(() => {
+    if (!isDeleting && isRefreshing) {
+      // Ensure animation completes full rotation
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 1000);
+    }
+  }, [isDeleting, isRefreshing]);
   
   if (!deleteModal || !deleteModal.open || deleteModal.idx === -1) {
     return null;
@@ -166,9 +181,9 @@ export default function DeleteModal({
                 isDeleting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isDeleting ? (
+              {(isDeleting || isRefreshing) ? (
                 <span className="flex items-center gap-2">
-                  <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
+                  <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
                   Deleting...
                 </span>
               ) : (

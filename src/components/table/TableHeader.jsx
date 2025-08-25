@@ -1,4 +1,4 @@
-import { TABLE_HEADERS } from '../../utils/constants';
+import { TABLE_HEADERS } from '../../utils';
 import { SortIcons } from '../SortIcons';
 
 export default function TableHeader({ 

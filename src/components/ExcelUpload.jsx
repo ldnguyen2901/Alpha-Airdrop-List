@@ -1,12 +1,28 @@
-import { useState, useRef } from 'react';
-import { readExcelFile, parseExcelData } from '../utils/excel';
+import { useState, useRef, useEffect } from 'react';
+import { readExcelFile, parseExcelData } from '../utils';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import TableChartIcon from '@mui/icons-material/TableChart';
 
 export default function ExcelUpload({ onImportData }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (isLoading && !isRefreshing) {
+      setIsRefreshing(true);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (!isLoading && isRefreshing) {
+      // Ensure animation completes full rotation
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 1000);
+    }
+  }, [isLoading, isRefreshing]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -36,7 +52,7 @@ export default function ExcelUpload({ onImportData }) {
         return;
       }
 
-      onImportData(parsedData);
+      onImportData(file);
       setError('');
 
       // Reset file input
@@ -44,7 +60,8 @@ export default function ExcelUpload({ onImportData }) {
         fileInputRef.current.value = '';
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Excel upload error:', err);
+      setError(err.message || 'Failed to process Excel file');
     } finally {
       setIsLoading(false);
     }
@@ -76,9 +93,9 @@ export default function ExcelUpload({ onImportData }) {
           <TableChartIcon sx={{ fontSize: 48 }} />
         </div>
         <div className='text-base sm:text-lg font-medium mb-2 dark:text-white flex items-center justify-center gap-2'>
-          {isLoading ? (
+          {(isLoading || isRefreshing) ? (
             <>
-              <AutorenewIcon className="animate-spin" sx={{ fontSize: 20 }} />
+              <AutorenewIcon sx={{ fontSize: 20, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
               Reading file...
             </>
           ) : (

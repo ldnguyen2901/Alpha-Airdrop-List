@@ -23,6 +23,155 @@ export function splitCSV(line) {
   return out.map((s) => s.trim());
 }
 
+// Parse và validate data từ paste (Excel/CSV)
+export function parsePastedData(text) {
+  try {
+    // Tách thành các dòng
+    const lines = text.trim().split(/\r?\n/).filter(line => line.trim());
+    
+    if (lines.length === 0) {
+      return { success: false, error: 'No data found' };
+    }
+
+    // Parse từng dòng
+    const parsedRows = [];
+    const errors = [];
+
+    lines.forEach((line, index) => {
+      try {
+        const columns = splitCSV(line);
+        
+        // Validate số cột (tối thiểu 2, tối đa 6)
+        if (columns.length < 2) {
+          errors.push(`Row ${index + 1}: Too few columns (${columns.length}), minimum 2 required (API ID and optionally Date)`);
+          return;
+        }
+        
+        if (columns.length > 6) {
+          errors.push(`Row ${index + 1}: Too many columns (${columns.length}), maximum 6 allowed`);
+          return;
+        }
+
+        const [token = '', amount = '', dateClaim = '', fullName = '', pointPriority = '', pointFCFS = ''] = columns;
+
+        // Find API ID - it could be in different columns depending on the format
+        let apiId = '';
+        let actualToken = '';
+        let actualAmount = '';
+        let actualDate = '';
+
+        // Super simple logic for ,ethereum,31/12/2024 format
+        if (columns.length >= 3 && !token.trim() && amount.trim() && dateClaim.trim()) {
+          // Format: ,API_ID,DATE
+          apiId = amount.trim();
+          actualDate = dateClaim.trim();
+        } else if (columns.length >= 2 && token.trim() && amount.trim()) {
+          // Format: API_ID,DATE
+          apiId = token.trim();
+          actualDate = amount.trim();
+        } else if (fullName.trim()) {
+          // Standard format: API ID in column D
+          apiId = fullName.trim();
+          actualToken = token.trim();
+          actualAmount = amount.trim();
+          actualDate = dateClaim.trim();
+        } else {
+          // Try to find any non-empty, non-date, non-number value
+          for (let i = 0; i < columns.length; i++) {
+            const col = columns[i].trim();
+            if (!col) continue;
+            
+            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(col)) {
+              actualDate = col;
+            } else if (!isNaN(parseFloat(col.replace(/[^\d.,]/g, '').replace(',', '.')))) {
+              actualAmount = col;
+            } else if (!apiId) {
+              apiId = col;
+            }
+          }
+        }
+        
+        actualToken = token.trim();
+
+        // Only API ID is required, others are optional
+        if (!apiId) {
+          errors.push(`Row ${index + 1}: API ID is required`);
+          return;
+        }
+
+        // Parse và validate amount
+        let parsedAmount = 0;
+        if (actualAmount) {
+          const cleanAmount = actualAmount.replace(/[^\d.,]/g, '').replace(',', '.');
+          parsedAmount = parseFloat(cleanAmount) || 0;
+        }
+
+        // Parse và validate date
+        let listingTime = '';
+        if (actualDate) {
+          // Try to parse various date formats
+          const dateStr = actualDate.trim();
+          
+          // Excel date number
+          if (/^\d+(\.\d+)?$/.test(dateStr)) {
+            try {
+              const date = new Date((parseFloat(dateStr) - 25569) * 86400 * 1000);
+              if (!isNaN(date.getTime())) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                listingTime = `${day}/${month}/${year} ${hours}:${minutes}`;
+              }
+            } catch (e) {
+              // Fallback to original string
+              listingTime = dateStr;
+            }
+          } else {
+            // Try to parse DD/MM/YYYY or DD/MM/YYYY HH:mm formats
+            const dateMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
+            if (dateMatch) {
+              const [, day, month, year, hours = '00', minutes = '00'] = dateMatch;
+              listingTime = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year} ${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            } else {
+              listingTime = dateStr;
+            }
+          }
+        }
+
+        parsedRows.push({
+          name: actualToken || apiId, // Use API ID as name if token name is empty
+          amount: parsedAmount,
+          launchAt: listingTime,
+          apiId: apiId,
+          pointPriority: pointPriority.trim() || '',
+          pointFCFS: pointFCFS.trim() || '',
+          price: 0,
+          value: 0,
+          highestPrice: 0,
+        });
+
+      } catch (error) {
+        errors.push(`Row ${index + 1}: ${error.message}`);
+      }
+    });
+
+    if (errors.length > 0) {
+      return { 
+        success: false, 
+        error: `Validation errors:\n${errors.join('\n')}`,
+        partialData: parsedRows 
+      };
+    }
+
+    return { success: true, data: parsedRows };
+
+  } catch (error) {
+    return { success: false, error: `Failed to parse data: ${error.message}` };
+  }
+}
+
 export function formatNumber(n) {
   if (typeof n !== 'number' || isNaN(n)) return '-';
   // Hiển thị tối đa 8 chữ số thập phân, bỏ số 0 dư

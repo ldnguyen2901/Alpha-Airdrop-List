@@ -1,14 +1,24 @@
-export async function fetchCryptoPrices(ids, currency) {
+export async function fetchCryptoPrices(ids, currency = 'usd') {
+  console.log('🌐 fetchCryptoPrices called with:', { ids, currency });
   if (!ids.length) return {};
   
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=${encodeURIComponent(currency)}`;
-  const res = await fetch(url);
+  console.log('🌐 API URL:', url);
   
-  if (!res.ok) {
-    throw new Error(`API lỗi ${res.status}`);
+  try {
+    const res = await fetch(url);
+    
+    if (!res.ok) {
+      throw new Error(`API lỗi ${res.status}`);
+    }
+    
+    const data = await res.json();
+    console.log('🌐 API response:', data);
+    return data;
+  } catch (error) {
+    console.error('🌐 Error in fetchCryptoPrices:', error);
+    throw error;
   }
-  
-  return await res.json();
 }
 
 // Cache for token logos to avoid unnecessary API calls

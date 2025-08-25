@@ -1,5 +1,5 @@
-import { normalizeDateTime } from '../../utils/helpers';
-import { useState } from 'react';
+import { normalizeDateTime } from '../../utils';
+import { useState, useEffect } from 'react';
 
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
@@ -16,6 +16,22 @@ export default function EditModal({
 }) {
   const [isSaving, setIsSaving] = useState(false);
   const [editErrors, setEditErrors] = useState({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (isSaving && !isRefreshing) {
+      setIsRefreshing(true);
+    }
+  }, [isSaving]);
+
+  useEffect(() => {
+    if (!isSaving && isRefreshing) {
+      // Ensure animation completes full rotation
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 1000);
+    }
+  }, [isSaving, isRefreshing]);
 
   // Validate edit form
   const validateEditForm = (form) => {
@@ -378,9 +394,9 @@ export default function EditModal({
                 isSaving ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSaving ? (
+              {(isSaving || isRefreshing) ? (
                 <span className="flex items-center gap-2">
-                  <AutorenewIcon className="animate-spin" sx={{ fontSize: 16 }} />
+                  <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
                   Saving...
                 </span>
               ) : (

@@ -11,7 +11,7 @@ import { useState, useRef } from 'react';
 export default function ActionButtons({
   onAddRow,
   onPasteText,
-  onExportCSV,
+  onExportExcel,
   onImportExcel,
   onRefresh,
   onCheckDuplicates,
@@ -35,6 +35,7 @@ export default function ActionButtons({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formPosition, setFormPosition] = useState({ top: 60, left: 16 });
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const addRowButtonRef = useRef(null);
 
 
@@ -123,18 +124,22 @@ export default function ActionButtons({
           </button>
           <PasteButton onPasteText={onPasteText} />
           <button
-            onClick={onImportExcel}
+                              onClick={() => {
+                    onImportExcel();
+                  }}
             className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
           >
             <TableChartIcon sx={{ fontSize: 16 }} />
             Import Excel
           </button>
           <button
-            onClick={onExportCSV}
-            className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
-          >
-            <FileDownloadIcon sx={{ fontSize: 16 }} />
-            Export CSV
+                                                onClick={() => {
+                    onExportExcel();
+                  }}
+                  className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+                >
+                  <FileDownloadIcon sx={{ fontSize: 16 }} />
+                  Export Excel
           </button>
           <button
             onClick={handleCheckDuplicates}
@@ -146,6 +151,7 @@ export default function ActionButtons({
                 fontSize: 16,
                 animation: isCheckingDuplicates ? 'spin 1s linear infinite' : 'none'
               }} 
+              className={isCheckingDuplicates ? 'refresh-spin' : ''}
             />
             Check Duplicates
           </button>
@@ -166,7 +172,9 @@ export default function ActionButtons({
         <div className='flex items-center justify-between gap-2 sm:gap-4'>
           {/* Show Highest Price button - only on desktop */}
           <button
-            onClick={() => setShowHighestPrice(!showHighestPrice)}
+            onClick={() => {
+              setShowHighestPrice(!showHighestPrice);
+            }}
             className='hidden sm:flex px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
           >
             <div className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out flex items-center justify-center ${
@@ -182,13 +190,23 @@ export default function ActionButtons({
           </button>
 
           <button
-            onClick={onRefresh}
-            className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 sm:flex-shrink flex items-center gap-2'
+            onClick={() => {
+              setIsRefreshing(true);
+              onRefresh();
+              // Ensure animation completes full rotation
+              setTimeout(() => {
+                setIsRefreshing(false);
+              }, 1000);
+            }}
+            className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 flex items-center gap-2'
             title='Refresh prices and token info'
           >
             <AutorenewIcon 
-              className={`${loading ? 'animate-spin' : ''}`}
-              sx={{ fontSize: 16 }}
+              sx={{ 
+                fontSize: 16,
+                animation: (loading || isRefreshing) ? 'spin 1s linear infinite' : 'none'
+              }}
+              className={(loading || isRefreshing) ? 'refresh-spin' : ''}
             />
             Refresh
           </button>
@@ -202,16 +220,4 @@ export default function ActionButtons({
   );
 }
 
-// Add CSS animation for spinning
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-`;
-document.head.appendChild(style);
+
