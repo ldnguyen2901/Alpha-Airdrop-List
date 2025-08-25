@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModal) => {
   // Function to check for duplicate logos and token names
   const checkDuplicateLogosAndNames = useCallback(async () => {
-    console.log('🔍 === CHECKING DUPLICATES ===');
+  
     
     const duplicates = {
       logos: {},
@@ -79,47 +79,18 @@ export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModa
     };
     
     // Log results
-    console.log('🔍 Duplicate Analysis Results:');
+
     
     if (actualDuplicates.logos.length > 0) {
-      console.log('⚠️ DUPLICATE LOGOS:', actualDuplicates.logos);
-      actualDuplicates.logos.forEach(([logo, items]) => {
-        console.log(`   Logo "${logo}" used by ${items.length} tokens:`);
-        items.forEach(item => {
-          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol || item.apiId} (API: ${item.apiId})`);
-        });
-      });
+      
+      
     }
     
-    if (actualDuplicates.names.length > 0) {
-      console.log('⚠️ DUPLICATE NAMES:', actualDuplicates.names);
-      actualDuplicates.names.forEach(([name, items]) => {
-        console.log(`   Name "${name}" used by ${items.length} tokens:`);
-        items.forEach(item => {
-          console.log(`     - Row ${item.index + 1}: API ${item.apiId} (Symbol: ${item.symbol})`);
-        });
-      });
-    }
     
-    if (actualDuplicates.symbols.length > 0) {
-      console.log('⚠️ DUPLICATE SYMBOLS:', actualDuplicates.symbols);
-      actualDuplicates.symbols.forEach(([symbol, items]) => {
-        console.log(`   Symbol "${symbol}" used by ${items.length} tokens:`);
-        items.forEach(item => {
-          console.log(`     - Row ${item.index + 1}: ${item.name} (API: ${item.apiId})`);
-        });
-      });
-    }
     
-    if (actualDuplicates.apiIds.length > 0) {
-      console.log('⚠️ DUPLICATE API IDs:', actualDuplicates.apiIds);
-      actualDuplicates.apiIds.forEach(([apiId, items]) => {
-        console.log(`   API ID "${apiId}" used by ${items.length} tokens:`);
-        items.forEach(item => {
-          console.log(`     - Row ${item.index + 1}: ${item.name || item.symbol}`);
-        });
-      });
-    }
+    
+    
+    
     
     const totalDuplicates = actualDuplicates.logos.length + 
                            actualDuplicates.names.length + 

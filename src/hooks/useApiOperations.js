@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo } from '../services/api';
 import { saveTokenLogoToDatabase } from '../services/firebase';
+import { usePriceTracking } from './usePriceTracking';
 
 export const useApiOperations = (
   rows, 
@@ -12,6 +13,9 @@ export const useApiOperations = (
   setLoading,
   setLastUpdated
 ) => {
+  // Initialize price tracking hook
+  const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
+
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
     return Array.from(
@@ -81,14 +85,14 @@ export const useApiOperations = (
     // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
     const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
     if (!validApiIdPattern.test(apiId.trim())) {
-      console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
+  
       return;
     }
     
     // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
     const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
     if (invalidInputs.some(char => apiId.includes(char))) {
-      console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+  
       return;
     }
 
@@ -108,45 +112,60 @@ export const useApiOperations = (
 
   // Refresh data function
   const refreshData = useCallback(async () => {
-    console.log('🔄 refreshData called');
+  
     setLoading(true);
     try {
-      console.log('🔄 Fetching main crypto prices...');
+  
       // Fetch main crypto prices
       const prices = await fetchCryptoPrices(['bitcoin', 'ethereum', 'binancecoin']);
-      console.log('🔄 Setting main crypto prices:', {
-        btc: prices.bitcoin?.usd || 0,
-        eth: prices.ethereum?.usd || 0,
-        bnb: prices.binancecoin?.usd || 0
-      });
+      
       setBtcPrice(prices.bitcoin?.usd || 0);
       setEthPrice(prices.ethereum?.usd || 0);
       setBnbPrice(prices.binancecoin?.usd || 0);
 
       // Fetch token prices for all rows
       if (ids.length > 0) {
-        console.log('🔄 Fetching token prices for', ids.length, 'tokens...');
+
         const tokenPrices = await fetchCryptoPrices(ids);
         
-        // Update rows with new prices
+        // Update rows with new prices and track highest prices using optimized algorithm
         rows.forEach((row, index) => {
           if (row.apiId && tokenPrices[row.apiId]) {
-            const price = tokenPrices[row.apiId].usd;
-            const value = price * row.amount;
-            console.log('🔄 Updating row', index, row.name, 'with price:', price, 'value:', value);
-            updateRow(index, { price, value });
+            const currentPrice = tokenPrices[row.apiId].usd;
+            const value = currentPrice * row.amount;
+            
+            // Use optimized price tracking algorithm
+            const trackingResult = trackPriceChange(
+              row.apiId, 
+              currentPrice, 
+              row.price || 0, 
+              row.highestPrice || 0
+            );
+            
+            // Get additional price statistics
+            const priceStats = getPriceStats(row.apiId);
+            const trend = analyzeTrend(row.apiId);
+            
+            // Update row with new data
+            const updateData = { 
+              price: currentPrice, 
+              value,
+              ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
+            };
+            
+            updateRow(index, updateData);
           }
         });
       }
 
       setLastUpdated(new Date());
-      console.log('🔄 Refresh completed successfully');
+
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
       setLoading(false);
     }
-  }, [ids, rows, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated]);
+  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend]); // Remove 'rows' from dependencies to prevent infinite loop
 
   return {
     ids,

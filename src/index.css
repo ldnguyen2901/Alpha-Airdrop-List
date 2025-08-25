@@ -77,6 +77,8 @@ button:not([disabled]) {
   transform: translateZ(0);
 }
 
+
+
 button:not([disabled]):hover {
   transform: translateY(-1px) translateZ(0);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -102,9 +104,10 @@ input:not([disabled]):focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Table row hover effects - more specific */
+/* Table row hover effects - optimized for performance */
 tbody tr {
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  will-change: background-color, transform;
 }
 
 /* Desktop hover effects */
@@ -121,11 +124,6 @@ tbody tr {
   /* Dark theme hover */
   .dark tbody tr:hover {
     background-color: rgb(75, 85, 99) !important; /* gray-600 */
-  }
-  
-  /* Ensure sticky columns match row background on hover */
-  tbody tr:hover td[style*="backgroundColor"] {
-    background-color: inherit !important;
   }
 }
 

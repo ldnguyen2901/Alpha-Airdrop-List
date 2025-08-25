@@ -21,7 +21,8 @@ export const useFirebaseSync = (
   const initializeFirebaseSync = useCallback(async () => {
     try {
       setSyncing(true);
-      const { userId, workspaceId: newWorkspaceId } = await ensureAnonymousLogin();
+      const user = await ensureAnonymousLogin();
+      const newWorkspaceId = user.uid; // Use user ID as workspace ID
       setWorkspaceId(newWorkspaceId);
       
       // Load initial data from Firebase
@@ -45,6 +46,8 @@ export const useFirebaseSync = (
       setSyncing(false);
     } catch (error) {
       console.error('Firebase sync initialization failed:', error);
+      // Don't throw error, just disable Firebase sync gracefully
+      setWorkspaceId(''); // Clear workspaceId to disable Firebase operations
       setSyncing(false);
     }
   }, [setWorkspaceId, setSyncing, setRows, isRemoteUpdateRef, unsubRef]);
@@ -63,12 +66,15 @@ export const useFirebaseSync = (
 
   // Initialize sync on mount
   useEffect(() => {
-    initializeFirebaseSync();
+    // Only initialize if we don't already have a workspaceId
+    if (!workspaceId) {
+      initializeFirebaseSync();
+    }
     
     return () => {
       cleanupFirebaseSync();
     };
-  }, [initializeFirebaseSync, cleanupFirebaseSync]);
+  }, [workspaceId]); // Remove function dependencies to prevent infinite loop
 
   return {
     initializeFirebaseSync,

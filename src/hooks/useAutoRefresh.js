@@ -8,11 +8,16 @@ export const useAutoRefresh = (
   refreshSec = 60
 ) => {
   const refreshDataRef = useRef(refreshData);
+  const isInitializedRef = useRef(false);
+  const refreshSecRef = useRef(refreshSec);
 
-  // Update ref when refreshData changes
+  // Update refs when props change
   useEffect(() => {
     refreshDataRef.current = refreshData;
-  }, [refreshData]);
+    refreshSecRef.current = refreshSec;
+  }, [refreshData, refreshSec]);
+
+
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -20,8 +25,10 @@ export const useAutoRefresh = (
       setIsPageVisible(isVisible);
       
       if (isVisible) {
-        // Page became visible, refresh data immediately
-        refreshDataRef.current();
+        // Page became visible, refresh data immediately only if not initial load
+        if (isInitializedRef.current) {
+          refreshDataRef.current();
+        }
         
         // Restart timer
         if (timerRef.current) {
@@ -29,7 +36,7 @@ export const useAutoRefresh = (
         }
         timerRef.current = setInterval(() => {
           refreshDataRef.current();
-        }, refreshSec * 1000);
+        }, refreshSecRef.current * 1000);
       } else {
         // Page became hidden, clear timer
         if (timerRef.current) {
@@ -42,12 +49,13 @@ export const useAutoRefresh = (
     // Set up visibility change listener
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Initial setup
-    if (isPageVisible) {
+    // Initial setup - only start timer, don't refresh immediately
+    if (isPageVisible && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       // Start timer if page is visible
       timerRef.current = setInterval(() => {
         refreshDataRef.current();
-      }, refreshSec * 1000);
+      }, refreshSecRef.current * 1000);
     }
 
     // Cleanup
@@ -58,5 +66,5 @@ export const useAutoRefresh = (
         timerRef.current = null;
       }
     };
-  }, [isPageVisible, setIsPageVisible, timerRef, refreshSec]);
+  }, [isPageVisible, setIsPageVisible, timerRef]); // Remove refreshSec dependency to prevent timer restart
 };

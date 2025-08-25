@@ -56,12 +56,12 @@ export const useAppState = () => {
   // UI states
   const [showHighestPrice, setShowHighestPrice] = useState(() => {
     const isMobileInitial = window.innerWidth < 768;
-    console.log('🚀 Initial state:', isMobileInitial ? 'Mobile' : 'Desktop', 'showHighestPrice:', isMobileInitial);
+  
     return isMobileInitial;
   });
   const [isMobile, setIsMobile] = useState(() => {
     const mobileInitial = window.innerWidth < 768;
-    console.log('📱 Initial isMobile:', mobileInitial);
+  
     return mobileInitial;
   });
   const [searchToken, setSearchToken] = useState('');

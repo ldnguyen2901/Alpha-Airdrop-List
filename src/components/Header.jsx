@@ -1,4 +1,5 @@
 import ThemeToggle from './ThemeToggle';
+import NotificationButton from './NotificationButton';
 
 export default function Header({ loading, onRefresh, syncing, isPageVisible }) {
   return (
@@ -10,8 +11,9 @@ export default function Header({ loading, onRefresh, syncing, isPageVisible }) {
         </h1>
       </div>
       
-      {/* Right side - Theme Toggle */}
-      <div className='flex-shrink-0'>
+      {/* Right side - Notification Button and Theme Toggle */}
+      <div className='flex items-center gap-2 flex-shrink-0'>
+        <NotificationButton />
         <ThemeToggle />
       </div>
     </header>

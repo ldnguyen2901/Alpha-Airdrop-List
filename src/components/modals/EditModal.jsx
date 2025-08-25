@@ -115,20 +115,20 @@ export default function EditModal({
       // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
       const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
       if (!validApiIdPattern.test(apiId.trim())) {
-        console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
+    
         return;
       }
       
       // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
       const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
       if (invalidInputs.some(char => apiId.includes(char))) {
-        console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+    
         return;
       }
       
       // Special handling for hidden tokens (containing ?)
       if (apiId.includes('?')) {
-        console.log('🔍 Hidden token detected, skipping API fetch:', apiId);
+    
         // For hidden tokens, keep the API ID as the name
         setRowDrafts((p) => ({
           ...p,

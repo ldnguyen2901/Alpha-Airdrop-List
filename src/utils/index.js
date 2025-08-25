@@ -12,3 +12,6 @@ export * from './storage';
 
 // Excel utilities
 export * from './excel';
+
+// Error handling utilities
+export * from './errorHandler';

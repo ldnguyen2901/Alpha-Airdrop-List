@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { splitCSV, CSV_HEADERS, readExcelFile, parsePastedData } from '../utils';
 import * as XLSX from 'xlsx';
 
-export const useImportExport = (addMultipleRows, replaceRows) => {
+export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
   // Handle paste CSV/TSV data
   const handlePaste = useCallback((text) => {
     try {
@@ -10,16 +10,25 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
       
       if (result.success) {
         addMultipleRows(result.data);
+        if (addNotification) {
+          addNotification(`Added ${result.data.length} tokens from pasted data!`, 'success');
+        }
         return { success: true, count: result.data.length };
       } else {
         // Nếu có lỗi validation nhưng có partial data, vẫn thêm data hợp lệ
         if (result.partialData && result.partialData.length > 0) {
           addMultipleRows(result.partialData);
+          if (addNotification) {
+            addNotification(`Added ${result.partialData.length} tokens with warnings: ${result.error}`, 'warning');
+          }
           return { 
             success: true, 
             count: result.partialData.length,
             warning: result.error 
           };
+        }
+        if (addNotification) {
+          addNotification(result.error || 'Failed to parse pasted data', 'error');
         }
         return { success: false, error: result.error };
       }
@@ -86,8 +95,14 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      if (addNotification) {
+        addNotification('Excel file exported successfully!', 'success');
+      }
     } catch (error) {
       console.error('Error exporting Excel:', error);
+      if (addNotification) {
+        addNotification('Failed to export Excel file', 'error');
+      }
     }
   }, []);
 
@@ -102,11 +117,20 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
       const rows = parseExcelData(excelData);
       if (rows && rows.length > 0) {
         replaceRows(rows);
+        if (addNotification) {
+          addNotification(`Successfully imported ${rows.length} tokens from Excel!`, 'success');
+        }
         return { success: true, count: rows.length };
+      }
+      if (addNotification) {
+        addNotification('No valid data found in Excel file', 'error');
       }
       return { success: false, error: 'No valid data found in Excel file' };
     } catch (error) {
       console.error('Error importing Excel:', error);
+      if (addNotification) {
+        addNotification(error.message || 'Failed to read Excel file', 'error');
+      }
       return { success: false, error: error.message || 'Failed to read Excel file' };
     }
   }, [replaceRows]);

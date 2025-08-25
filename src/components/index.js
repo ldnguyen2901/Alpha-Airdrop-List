@@ -21,8 +21,12 @@ export { default as TableRow } from './table/TableRow';
 
 // Other components
 export { default as Card } from './Card';
+export { default as PriceTrackingInfo } from './PriceTrackingInfo';
 export { default as Pagination } from './Pagination';
 export { default as PasteButton } from './PasteButton';
 export { default as ResponsiveDataView } from './ResponsiveDataView';
 export { SortIcons } from './SortIcons';
 export { default as ThemeToggle } from './ThemeToggle';
+export { default as NotificationButton } from './NotificationButton';
+export { default as AppContent } from './AppContent';
+

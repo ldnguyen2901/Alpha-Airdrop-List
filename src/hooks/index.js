@@ -12,3 +12,4 @@ export { useModalOperations } from './useModalOperations';
 // Re-export existing hooks
 export { useTableSort } from './useTableSort';
 export { useTableEditing } from './useTableEditing';
+export { usePriceTracking } from './usePriceTracking';

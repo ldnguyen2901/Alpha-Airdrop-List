@@ -1,9 +1,9 @@
 export async function fetchCryptoPrices(ids, currency = 'usd') {
-  console.log('🌐 fetchCryptoPrices called with:', { ids, currency });
+  
   if (!ids.length) return {};
   
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=${encodeURIComponent(currency)}`;
-  console.log('🌐 API URL:', url);
+
   
   try {
     const res = await fetch(url);
@@ -13,7 +13,7 @@ export async function fetchCryptoPrices(ids, currency = 'usd') {
     }
     
     const data = await res.json();
-    console.log('🌐 API response:', data);
+
     return data;
   } catch (error) {
     console.error('🌐 Error in fetchCryptoPrices:', error);

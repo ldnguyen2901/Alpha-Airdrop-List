@@ -2,32 +2,52 @@ import { useCallback } from 'react';
 import { newRow, saveDataToStorage, normalizeDateTime } from '../utils';
 import { saveWorkspaceData } from '../services/firebase';
 
-export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef) => {
+export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
+  // Helper function to clean row data
+  const cleanRowData = useCallback((row) => {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(row)) {
+      if (value !== undefined && value !== null) {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  }, []);
+
   // Add new row
   const addRow = useCallback((rowData = null) => {
-    const newRowData = rowData || newRow();
+    const newRowData = rowData ? cleanRowData(rowData) : newRow();
     setRows(prevRows => {
       const updatedRows = [...prevRows, newRowData];
       saveDataToStorage(updatedRows);
       if (workspaceId) {
-        saveWorkspaceData(workspaceId, updatedRows);
+        try {
+          saveWorkspaceData(workspaceId, updatedRows);
+        } catch (error) {
+          console.error('Failed to save to Firebase:', error);
+        }
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId]);
+  }, [setRows, workspaceId, cleanRowData]);
 
   // Update specific row
   const updateRow = useCallback((index, updates) => {
     setRows(prevRows => {
       const updatedRows = [...prevRows];
-      updatedRows[index] = { ...updatedRows[index], ...updates };
+      const cleanedUpdates = cleanRowData(updates);
+      updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
       saveDataToStorage(updatedRows);
       if (workspaceId && !isRemoteUpdateRef.current) {
-        saveWorkspaceData(workspaceId, updatedRows);
+        try {
+          saveWorkspaceData(workspaceId, updatedRows);
+        } catch (error) {
+          console.error('Failed to save to Firebase:', error);
+        }
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId, isRemoteUpdateRef]);
+  }, [setRows, workspaceId, isRemoteUpdateRef, cleanRowData]);
 
   // Remove row
   const removeRow = useCallback((index) => {
@@ -35,7 +55,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
       const updatedRows = prevRows.filter((_, i) => i !== index);
       saveDataToStorage(updatedRows);
       if (workspaceId) {
-        saveWorkspaceData(workspaceId, updatedRows);
+        try {
+          saveWorkspaceData(workspaceId, updatedRows);
+        } catch (error) {
+          console.error('Failed to save to Firebase:', error);
+        }
       }
       return updatedRows;
     });
@@ -46,7 +70,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
     setRows(newRows);
     saveDataToStorage(newRows);
     if (workspaceId) {
-      saveWorkspaceData(workspaceId, newRows);
+      try {
+        saveWorkspaceData(workspaceId, newRows);
+      } catch (error) {
+        console.error('Failed to save to Firebase:', error);
+      }
     }
   }, [setRows, workspaceId]);
 
@@ -56,7 +84,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
       const updatedRows = [...prevRows, ...newRowsData];
       saveDataToStorage(updatedRows);
       if (workspaceId) {
-        saveWorkspaceData(workspaceId, updatedRows);
+        try {
+          saveWorkspaceData(workspaceId, updatedRows);
+        } catch (error) {
+          console.error('Failed to save to Firebase:', error);
+        }
       }
       return updatedRows;
     });
@@ -64,7 +96,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
 
   // Validate add form - only API ID is required
   const validateAddForm = useCallback((form) => {
-    console.log('🔍 validateAddForm called with:', form);
+  
     const errors = {};
     
     // Only API ID is required
@@ -72,17 +104,17 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
       errors.apiId = 'API ID is required';
     }
     
-    console.log('🔍 Validation result:', errors);
+
     return errors;
   }, []);
 
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {
-    console.log('🔍 handleAddRowSubmit called with form:', form);
+  
     const errors = validateAddForm(form);
-    console.log('🔍 Validation errors:', errors);
+
     if (Object.keys(errors).length > 0) {
-      console.log('❌ Form validation failed');
+  
       return { success: false, errors };
     }
 
@@ -118,11 +150,17 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef)
       pointFCFS: form.pointFCFS.trim() || '',
     });
 
-    console.log('✅ Creating new row:', newRowData);
-    addRow(newRowData);
-    console.log('✅ Row added successfully');
+    // Clean the row data before adding
+    const cleanedRowData = cleanRowData(newRowData);
+
+
+    addRow(cleanedRowData);
+
+    if (addNotification) {
+      addNotification('Token added successfully!', 'success');
+    }
     return { success: true };
-  }, [validateAddForm, addRow]);
+  }, [validateAddForm, addRow, addNotification, cleanRowData]);
 
   return {
     addRow,

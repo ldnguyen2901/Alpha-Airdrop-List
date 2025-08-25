@@ -14,8 +14,7 @@ export default function AddRowModal({
   addErrors,
   handleAddRowSubmit
 }) {
-  console.log('📝 AddRowModal render - handleAddRowSubmit:', typeof handleAddRowSubmit);
-  console.log('📝 AddRowModal render - addForm:', addForm);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -58,20 +57,20 @@ export default function AddRowModal({
       // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
       const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
       if (!validApiIdPattern.test(apiId.trim())) {
-        console.log('🔍 Invalid API ID format, skipping fetch:', apiId);
+    
         return;
       }
       
       // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
       const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
       if (invalidInputs.some(char => apiId.includes(char))) {
-        console.log('🔍 Invalid characters in API ID, skipping fetch:', apiId);
+    
         return;
       }
       
       // Special handling for hidden tokens (containing ?)
       if (apiId.includes('?')) {
-        console.log('🔍 Hidden token detected, skipping API fetch:', apiId);
+    
         // For hidden tokens, keep the API ID as the name
         setAddForm((p) => ({
           ...p,
@@ -137,13 +136,13 @@ export default function AddRowModal({
 
         <form
           onSubmit={async (e) => {
-            console.log('📝 Form submit triggered');
+        
             e.preventDefault();
             setIsSubmitting(true);
             try {
-              console.log('📝 Calling handleAddRowSubmit with form:', addForm);
+          
               const result = await handleAddRowSubmit(addForm);
-              console.log('📝 handleAddRowSubmit result:', result);
+          
               
               if (result && result.success) {
                 // Add success animation
@@ -153,7 +152,7 @@ export default function AddRowModal({
                   form.classList.remove('modal-success');
                 }, 500);
               } else if (result && result.errors) {
-                console.log('📝 Form has validation errors:', result.errors);
+            
               }
             } catch (error) {
               console.error('Form submission error:', error);
@@ -298,7 +297,7 @@ export default function AddRowModal({
                            <button
                 type='submit'
                 disabled={isSubmitting}
-                onClick={() => console.log('🔘 Add button clicked')}
+    
                 className={`px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 ${
                   isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
                 }`}

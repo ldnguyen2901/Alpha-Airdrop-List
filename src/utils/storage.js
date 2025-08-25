@@ -154,3 +154,65 @@ export function loadWorkspaceId() {
     return '';
   }
 }
+
+// Price tracking storage functions
+export const savePriceHistory = (apiId, priceHistory) => {
+  try {
+    const key = `price_history_${apiId}`;
+    localStorage.setItem(key, JSON.stringify(priceHistory));
+  } catch (error) {
+    console.error('Error saving price history:', error);
+  }
+};
+
+export const loadPriceHistory = (apiId) => {
+  try {
+    const key = `price_history_${apiId}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error loading price history:', error);
+    return [];
+  }
+};
+
+export const saveHighestPrices = (highestPrices) => {
+  try {
+    localStorage.setItem('highest_prices', JSON.stringify(highestPrices));
+  } catch (error) {
+    console.error('Error saving highest prices:', error);
+  }
+};
+
+export const loadHighestPrices = () => {
+  try {
+    const data = localStorage.getItem('highest_prices');
+    return data ? JSON.parse(data) : {};
+  } catch (error) {
+    console.error('Error loading highest prices:', error);
+    return {};
+  }
+};
+
+export const clearPriceHistory = (apiId) => {
+  try {
+    const key = `price_history_${apiId}`;
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error('Error clearing price history:', error);
+  }
+};
+
+export const clearAllPriceHistory = () => {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('price_history_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    localStorage.removeItem('highest_prices');
+  } catch (error) {
+    console.error('Error clearing all price history:', error);
+  }
+};

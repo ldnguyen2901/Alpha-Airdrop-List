@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -15,6 +15,26 @@ const TokenCard = ({
   deleteButtonRefs,
   setEditButtonPosition
 }) => {
+  const [previousPrice, setPreviousPrice] = useState(row.price || 0);
+  const [priceChangeColor, setPriceChangeColor] = useState('');
+
+  // Track price changes and set color
+  useEffect(() => {
+    if (row.price && row.price !== previousPrice) {
+      if (row.price > previousPrice) {
+        setPriceChangeColor('text-green-600 dark:text-green-400');
+      } else if (row.price < previousPrice) {
+        setPriceChangeColor('text-red-600 dark:text-red-400');
+      }
+      setPreviousPrice(row.price);
+      
+      // Reset color after 2 seconds
+      setTimeout(() => {
+        setPriceChangeColor('');
+      }, 2000);
+    }
+  }, [row.price, previousPrice]);
+
   // Helper function to parse date in DD/MM/YYYY format
   const parseDate = (dateString) => {
     if (!dateString) return null;
@@ -108,7 +128,7 @@ const TokenCard = ({
                <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                  {row.name || row.symbol || 'Unknown Token'}
                </h3>
-               <div className="text-sm font-medium text-gray-900 dark:text-white ml-2">
+               <div className={`text-lg font-bold ${priceChangeColor || 'text-gray-900 dark:text-white'} ml-2 transition-colors duration-500`}>
                  {row.price ? `$${formatPrice(row.price)}` : (row.launchAt && !isTokenListed(row) ? (
                    <div className={`px-2 py-1 ${getStatusColor(row)} border rounded-lg text-xs font-medium flex items-center gap-1`}>
                      <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />

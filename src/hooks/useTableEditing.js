@@ -39,7 +39,7 @@ export function useTableEditing() {
     // Parse launchAt to extract date and time for date/time pickers
     if (row.launchAt) {
       const launchAtStr = String(row.launchAt).trim();
-      console.log('🔍 Parsing launchAt for edit:', launchAtStr);
+  
       
       // Handle DD/MM/YYYY HH:mm:ss format (legacy) and DD/MM/YYYY HH:mm format (new)
       if (/^\d{1,2}\/\d{1,2}\/\d{4}(\s+\d{1,2}:\d{1,2}(:\d{1,2})?)?$/.test(launchAtStr)) {
@@ -47,13 +47,13 @@ export function useTableEditing() {
         const datePart = parts[0]; // DD/MM/YYYY
         const timePart = parts[1] || ''; // HH:mm:ss or HH:mm or empty
         
-        console.log('🔍 Date part:', datePart, 'Time part:', timePart);
+
         
         // Convert DD/MM/YYYY to YYYY-MM-DD for date picker
         if (datePart) {
           const [day, month, year] = datePart.split('/');
           launchDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-          console.log('🔍 Converted date:', launchDate);
+
         }
         
         // Extract time for time picker (HH:mm format) - strip seconds if present
@@ -64,15 +64,15 @@ export function useTableEditing() {
             const hours = timeMatch[1].padStart(2, '0');
             const minutes = timeMatch[2].padStart(2, '0');
             launchTime = `${hours}:${minutes}`;
-            console.log('🔍 Extracted time:', launchTime);
+  
           }
         }
       } else {
-        console.log('🔍 launchAt format not recognized:', launchAtStr);
+
       }
     }
     
-    console.log('🔍 Final draft values:', { launchDate, launchTime, originalLaunchAt: row.launchAt });
+    
     setRowDrafts((prev) => ({ 
       ...prev, 
       [actual]: { 
