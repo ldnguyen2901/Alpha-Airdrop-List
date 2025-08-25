@@ -7,6 +7,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SortIcon from '@mui/icons-material/Sort';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { formatPrice } from '../utils/helpers';
 import { formatDateTime, getCountdownText } from '../utils/dateTimeUtils';
 
@@ -173,22 +174,6 @@ export default function CardView({
               Refresh
             </button>
             <div className="flex items-center gap-2">
-              {/* Show Highest Price Toggle for Mobile */}
-              <button
-                onClick={() => setShowHighestPrice(!showHighestPrice)}
-                className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
-              >
-                <div className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out flex items-center justify-center ${
-                  showHighestPrice 
-                    ? 'bg-blue-500 border-blue-500' 
-                    : 'bg-transparent border-gray-400 dark:border-gray-500'
-                }`}>
-                  {showHighestPrice && (
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <span className="text-xs">Highest</span>
-              </button>
               <div className="relative">
                 <button
                   ref={sortButtonRef}
@@ -325,7 +310,8 @@ export default function CardView({
                   {getStatusText(row)}
                 </span>
                 {getCountdownTextForRow(row) && (
-                  <div className="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs font-mono text-gray-700 dark:text-gray-300">
+                  <div className="px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs font-mono text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                    <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
                     <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                   </div>
                 )}

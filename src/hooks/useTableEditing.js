@@ -41,11 +41,11 @@ export function useTableEditing() {
       const launchAtStr = String(row.launchAt).trim();
       console.log('🔍 Parsing launchAt for edit:', launchAtStr);
       
-      // Handle DD/MM/YYYY HH:mm format (more flexible)
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}(\s+\d{1,2}:\d{1,2})?$/.test(launchAtStr)) {
+      // Handle DD/MM/YYYY HH:mm:ss format (legacy) and DD/MM/YYYY HH:mm format (new)
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}(\s+\d{1,2}:\d{1,2}(:\d{1,2})?)?$/.test(launchAtStr)) {
         const parts = launchAtStr.split(' ');
         const datePart = parts[0]; // DD/MM/YYYY
-        const timePart = parts[1] || ''; // HH:mm or empty
+        const timePart = parts[1] || ''; // HH:mm:ss or HH:mm or empty
         
         console.log('🔍 Date part:', datePart, 'Time part:', timePart);
         
@@ -56,11 +56,14 @@ export function useTableEditing() {
           console.log('🔍 Converted date:', launchDate);
         }
         
-        // Extract time for time picker (HH:mm format)
+        // Extract time for time picker (HH:mm format) - strip seconds if present
         if (timePart) {
-          const timeMatch = timePart.match(/^(\d{2}):(\d{2})$/);
+          // Handle both HH:mm:ss and HH:mm formats
+          const timeMatch = timePart.match(/^(\d{1,2}):(\d{1,2})(:\d{1,2})?$/);
           if (timeMatch) {
-            launchTime = `${timeMatch[1]}:${timeMatch[2]}`;
+            const hours = timeMatch[1].padStart(2, '0');
+            const minutes = timeMatch[2].padStart(2, '0');
+            launchTime = `${hours}:${minutes}`;
             console.log('🔍 Extracted time:', launchTime);
           }
         }

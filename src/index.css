@@ -461,6 +461,93 @@ tbody tr td.sticky.left-0 {
   animation: spin 1s linear infinite;
 }
 
+/* Hourglass rotation animation */
+@keyframes hourglassRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(90deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+  75% {
+    transform: rotate(270deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hourglass sand flow animation with blinking fade effect */
+@keyframes hourglassFlow {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  15% {
+    opacity: 0.2;
+    transform: scale(0.85);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  45% {
+    opacity: 0.2;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 0.2;
+    transform: scale(0.85);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hourglass-rotate {
+  animation: hourglassRotate 5s linear infinite, hourglassFlow 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Alternative blinking hourglass effect */
+@keyframes hourglassBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.1;
+  }
+}
+
+.hourglass-blink {
+  animation: hourglassRotate 5s linear infinite, hourglassBlink 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Slower blinking effect option */
+.hourglass-blink-slow {
+  animation: hourglassRotate 5s linear infinite, hourglassBlink 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* Fade in animation */
 @keyframes fadeIn {
   from {

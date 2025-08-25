@@ -16,6 +16,7 @@ import ActionButtons from './components/ActionButtons';
 import SortableTable from './components/SortableTable';
 import ExcelUpload from './components/ExcelUpload';
 import AddRowModal from './components/modals/AddRowModal';
+import DuplicatesModal from './components/modals/DuplicatesModal';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -94,6 +95,8 @@ export default function App() {
   const highlightRowRef = useRef(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalPosition, setAddModalPosition] = useState(null);
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+  const [duplicatesData, setDuplicatesData] = useState(null);
 
   const [addForm, setAddForm] = useState({
     name: '',
@@ -393,18 +396,25 @@ export default function App() {
                            actualDuplicates.symbols.length + 
                            actualDuplicates.apiIds.length;
     
-    if (totalDuplicates === 0) {
+        if (totalDuplicates === 0) {
       console.log('✅ No duplicates found! All tokens have unique data.');
       toast.success('No duplicates found! All tokens have unique data.', {
         autoClose: 3000
       });
+      // Show modal with no duplicates
+      setDuplicatesData(actualDuplicates);
+      setShowDuplicatesModal(true);
       return actualDuplicates;
     }
-    
+
     console.log(`⚠️ Found ${totalDuplicates} types of duplicates!`);
-    toast.info(`Found ${totalDuplicates} types of duplicates! Fetching fresh data for duplicate rows...`, {
+    toast.info(`Found ${totalDuplicates} types of duplicates! Check the modal for details.`, {
       autoClose: 3000
     });
+    
+    // Show modal with duplicates
+    setDuplicatesData(actualDuplicates);
+    setShowDuplicatesModal(true);
     
     // Collect all unique API IDs from duplicate rows
     const duplicateApiIds = new Set();
@@ -758,7 +768,7 @@ export default function App() {
       return;
     }
 
-    // normalize launchAt: date-only -> DD/MM/YYYY 00:00:00, keep time if provided
+    // normalize launchAt: handle both legacy launchAt and new launchDate/launchTime
     const normalizedLaunch = form.launchAt
       ? (function (v) {
           const n = normalizeDateTime(v);
@@ -766,6 +776,12 @@ export default function App() {
           if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
           return n;
         })(form.launchAt)
+      : form.launchDate
+      ? (function() {
+          // Convert YYYY-MM-DD to DD/MM/YYYY
+          const formattedDate = form.launchDate.split('-').reverse().join('/');
+          return formattedDate + (form.launchTime ? ` ${form.launchTime}` : ' 00:00');
+        })()
       : '';
 
     try {
@@ -1021,6 +1037,12 @@ export default function App() {
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(n)) return n + ' 00:00:00';
             return n;
           })(formData.launchAt)
+        : formData.launchDate
+        ? (function() {
+            // Convert YYYY-MM-DD to DD/MM/YYYY
+            const formattedDate = formData.launchDate.split('-').reverse().join('/');
+            return formattedDate + (formData.launchTime ? ` ${formData.launchTime}` : ' 00:00');
+          })()
         : '';
 
       const nr = newRow({
@@ -1083,13 +1105,22 @@ export default function App() {
       }
     }
 
-    // Check if launchDate is provided
+    // Check if either launchDate (new) or launchAt (legacy) is provided
     const hasLaunchDate = form.launchDate && String(form.launchDate).trim();
+    const hasLegacyLaunchAt = form.launchAt && String(form.launchAt).trim();
     
-    if (!hasLaunchDate) {
+    if (!hasLaunchDate && !hasLegacyLaunchAt) {
       errs.launchDate = 'Listing date is required';
+    } else if (hasLegacyLaunchAt && !hasLaunchDate) {
+      // Only validate legacy format if using legacy input (not new date picker)
+      const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+      const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
+      const val = String(form.launchAt).trim();
+      if (!(regexDate.test(val) || regexDateTime.test(val))) {
+        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
+      }
     }
-    // No additional validation needed for date picker
+    // If using new date picker (hasLaunchDate), no additional validation needed
 
     if (form.amount !== undefined && String(form.amount).trim() !== '') {
       const n = Number(form.amount);
@@ -1503,6 +1534,12 @@ export default function App() {
           setAddForm={setAddForm}
           addErrors={addErrors}
           handleAddRowSubmit={handleAddRowSubmit}
+        />
+        
+        <DuplicatesModal
+          isOpen={showDuplicatesModal}
+          onClose={() => setShowDuplicatesModal(false)}
+          duplicates={duplicatesData}
         />
         <footer className='mt-2 text-center text-xs text-gray-500 dark:text-gray-400'>
           <div className='py-1'>

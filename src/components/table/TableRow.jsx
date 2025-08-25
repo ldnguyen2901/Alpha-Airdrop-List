@@ -2,6 +2,7 @@ import { formatAmount, formatPrice } from '../../utils/helpers';
 import { formatDateTime } from '../../utils/dateTimeUtils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { useRef } from 'react';
 
 export default function TableRow({
@@ -38,7 +39,10 @@ export default function TableRow({
       return (
         <>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-            <span dangerouslySetInnerHTML={{ __html: cd }} />
+            <div className="flex items-center justify-center gap-1">
+              <HourglassEmptyIcon sx={{ fontSize: 14 }} className="hourglass-blink" />
+              <span dangerouslySetInnerHTML={{ __html: cd }} />
+            </div>
           </td>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
             Wait for listing
