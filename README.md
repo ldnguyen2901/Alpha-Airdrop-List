@@ -184,9 +184,12 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
 VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef123456
 ```
 
-4. Khởi động lại dev server nếu đang chạy (`npm run dev`). Ứng dụng sẽ tự động đăng nhập ẩn danh và đồng bộ dữ liệu qua workspace `global`.
+4. Khởi động lại dev server nếu đang chạy (`npm run dev`). Ứng dụng sẽ tự động đăng nhập ẩn danh và đồng bộ dữ liệu qua workspace `shared-workspace` cho tất cả user.
 
-**Ghi chú bảo mật**: Không commit file `.env.local` chứa khóa vào git; giữ các khóa an toàn.
+**Ghi chú bảo mật**: 
+- Không commit file `.env.local` chứa khóa vào git; giữ các khóa an toàn.
+- Tất cả user sẽ chia sẻ cùng một workspace `shared-workspace` trên Firebase.
+- Dữ liệu được đồng bộ real-time giữa tất cả user.
 
 ## Lưu ý
 

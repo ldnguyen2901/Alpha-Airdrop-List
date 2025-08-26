@@ -4,6 +4,7 @@ import {
   saveWorkspaceData,
   loadWorkspaceDataOnce,
   subscribeWorkspace,
+  SHARED_WORKSPACE_ID,
 } from '../services/firebase';
 
 export const useFirebaseSync = (
@@ -22,10 +23,12 @@ export const useFirebaseSync = (
     try {
       setSyncing(true);
       const user = await ensureAnonymousLogin();
-      const newWorkspaceId = user.uid; // Use user ID as workspace ID
+      
+      // Use shared workspace ID for all users
+      const newWorkspaceId = SHARED_WORKSPACE_ID;
       setWorkspaceId(newWorkspaceId);
       
-      // Load initial data from Firebase
+      // Load initial data from Firebase shared workspace
       const firebaseData = await loadWorkspaceDataOnce(newWorkspaceId);
       if (firebaseData && firebaseData.length > 0) {
         isRemoteUpdateRef.current = true;
@@ -33,11 +36,16 @@ export const useFirebaseSync = (
         isRemoteUpdateRef.current = false;
       }
       
-      // Subscribe to real-time updates
+      // Subscribe to real-time updates from shared workspace
       const unsubscribe = subscribeWorkspace(newWorkspaceId, (data) => {
         if (data && data.length > 0) {
           isRemoteUpdateRef.current = true;
           setRows(data);
+          isRemoteUpdateRef.current = false;
+        } else {
+          // Handle empty data case
+          isRemoteUpdateRef.current = true;
+          setRows([]);
           isRemoteUpdateRef.current = false;
         }
       });

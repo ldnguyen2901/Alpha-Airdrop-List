@@ -44,6 +44,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Single workspace ID for all users
+export const SHARED_WORKSPACE_ID = 'shared-workspace';
+
 export async function ensureAnonymousLogin() {
   try {
     // Check if Firebase config is properly set
@@ -86,33 +89,40 @@ const removeUndefinedValues = (obj) => {
 };
 
 export async function saveWorkspaceData(workspaceId, rows) {
-  if (!workspaceId) throw new Error('workspaceId is required');
+  // Always use shared workspace ID
+  const targetWorkspaceId = SHARED_WORKSPACE_ID;
   
   // Clean rows data by removing undefined values
   const cleanedRows = removeUndefinedValues(rows);
   
   await setDoc(
-    workspaceDocRef(workspaceId),
+    workspaceDocRef(targetWorkspaceId),
     {
       rows: cleanedRows,
       updatedAt: serverTimestamp(),
+      lastUpdatedBy: workspaceId || 'anonymous', // Track who made the last update
     },
     { merge: true },
   );
 }
 
 export async function loadWorkspaceDataOnce(workspaceId) {
-  if (!workspaceId) throw new Error('workspaceId is required');
-  const snap = await getDoc(workspaceDocRef(workspaceId));
+  // Always load from shared workspace
+  const targetWorkspaceId = SHARED_WORKSPACE_ID;
+  const snap = await getDoc(workspaceDocRef(targetWorkspaceId));
   return snap.exists() ? snap.data().rows || [] : [];
 }
 
 export function subscribeWorkspace(workspaceId, callback) {
-  if (!workspaceId) return () => {};
-  return onSnapshot(workspaceDocRef(workspaceId), (snap) => {
+  // Always subscribe to shared workspace
+  const targetWorkspaceId = SHARED_WORKSPACE_ID;
+  return onSnapshot(workspaceDocRef(targetWorkspaceId), (snap) => {
     if (snap.exists()) {
       const data = snap.data();
       callback(Array.isArray(data.rows) ? data.rows : []);
+    } else {
+      // If shared workspace doesn't exist, return empty array
+      callback([]);
     }
   });
 }

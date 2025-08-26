@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { newRow, saveDataToStorage, normalizeDateTime } from '../utils';
-import { saveWorkspaceData } from '../services/firebase';
+import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services/firebase';
 
 export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
   // Helper function to clean row data
@@ -20,16 +20,16 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     setRows(prevRows => {
       const updatedRows = [...prevRows, newRowData];
       saveDataToStorage(updatedRows);
-      if (workspaceId) {
-        try {
-          saveWorkspaceData(workspaceId, updatedRows);
-        } catch (error) {
-          console.error('Failed to save to Firebase:', error);
-        }
+      
+      // Always save to shared workspace
+      try {
+        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+      } catch (error) {
+        console.error('Failed to save to Firebase:', error);
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId, cleanRowData]);
+  }, [setRows, cleanRowData]);
 
   // Update specific row
   const updateRow = useCallback((index, updates) => {
@@ -38,61 +38,63 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       const cleanedUpdates = cleanRowData(updates);
       updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
       saveDataToStorage(updatedRows);
-      if (workspaceId && !isRemoteUpdateRef.current) {
+      
+      // Always save to shared workspace if not a remote update
+      if (!isRemoteUpdateRef.current) {
         try {
-          saveWorkspaceData(workspaceId, updatedRows);
+          saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
         } catch (error) {
           console.error('Failed to save to Firebase:', error);
         }
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId, isRemoteUpdateRef, cleanRowData]);
+  }, [setRows, isRemoteUpdateRef, cleanRowData]);
 
   // Remove row
   const removeRow = useCallback((index) => {
     setRows(prevRows => {
       const updatedRows = prevRows.filter((_, i) => i !== index);
       saveDataToStorage(updatedRows);
-      if (workspaceId) {
-        try {
-          saveWorkspaceData(workspaceId, updatedRows);
-        } catch (error) {
-          console.error('Failed to save to Firebase:', error);
-        }
+      
+      // Always save to shared workspace
+      try {
+        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+      } catch (error) {
+        console.error('Failed to save to Firebase:', error);
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId]);
+  }, [setRows]);
 
   // Replace all rows
   const replaceRows = useCallback((newRows) => {
     setRows(newRows);
     saveDataToStorage(newRows);
-    if (workspaceId) {
-      try {
-        saveWorkspaceData(workspaceId, newRows);
-      } catch (error) {
-        console.error('Failed to save to Firebase:', error);
-      }
+    
+    // Always save to shared workspace
+    try {
+      saveWorkspaceData(SHARED_WORKSPACE_ID, newRows);
+    } catch (error) {
+      console.error('Failed to save to Firebase:', error);
     }
-  }, [setRows, workspaceId]);
+  }, [setRows]);
 
   // Add multiple rows
   const addMultipleRows = useCallback((newRowsData) => {
     setRows(prevRows => {
       const updatedRows = [...prevRows, ...newRowsData];
       saveDataToStorage(updatedRows);
-      if (workspaceId) {
-        try {
-          saveWorkspaceData(workspaceId, updatedRows);
-        } catch (error) {
-          console.error('Failed to save to Firebase:', error);
-        }
+      
+      // Always save to shared workspace
+      try {
+        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+      } catch (error) {
+        console.error('Failed to save to Firebase:', error);
       }
       return updatedRows;
     });
-  }, [setRows, workspaceId]);
+  }, [setRows]);
 
   // Validate add form - only API ID is required
   const validateAddForm = useCallback((form) => {

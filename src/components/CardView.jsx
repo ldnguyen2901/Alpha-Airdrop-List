@@ -52,7 +52,7 @@ export default function CardView({
   };
   
   const filteredRows = rows.filter((row) =>
-    (row.symbol || row.name || row.apiId).toLowerCase().includes(searchToken.toLowerCase())
+                (row.symbol || row.name || row.apiId).toLowerCase().includes(searchToken.toLowerCase())
   );
   
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
@@ -66,7 +66,7 @@ export default function CardView({
 
   return (
     <div>
-      {/* Mobile Header with Sort Options */}
+                           {/* Mobile Header with Sort Options */}
       <MobileHeader
         onRefresh={onRefresh}
         loading={loading}
@@ -93,7 +93,7 @@ export default function CardView({
             setEditButtonPosition={setEditButtonPosition}
           />
         ))}
-      </div>
+          </div>
 
       {/* Empty States */}
       {paginatedRows.length === 0 && filteredRows.length > 0 && (
