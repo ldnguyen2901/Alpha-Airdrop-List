@@ -10,12 +10,13 @@ import { useState, useRef } from 'react';
 
 export default function ActionButtons({
   onAddRow,
+  handleAddRowSubmit,
   onPasteText,
   onExportExcel,
   onImportExcel,
   onRefresh,
   onCheckDuplicates,
-
+  onTestATHAPI,
   loading,
   showHighestPrice,
   setShowHighestPrice,
@@ -30,6 +31,7 @@ export default function ActionButtons({
     apiId: '',
     pointPriority: '',
     pointFCFS: '',
+    contractAddress: '',
   });
   const [addErrors, setAddErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,8 +74,8 @@ export default function ActionButtons({
         return;
       }
 
-      // Call original onAddRow with form data
-      const result = await onAddRow(addForm);
+      // Call handleAddRowSubmit with form data
+      const result = await handleAddRowSubmit(addForm);
       
       if (result && result.success) {
         // Reset form
@@ -84,6 +86,7 @@ export default function ActionButtons({
           apiId: '',
           pointPriority: '',
           pointFCFS: '',
+          contractAddress: '',
         });
         setAddErrors({});
         setShowInlineForm(false);
@@ -209,6 +212,16 @@ export default function ActionButtons({
               className={(loading || isRefreshing) ? 'refresh-spin' : ''}
             />
             Refresh
+          </button>
+
+          {/* Debug Test ATH API Button */}
+          <button
+            onClick={onTestATHAPI}
+            className='hidden sm:flex px-3 py-2 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+            title='Test ATH API'
+          >
+            <span className="text-xs">🧪</span>
+            Test ATH
           </button>
 
         </div>

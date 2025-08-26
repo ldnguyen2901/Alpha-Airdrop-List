@@ -18,6 +18,7 @@ export default function TableHeader({
       'Token Price': 'price',
       Reward: 'value',
       'Highest Price': 'highestPrice',
+      'ATH': 'ath',
       'Contract Address': 'contractAddress',
     };
     return mapping[header];
@@ -41,6 +42,8 @@ export default function TableHeader({
               className={`text-left py-0.5 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
                 h === 'Contract Address' ? 'px-2' : 'px-3'
               } ${
+                h === 'ATH' ? 'text-center' : ''
+              } ${
                 isSortable
                   ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 select-none'
                   : ''
@@ -50,9 +53,7 @@ export default function TableHeader({
                   : ''
               }`}
 
-              onClick={
-                isSortable ? () => requestSort(columnKey) : undefined
-              }
+              onClick={() => isSortable && requestSort(getColumnKey(h))}
               title={isSortable ? `Click to sort by ${h}` : ''}
             >
               <div
@@ -62,7 +63,8 @@ export default function TableHeader({
                   h === 'Highest Price' ||
                   h === 'Listing time' ||
                   h === 'Point (Priority)' ||
-                  h === 'Point (FCFS)'
+                  h === 'Point (FCFS)' ||
+                  h === 'ATH'
                     ? 'justify-center'
                     : ''
                 }`}
@@ -78,6 +80,8 @@ export default function TableHeader({
                     ? 'FCFS'
                     : h === 'Contract Address'
                     ? 'Contract'
+                    : h === 'ATH'
+                    ? 'ATH'
                     : h}
                 </span>
                                  {isSortable && (

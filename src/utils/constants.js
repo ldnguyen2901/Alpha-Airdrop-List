@@ -10,7 +10,8 @@ export function newRow(partial = {}) {
     price: 0, // Current price
     reward: 0, // Reward
     value: 0, // Value = Amount x Price
-    highestPrice: 0, // Highest price reached
+    highestPrice: 0, // Highest price reached (tracked locally)
+    ath: 0, // All-Time High price (from CoinGecko)
     contractAddress: '', // Smart contract address
     logo: '', // Token logo URL
     symbol: '', // Token symbol
@@ -29,6 +30,7 @@ export const TABLE_HEADERS = [
   'Token Price',
   'Reward',
   'Highest Price',
+  'ATH',
   'Contract Address',
   '',
 ];
@@ -43,6 +45,7 @@ export const CSV_HEADERS = [
   'Token Price',
   'Reward',
   'Highest Price',
+  'ATH',
   'Contract Address',
   'Logo',
   'Symbol',

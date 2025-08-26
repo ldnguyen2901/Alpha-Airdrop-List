@@ -62,6 +62,17 @@ export default function AppContent() {
     state.setLastUpdated,
     addNotification
   );
+
+  // Debug function to test ATH API
+  const handleTestATHAPI = async () => {
+    console.log('🧪 Testing ATH API...');
+    const result = await apiOps.testATHAPI();
+    if (result) {
+      addNotification('ATH API test successful!', 'success');
+    } else {
+      addNotification('ATH API test failed!', 'error');
+    }
+  };
   
   // Firebase sync
   useFirebaseSync(
@@ -78,6 +89,7 @@ export default function AppContent() {
   
   // Import/Export operations
   const importExportOps = useImportExport(
+    state.rows,
     dataOps.addMultipleRows,
     dataOps.replaceRows,
     addNotification
@@ -176,6 +188,7 @@ export default function AppContent() {
 
         <ActionButtons
           onAddRow={modalOps.openAddRowModal}
+          handleAddRowSubmit={handleAddRowSubmit}
           onPasteText={handlePaste}
           onExportExcel={exportExcel}
           onImportExcel={() => {
@@ -185,6 +198,7 @@ export default function AppContent() {
             apiOps.refreshData();
           }}
           onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
+          onTestATHAPI={handleTestATHAPI}
           loading={state.loading}
           showHighestPrice={state.showHighestPrice}
           setShowHighestPrice={state.setShowHighestPrice}
@@ -202,7 +216,7 @@ export default function AppContent() {
            tokenLogos={state.tokenLogos}
            onRefresh={apiOps.refreshData}
            loading={state.loading}
-           onRetryContract={apiOps.retryFetchContract}
+ 
            ref={state.highlightRowRef}
          />
       </div>

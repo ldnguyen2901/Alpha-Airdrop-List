@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { splitCSV, CSV_HEADERS, readExcelFile, parsePastedData } from '../utils';
 import * as XLSX from 'xlsx';
 
-export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
+export const useImportExport = (rows, addMultipleRows, replaceRows, addNotification) => {
   // Handle paste CSV/TSV data
   const handlePaste = useCallback((text) => {
     try {
@@ -39,74 +39,55 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
   }, [addMultipleRows]);
 
   // Export Excel
-  const exportExcel = useCallback((rows) => {
-    try {
-      // Prepare data for Excel
-      const excelData = [
-        CSV_HEADERS, // Headers row
-        ...rows.map(row => [
-          row.name || '',
-          row.amount || '',
-          row.launchAt || '',
-          row.apiId || '',
-          row.pointPriority || '',
-          row.pointFCFS || '',
-          row.price || '',
-          row.value || '',
-          row.highestPrice || '',
-          row.contractAddress || '',
-          row.logo || '',
-          row.symbol || ''
-        ])
-      ];
-
-      // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-
-      // Set column widths for better readability
-      const columnWidths = [
-        { wch: 20 }, // Token
-        { wch: 12 }, // Amount
-        { wch: 20 }, // Listing time
-        { wch: 15 }, // API ID
-        { wch: 15 }, // Point (Priority)
-        { wch: 15 }, // Point (FCFS)
-        { wch: 12 }, // Token Price
-        { wch: 12 }, // Reward
-        { wch: 12 }, // Highest Price
-        { wch: 25 }, // Contract Address (reduced width)
-        { wch: 30 }, // Logo
-        { wch: 10 }  // Symbol
-      ];
-      worksheet['!cols'] = columnWidths;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Airdrop Data');
-
-      // Generate Excel file
-      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      // Create and download file
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `airdrop-data-${new Date().toISOString().split('T')[0]}.xlsx`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      if (addNotification) {
-        addNotification('Excel file exported successfully!', 'success');
-      }
-    } catch (error) {
-      console.error('Error exporting Excel:', error);
-      if (addNotification) {
-        addNotification('Failed to export Excel file', 'error');
-      }
-    }
-  }, []);
+  const exportExcel = useCallback(() => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Prepare data for export
+    const exportData = rows.map(row => [
+      row.name || '',
+      row.amount || '',
+      row.launchAt || '',
+      row.apiId || '',
+      row.pointPriority || '',
+      row.pointFCFS || '',
+      row.price || '',
+      row.value || '',
+      row.highestPrice || '',
+      row.ath || '',
+      row.contractAddress || '',
+      row.logo || '',
+      row.symbol || ''
+    ]);
+    
+    // Add headers
+    exportData.unshift(CSV_HEADERS);
+    
+    // Create worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(exportData);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 20 }, // Token
+      { wch: 12 }, // Amount
+      { wch: 20 }, // Listing time
+      { wch: 15 }, // API ID
+      { wch: 15 }, // Point (Priority)
+      { wch: 15 }, // Point (FCFS)
+      { wch: 12 }, // Token Price
+      { wch: 12 }, // Reward
+      { wch: 12 }, // Highest Price
+      { wch: 12 }, // ATH
+      { wch: 25 }, // Contract Address (reduced width)
+      { wch: 30 }, // Logo
+      { wch: 10 }  // Symbol
+    ];
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Airdrop Data');
+    
+    // Save file
+    XLSX.writeFile(workbook, `airdrop-data-${new Date().toISOString().split('T')[0]}.xlsx`);
+  }, [rows]);
 
   // Handle Excel import
   const handleImportExcel = useCallback(async (file) => {

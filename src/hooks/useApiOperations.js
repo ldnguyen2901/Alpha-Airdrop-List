@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchContractAddresses } from '../services/api';
+import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchContractAddresses, fetchATH, testATHAPI } from '../services/api';
 import { saveTokenLogoToDatabase } from '../services/firebase';
 import { usePriceTracking } from './usePriceTracking';
 
@@ -86,22 +86,21 @@ export const useApiOperations = (
     // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
     const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
     if (!validApiIdPattern.test(apiId.trim())) {
-  
       return;
     }
     
     // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
     const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
     if (invalidInputs.some(char => apiId.includes(char))) {
-  
       return;
     }
 
     try {
-      // Fetch both token info and contract address in parallel
-      const [tokenInfo, contractData] = await Promise.all([
+      // Fetch token info, contract address, and ATH data in parallel
+      const [tokenInfo, contractData, athData] = await Promise.all([
         fetchTokenInfo(apiId.trim()),
-        fetchContractAddresses([apiId.trim()])
+        fetchContractAddresses([apiId.trim()]),
+        fetchATH([apiId.trim()])
       ]);
       
       const updateData = {};
@@ -129,6 +128,12 @@ export const useApiOperations = (
         updateMessages.push('contract address');
       }
       
+      // Update ATH data if available
+      if (athData[apiId.trim()]) {
+        updateData.ath = athData[apiId.trim()];
+        updateMessages.push('ATH data');
+      }
+      
       // Only update if we have data to update
       if (Object.keys(updateData).length > 0) {
         updateRow(rowIndex, updateData);
@@ -147,10 +152,8 @@ export const useApiOperations = (
 
   // Refresh data function
   const refreshData = useCallback(async () => {
-  
     setLoading(true);
     try {
-  
       // Fetch main crypto prices
       const prices = await fetchCryptoPrices(['bitcoin', 'ethereum', 'binancecoin']);
       
@@ -160,21 +163,22 @@ export const useApiOperations = (
 
       // Fetch token prices for all rows
       if (ids.length > 0) {
-
         const tokenPrices = await fetchCryptoPrices(ids);
         
-        // Fetch missing data (logos, symbols, contract addresses) for tokens that need them
+        // Fetch missing data (logos, symbols, contract addresses, ATH) for tokens that need them
         const tokensNeedingData = rows.filter(row => 
           row.apiId && (
             !row.logo || 
             !row.symbol || 
             !row.contractAddress ||
-            !row.name
+            !row.name ||
+            !row.ath
           )
         );
         const missingDataIds = tokensNeedingData.map(row => row.apiId);
         let contractData = {};
         let logoData = {};
+        let athData = {};
         
         if (missingDataIds.length > 0) {
           try {
@@ -195,6 +199,16 @@ export const useApiOperations = (
             if (tokensWithoutLogo.length > 0) {
               console.log(`🖼️ Fetching logos for ${tokensWithoutLogo.length} tokens...`);
               logoData = await fetchTokenLogos(tokensWithoutLogo);
+            }
+            
+            // Fetch ATH data for tokens that don't have them
+            const tokensWithoutATH = missingDataIds.filter(id => {
+              const row = rows.find(row => row.apiId === id);
+              return !row?.ath;
+            });
+            if (tokensWithoutATH.length > 0) {
+              console.log(`📈 Fetching ATH for ${tokensWithoutATH.length} tokens...`);
+              athData = await fetchATH(tokensWithoutATH);
             }
           } catch (error) {
             console.error('Error fetching missing token data:', error);
@@ -237,7 +251,8 @@ export const useApiOperations = (
               logo: false,
               symbol: false,
               contract: false,
-              name: false
+              name: false,
+              ath: false
             };
             
             // Add missing data if available and not already set
@@ -262,8 +277,16 @@ export const useApiOperations = (
               }
             }
             
+            // Add missing ATH data if available
+            if (athData[row.apiId]) {
+              if (!row.ath) {
+                updateData.ath = athData[row.apiId];
+                tokenUpdates.ath = true;
+              }
+            }
+            
             // Add to updated tokens list if any metadata was updated
-            if (tokenUpdates.logo || tokenUpdates.symbol || tokenUpdates.contract || tokenUpdates.name) {
+            if (tokenUpdates.logo || tokenUpdates.symbol || tokenUpdates.contract || tokenUpdates.name || tokenUpdates.ath) {
               updatedTokens.push({
                 symbol: row.symbol || row.name || row.apiId,
                 updates: tokenUpdates
@@ -282,6 +305,7 @@ export const useApiOperations = (
             if (token.updates.symbol) updateMessages.push('symbol');
             if (token.updates.contract) updateMessages.push('contract address');
             if (token.updates.name) updateMessages.push('name');
+            if (token.updates.ath) updateMessages.push('ATH data');
             
             if (updateMessages.length > 0) {
               const message = `Updated ${updateMessages.join(', ')} for ${token.symbol}`;
@@ -298,7 +322,7 @@ export const useApiOperations = (
     } finally {
       setLoading(false);
     }
-  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend]); // Remove 'rows' from dependencies to prevent infinite loop
+  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend, addNotification]);
 
   // Manual retry function for fetching contract addresses
   const retryFetchContract = useCallback(async (apiId, rowIndex) => {
@@ -324,12 +348,8 @@ export const useApiOperations = (
           const tokenName = rows[rowIndex]?.symbol || rows[rowIndex]?.name || apiId;
           addNotification(`Contract address found for ${tokenName}!`, 'success');
         }
-      } else {
-        if (addNotification) {
-          const tokenName = rows[rowIndex]?.symbol || rows[rowIndex]?.name || apiId;
-          addNotification(`No contract address found for ${tokenName}`, 'warning');
-        }
       }
+      // Loại bỏ thông báo không tìm thấy contract
     } catch (error) {
       console.error('Error retrying contract fetch:', error);
       if (addNotification) {
@@ -344,5 +364,6 @@ export const useApiOperations = (
     fetchAndUpdateTokenInfo,
     refreshData,
     retryFetchContract,
+    testATHAPI,
   };
 };

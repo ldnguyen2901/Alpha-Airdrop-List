@@ -17,7 +17,6 @@ const SortableTable = forwardRef(({
   tokenLogos,
   onRefresh,
   loading,
-  onRetryContract,
 }, ref) => {
   const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
@@ -137,7 +136,6 @@ const SortableTable = forwardRef(({
           loading={loading}
           sortConfig={sortConfig}
           requestSort={requestSort}
-          onRetryContract={onRetryContract}
         />
         
         <EditModal
@@ -184,7 +182,7 @@ const SortableTable = forwardRef(({
                 getCountdownText={getCountdownTextForRow}
                 isHighlighted={highlightedRows.has(startIndex + idx)}
                 tokenLogos={tokenLogos}
-                onRetryContract={onRetryContract}
+
               />
             ))}
             {currentRows.length === 0 && (

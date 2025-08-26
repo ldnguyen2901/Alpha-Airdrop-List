@@ -277,33 +277,24 @@ export default function TableRow({
         </td>
       )}
 
+      {/* ATH */}
+      <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
+        ${formatPrice(row.ath || 0)}
+      </td>
+
       {/* Contract Address */}
-      <td className='px-2 py-3 text-left'>
-        <div className="flex items-center gap-1">
-          <span className="text-xs dark:text-white font-mono break-all">
-            {row.contractAddress ? (
-              <span className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" 
-                    title="Click to copy contract address"
-                    onClick={() => copyContractAddress(row.contractAddress, addNotification)}>
-                {row.contractAddress.length > 16 
-                  ? `${row.contractAddress.substring(0, 8)}...${row.contractAddress.substring(row.contractAddress.length - 6)}`
-                  : row.contractAddress
-                }
-              </span>
-            ) : (
-              <span className="text-gray-400 dark:text-gray-500">-</span>
-            )}
+      <td className='px-3 py-3 text-left text-xs dark:text-white font-mono max-w-[200px] truncate'>
+        {row.contractAddress ? (
+          <span 
+            className="truncate cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors" 
+            title="Click to copy contract address"
+            onClick={() => copyContractAddress(row.contractAddress)}
+          >
+            {row.contractAddress.slice(0, 8)}...{row.contractAddress.slice(-6)}
           </span>
-                     {!row.contractAddress && row.apiId && (
-             <button
-               onClick={() => onRetryContract && onRetryContract(row.apiId, index)}
-               className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-               title="Retry fetch contract address"
-             >
-               <RefreshIcon sx={{ fontSize: 16 }} />
-             </button>
-           )}
-        </div>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )}
       </td>
 
       {/* Actions */}
