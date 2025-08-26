@@ -18,6 +18,7 @@ export default function TableHeader({
       'Token Price': 'price',
       Reward: 'value',
       'Highest Price': 'highestPrice',
+      'Contract Address': 'contractAddress',
     };
     return mapping[header];
   };
@@ -26,7 +27,7 @@ export default function TableHeader({
     <thead className='bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 sticky top-0 z-30 border-b border-gray-200 dark:border-gray-600'>
       <tr>
         {TABLE_HEADERS.map((h) => {
-          // Always skip API ID column in table display
+          // Skip API ID column in table display (not shown to user)
           if (h === 'API ID') return null;
           // Skip Highest Price column if not showing
           if (h === 'Highest Price' && !showHighestPrice) return null;
@@ -37,7 +38,9 @@ export default function TableHeader({
           return (
             <th
               key={h}
-              className={`text-left px-3 py-0.5 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
+              className={`text-left py-0.5 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
+                h === 'Contract Address' ? 'px-2' : 'px-3'
+              } ${
                 isSortable
                   ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 select-none'
                   : ''
@@ -73,6 +76,8 @@ export default function TableHeader({
                     ? 'Priority'
                     : h === 'Point (FCFS)'
                     ? 'FCFS'
+                    : h === 'Contract Address'
+                    ? 'Contract'
                     : h}
                 </span>
                                  {isSortable && (

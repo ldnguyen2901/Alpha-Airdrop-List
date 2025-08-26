@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import { formatPrice, formatDateTime, getCountdownText } from '../../utils';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { formatPrice, formatDateTime, getCountdownText, copyContractAddress } from '../../utils';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 const TokenCard = ({
   row,
@@ -13,8 +15,10 @@ const TokenCard = ({
   onDeleteRow,
   editButtonRefs,
   deleteButtonRefs,
-  setEditButtonPosition
+  setEditButtonPosition,
+  onRetryContract
 }) => {
+  const { addNotification } = useNotifications();
   const [previousPrice, setPreviousPrice] = useState(row.price || 0);
   const [priceChangeColor, setPriceChangeColor] = useState('');
 
@@ -190,6 +194,38 @@ const TokenCard = ({
              <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
              <div className="font-medium text-green-600 dark:text-green-400">
                {row.value ? `$${formatPrice(row.value)}` : 'N/A'}
+             </div>
+           </div>
+         </div>
+
+                  {/* Contract Address */}
+         <div className="grid grid-cols-1 gap-4">
+           <div>
+             <span className="text-gray-500 dark:text-gray-400 text-sm">Contract Address:</span>
+             <div className="flex items-center gap-2">
+               <div className="font-medium text-gray-900 dark:text-white font-mono text-xs">
+                 {row.contractAddress ? (
+                   <span className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" 
+                         title="Click to copy contract address"
+                         onClick={() => copyContractAddress(row.contractAddress, addNotification)}>
+                     {row.contractAddress.length > 20 
+                       ? `${row.contractAddress.substring(0, 10)}...${row.contractAddress.substring(row.contractAddress.length - 8)}`
+                       : row.contractAddress
+                     }
+                   </span>
+                 ) : (
+                   <span className="text-gray-400 dark:text-gray-500">N/A</span>
+                 )}
+               </div>
+               {!row.contractAddress && row.apiId && (
+                 <button
+                   onClick={() => onRetryContract && onRetryContract(row.apiId, index)}
+                   className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                   title="Retry fetch contract address"
+                 >
+                   <RefreshIcon sx={{ fontSize: 16 }} />
+                 </button>
+               )}
              </div>
            </div>
          </div>

@@ -150,6 +150,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       apiId: form.apiId.trim(),
       pointPriority: form.pointPriority.trim() || '',
       pointFCFS: form.pointFCFS.trim() || '',
+      contractAddress: form.contractAddress || '', // Add contract address
     });
 
     // Clean the row data before adding

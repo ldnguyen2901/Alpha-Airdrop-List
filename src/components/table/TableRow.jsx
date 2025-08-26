@@ -1,4 +1,4 @@
-import { formatAmount, formatPrice, formatDateTime } from '../../utils';
+import { formatAmount, formatPrice, formatDateTime, copyContractAddress } from '../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -6,6 +6,8 @@ import InfoIcon from '@mui/icons-material/Info';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PriceTrackingInfo from '../PriceTrackingInfo';
+import { useNotifications } from '../../contexts/NotificationContext';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 export default function TableRow({
   row,
@@ -15,8 +17,10 @@ export default function TableRow({
   showHighestPrice,
   getCountdownText,
   isHighlighted,
-  tokenLogos
+  tokenLogos,
+  onRetryContract
 }) {
+  const { addNotification } = useNotifications();
   const deleteButtonRef = useRef(null);
   const [showPriceInfo, setShowPriceInfo] = useState(false);
   const tooltipRef = useRef(null);
@@ -272,6 +276,35 @@ export default function TableRow({
           </div>
         </td>
       )}
+
+      {/* Contract Address */}
+      <td className='px-2 py-3 text-left'>
+        <div className="flex items-center gap-1">
+          <span className="text-xs dark:text-white font-mono break-all">
+            {row.contractAddress ? (
+              <span className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" 
+                    title="Click to copy contract address"
+                    onClick={() => copyContractAddress(row.contractAddress, addNotification)}>
+                {row.contractAddress.length > 16 
+                  ? `${row.contractAddress.substring(0, 8)}...${row.contractAddress.substring(row.contractAddress.length - 6)}`
+                  : row.contractAddress
+                }
+              </span>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-500">-</span>
+            )}
+          </span>
+                     {!row.contractAddress && row.apiId && (
+             <button
+               onClick={() => onRetryContract && onRetryContract(row.apiId, index)}
+               className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+               title="Retry fetch contract address"
+             >
+               <RefreshIcon sx={{ fontSize: 16 }} />
+             </button>
+           )}
+        </div>
+      </td>
 
       {/* Actions */}
        <td className='px-3 py-3 text-right sticky right-0 z-10 actions-column' style={{ backgroundColor: 'inherit' }}>

@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "crons": [
+    {
+      "path": "/api/cron/update-prices",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/fetch-contracts", 
+      "schedule": "0 * * * *"
+    }
+  ]
+}

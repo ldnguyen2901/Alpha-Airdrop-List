@@ -54,6 +54,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
           row.price || '',
           row.value || '',
           row.highestPrice || '',
+          row.contractAddress || '',
           row.logo || '',
           row.symbol || ''
         ])
@@ -74,6 +75,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         { wch: 12 }, // Token Price
         { wch: 12 }, // Reward
         { wch: 12 }, // Highest Price
+        { wch: 25 }, // Contract Address (reduced width)
         { wch: 30 }, // Logo
         { wch: 10 }  // Symbol
       ];
@@ -139,10 +141,10 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
   const createExcelTemplate = useCallback(() => {
     try {
       const templateData = [
-        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)'],
-        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50'],
-        ['', '', '', 'ethereum', '', ''], // Example with only API ID
-        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40'], // Example without token name
+        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)', 'Contract Address (auto-filled)'],
+        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50', ''],
+        ['', '', '', 'ethereum', '', '', ''], // Example with only API ID
+        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40', ''], // Example without token name
       ];
 
       // Create workbook and worksheet
@@ -157,6 +159,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         { wch: 15 }, // API ID
         { wch: 15 }, // Point (Priority)
         { wch: 15 }, // Point (FCFS)
+        { wch: 25 }, // Contract Address (reduced width)
       ];
       worksheet['!cols'] = columnWidths;
 

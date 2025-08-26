@@ -128,3 +128,169 @@ export async function fetchTokenInfo(apiId) {
     return null;
   }
 }
+
+// Cache for contract addresses to avoid unnecessary API calls
+const contractCache = new Map();
+const CONTRACT_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// Function to clear contract cache
+export function clearContractCache() {
+  contractCache.clear();
+}
+
+// Fetch smart contract addresses for multiple tokens
+export async function fetchContractAddresses(ids) {
+  if (!ids.length) return {};
+  
+  const now = Date.now();
+  const uncachedIds = ids.filter(id => {
+    const cached = contractCache.get(id);
+    return !cached || (now - cached.timestamp) > CONTRACT_CACHE_DURATION;
+  });
+  
+  // If all IDs are cached and fresh, return from cache
+  if (uncachedIds.length === 0) {
+    const result = {};
+    ids.forEach(id => {
+      const cached = contractCache.get(id);
+      if (cached) {
+        result[id] = cached.data;
+      }
+    });
+    return result;
+  }
+  
+  // Fetch contract addresses for uncached IDs
+  const contracts = {};
+  
+  // Process in batches to avoid overwhelming the API
+  const batchSize = 3; // Reduced batch size for better reliability
+  for (let i = 0; i < uncachedIds.length; i += batchSize) {
+    const batch = uncachedIds.slice(i, i + batchSize);
+    
+    await Promise.all(batch.map(async (id) => {
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}`;
+          const res = await fetch(url, {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (compatible; AirdropTracker/1.0)'
+            }
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            
+            // Get contract address from platforms (Ethereum, BSC, etc.)
+            let contractAddress = '';
+            let platform = '';
+            
+            if (data.platforms && Object.keys(data.platforms).length > 0) {
+              // Priority: Ethereum > BSC > Polygon > Arbitrum > Optimism > Others
+              const priorityPlatforms = ['ethereum', 'binance-smart-chain', 'polygon-pos', 'arbitrum-one', 'optimistic-ethereum'];
+              
+              // First try priority platforms
+              for (const platformName of priorityPlatforms) {
+                if (data.platforms[platformName]) {
+                  contractAddress = data.platforms[platformName];
+                  platform = platformName;
+                  break;
+                }
+              }
+              
+              // If no priority platform found, take the first available
+              if (!contractAddress) {
+                const firstPlatform = Object.keys(data.platforms)[0];
+                contractAddress = data.platforms[firstPlatform];
+                platform = firstPlatform;
+              }
+            }
+            
+            const contractData = {
+              contractAddress: contractAddress,
+              platform: platform
+            };
+            
+            contracts[id] = contractData;
+            
+            // Cache the contract data (even if empty)
+            contractCache.set(id, {
+              data: contractData,
+              timestamp: now
+            });
+            
+            // Log successful fetch
+            if (contractAddress) {
+              console.log(`✅ Contract found for ${id}: ${contractAddress} (${platform})`);
+            } else {
+              console.log(`⚠️ No contract found for ${id} - may be a native token`);
+            }
+            
+            break; // Success, exit retry loop
+            
+          } else if (res.status === 429) {
+            // Rate limit - wait longer
+            console.log(`🔄 Rate limited for ${id}, retrying in 3s...`);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            retryCount++;
+          } else if (res.status === 404) {
+            // Token not found
+            console.log(`❌ Token not found: ${id}`);
+            contractCache.set(id, {
+              data: { contractAddress: '', platform: '' },
+              timestamp: now
+            });
+            break;
+          } else {
+            // Other HTTP errors
+            console.log(`⚠️ HTTP ${res.status} for ${id}, retrying...`);
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+          
+        } catch (error) {
+          console.error(`❌ Error fetching contract for ${id} (attempt ${retryCount + 1}):`, error.message);
+          retryCount++;
+          
+          if (retryCount <= maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } else {
+            // Final failure - cache empty result
+            contractCache.set(id, {
+              data: { contractAddress: '', platform: '' },
+              timestamp: now
+            });
+          }
+        }
+      }
+    }));
+    
+    // Add delay between batches to be respectful to the API
+    if (i + batchSize < uncachedIds.length) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  }
+  
+  // Add cached contracts for IDs that weren't fetched
+  ids.forEach(id => {
+    if (!contracts[id]) {
+      const cached = contractCache.get(id);
+      if (cached) {
+        contracts[id] = cached.data;
+      }
+    }
+  });
+  
+  // Log summary
+  const foundCount = Object.values(contracts).filter(c => c.contractAddress).length;
+  const totalCount = ids.length;
+  console.log(`📊 Contract fetch summary: ${foundCount}/${totalCount} tokens have contracts`);
+  
+  return contracts;
+}

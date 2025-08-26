@@ -161,6 +161,7 @@ export function parseExcelData(excelData) {
         apiId: apiId,
         pointPriority: String(pointPriority || '').trim(),
         pointFCFS: String(pointFCFS || '').trim(),
+        contractAddress: '', // Will be fetched from API later
         price: 0,
         value: 0,
         highestPrice: 0,

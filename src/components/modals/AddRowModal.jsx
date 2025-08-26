@@ -81,13 +81,18 @@ export default function AddRowModal({
       }
       
       try {
-        const { fetchTokenInfo } = await import('../../services/api');
-        const tokenInfo = await fetchTokenInfo(apiId.trim());
+        const { fetchTokenInfo, fetchContractAddresses } = await import('../../services/api');
+        const [tokenInfo, contractData] = await Promise.all([
+          fetchTokenInfo(apiId.trim()),
+          fetchContractAddresses([apiId.trim()])
+        ]);
+        
         if (tokenInfo) {
           setAddForm((p) => ({
             ...p,
             name: tokenInfo.symbol || tokenInfo.name,
-            apiId: tokenInfo.id // Use the correct ID from API
+            apiId: tokenInfo.id, // Use the correct ID from API
+            contractAddress: contractData[apiId.trim()]?.contractAddress || ''
           }));
         }
       } catch (error) {
@@ -277,6 +282,19 @@ export default function AddRowModal({
                 }
                 placeholder='Point (FCFS) (optional)'
                 className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Contract Address (auto-filled from API)
+              </label>
+              <input
+                name='contractAddress'
+                value={addForm.contractAddress || ''}
+                placeholder='Will be auto-filled from API'
+                className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+                disabled
               />
             </div>
           </div>

@@ -349,6 +349,18 @@ export default function EditModal({
             placeholder='Point (FCFS)'
           />
 
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Contract Address (auto-filled from API)
+            </label>
+            <input
+              value={rowDrafts[editingModal.idx].contractAddress || ''}
+              placeholder='Will be auto-filled from API'
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              disabled
+            />
+          </div>
+
                      <div className='flex justify-end gap-2 mt-2'>
                            <button
                 onClick={() => {

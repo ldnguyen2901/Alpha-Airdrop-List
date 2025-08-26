@@ -11,6 +11,7 @@ export function newRow(partial = {}) {
     reward: 0, // Reward
     value: 0, // Value = Amount x Price
     highestPrice: 0, // Highest price reached
+    contractAddress: '', // Smart contract address
     logo: '', // Token logo URL
     symbol: '', // Token symbol
     _forceTop: false, // temporary pin to top until saved
@@ -28,6 +29,7 @@ export const TABLE_HEADERS = [
   'Token Price',
   'Reward',
   'Highest Price',
+  'Contract Address',
   '',
 ];
 
@@ -41,6 +43,7 @@ export const CSV_HEADERS = [
   'Token Price',
   'Reward',
   'Highest Price',
+  'Contract Address',
   'Logo',
   'Symbol',
 ];

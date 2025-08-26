@@ -59,7 +59,8 @@ export default function AppContent() {
     state.setTokenLogos,
     dataOps.updateRow,
     state.setLoading,
-    state.setLastUpdated
+    state.setLastUpdated,
+    addNotification
   );
   
   // Firebase sync
@@ -191,18 +192,19 @@ export default function AppContent() {
           setSearchToken={state.setSearchToken}
         />
 
-        <SortableTable
-          rows={state.rows}
-          onUpdateRow={dataOps.updateRow}
-          onRemoveRow={dataOps.removeRow}
-          showHighestPrice={state.showHighestPrice}
-          setShowHighestPrice={state.setShowHighestPrice}
-          searchToken={state.searchToken}
-          tokenLogos={state.tokenLogos}
-          onRefresh={apiOps.refreshData}
-          loading={state.loading}
-          ref={state.highlightRowRef}
-        />
+                 <SortableTable
+           rows={state.rows}
+           onUpdateRow={dataOps.updateRow}
+           onRemoveRow={dataOps.removeRow}
+           showHighestPrice={state.showHighestPrice}
+           setShowHighestPrice={state.setShowHighestPrice}
+           searchToken={state.searchToken}
+           tokenLogos={state.tokenLogos}
+           onRefresh={apiOps.refreshData}
+           loading={state.loading}
+           onRetryContract={apiOps.retryFetchContract}
+           ref={state.highlightRowRef}
+         />
       </div>
 
       {/* Excel Upload Modal */}

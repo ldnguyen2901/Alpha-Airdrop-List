@@ -283,3 +283,22 @@ export function formatPrice(n) {
   if (fracPart) return sign + intFormatted + ',' + fracPart;
   return sign + intFormatted;
 }
+
+/**
+ * Copy contract address to clipboard with notification
+ * @param {string} contractAddress - The contract address to copy
+ * @param {function} addNotification - Notification function from context
+ */
+export const copyContractAddress = async (contractAddress, addNotification) => {
+  try {
+    await navigator.clipboard.writeText(contractAddress);
+    if (addNotification) {
+      addNotification('Contract address copied to clipboard!', 'success');
+    }
+  } catch (error) {
+    console.error('Failed to copy contract address:', error);
+    if (addNotification) {
+      addNotification('Failed to copy contract address', 'error');
+    }
+  }
+};
