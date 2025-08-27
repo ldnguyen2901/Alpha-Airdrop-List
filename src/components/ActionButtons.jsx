@@ -16,7 +16,6 @@ export default function ActionButtons({
   onImportExcel,
   onRefresh,
   onCheckDuplicates,
-  onTestATHAPI,
   loading,
   showHighestPrice,
   setShowHighestPrice,
@@ -193,36 +192,34 @@ export default function ActionButtons({
           </button>
 
           <button
-            onClick={() => {
-              setIsRefreshing(true);
-              onRefresh();
-              // Ensure animation completes full rotation
-              setTimeout(() => {
+            onClick={async () => {
+              if (isRefreshing) return;
+              try {
+                setIsRefreshing(true);
+                await onRefresh();
+              } finally {
                 setIsRefreshing(false);
-              }, 1000);
+              }
             }}
-            className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 flex items-center gap-2'
+            disabled={isRefreshing}
+            className={`hidden sm:flex px-3 py-2 rounded-2xl text-sm flex-shrink-0 flex items-center gap-2 shadow transition-all duration-300 ease-in-out ${
+              isRefreshing
+                ? 'bg-gray-400 cursor-not-allowed opacity-90'
+                : 'bg-black dark:bg-white dark:text-black text-white hover:opacity-90 hover:scale-105'
+            }`}
             title='Refresh prices and token info'
           >
             <AutorenewIcon 
               sx={{ 
                 fontSize: 16,
-                animation: (loading || isRefreshing) ? 'spin 1s linear infinite' : 'none'
+                animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
               }}
-              className={(loading || isRefreshing) ? 'refresh-spin' : ''}
+              className={isRefreshing ? 'refresh-spin' : ''}
             />
             Refresh
           </button>
 
-          {/* Debug Test ATH API Button */}
-          <button
-            onClick={onTestATHAPI}
-            className='hidden sm:flex px-3 py-2 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
-            title='Test ATH API'
-          >
-            <span className="text-xs">🧪</span>
-            Test ATH
-          </button>
+
 
         </div>
       </div>

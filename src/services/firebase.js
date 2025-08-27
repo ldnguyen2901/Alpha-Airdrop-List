@@ -1,7 +1,7 @@
 // Firebase initialization and Firestore helpers
 import { initializeApp } from 'firebase/app';
 import {
-  getFirestore,
+  initializeFirestore,
   doc,
   setDoc,
   getDoc,
@@ -41,7 +41,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Use long polling to avoid WebChannel being blocked by client extensions
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+});
 const auth = getAuth(app);
 
 // Single workspace ID for all users

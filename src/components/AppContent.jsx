@@ -63,16 +63,7 @@ export default function AppContent() {
     addNotification
   );
 
-  // Debug function to test ATH API
-  const handleTestATHAPI = async () => {
-    console.log('🧪 Testing ATH API...');
-    const result = await apiOps.testATHAPI();
-    if (result) {
-      addNotification('ATH API test successful!', 'success');
-    } else {
-      addNotification('ATH API test failed!', 'error');
-    }
-  };
+
   
   // Firebase sync
   useFirebaseSync(
@@ -105,14 +96,7 @@ export default function AppContent() {
   // Responsive design
   useResponsive(state.setIsMobile, state.setShowHighestPrice);
   
-  // Auto refresh
-  useAutoRefresh(
-    apiOps.refreshData,
-    state.isPageVisible,
-    state.setIsPageVisible,
-    state.timerRef,
-    60
-  );
+  // Auto refresh removed per request
   
   // Modal operations
   const modalOps = useModalOperations(
@@ -123,11 +107,23 @@ export default function AppContent() {
     state.setAddModalPosition
   );
 
-  // Initial data loading
+  // Initial data loading with staggered API calls
   useEffect(() => {
-    apiOps.loadLogosFromDatabase();
-    // Only refresh data once on initial load, not on every apiOps change
-    apiOps.refreshData();
+    const initializeData = async () => {
+      console.log('🚀 Initializing app data...');
+      
+      // Load logos from database first (no API call)
+      apiOps.loadLogosFromDatabase();
+      
+      // Wait a bit before starting API calls to avoid overwhelming the server
+      console.log('⏳ Waiting 1 second before starting API calls...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Refresh data with staggered approach
+      await apiOps.refreshData();
+    };
+    
+    initializeData();
   }, []); // Remove apiOps dependency to prevent infinite loop
 
   // Handle add row submit
@@ -168,12 +164,7 @@ export default function AppContent() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-6">
-        <Header 
-          workspaceId={state.workspaceId}
-          syncing={state.syncing}
-          isPageVisible={state.isPageVisible}
-          loading={state.loading}
-        />
+        <Header />
         <StatsCards
           rowsCount={state.rows.length}
           btcPrice={state.btcPrice}
@@ -194,16 +185,13 @@ export default function AppContent() {
           onImportExcel={() => {
             state.setShowExcelUpload(true);
           }}
-          onRefresh={() => {
-            apiOps.refreshData();
-          }}
-          onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
-          onTestATHAPI={handleTestATHAPI}
-          loading={state.loading}
-          showHighestPrice={state.showHighestPrice}
-          setShowHighestPrice={state.setShowHighestPrice}
-          searchToken={state.searchToken}
-          setSearchToken={state.setSearchToken}
+          onRefresh={async () => await apiOps.refreshData()}
+                                    onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
+                loading={state.loading}
+                showHighestPrice={state.showHighestPrice}
+                setShowHighestPrice={state.setShowHighestPrice}
+                searchToken={state.searchToken}
+                setSearchToken={state.setSearchToken}
         />
 
                  <SortableTable
