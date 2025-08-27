@@ -16,13 +16,13 @@ const MIN_REQUEST_INTERVAL = 5000; // 5 seconds between requests (increased for 
 const cache = new Map();
 const CACHE_TTL = 30 * 1000; // 30 seconds
 
-// Helper function to wait for rate limiting
-const waitForRateLimit = async () => {
+// Helper function to wait for rate limiting (configurable per-call)
+const waitForRateLimit = async (minIntervalMs = MIN_REQUEST_INTERVAL) => {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+  if (timeSinceLastRequest < minIntervalMs) {
+    const waitTime = minIntervalMs - timeSinceLastRequest;
     await new Promise(resolve => setTimeout(resolve, waitTime));
   }
   
@@ -47,7 +47,7 @@ const setCachedResponse = (key, data) => {
 };
 
 // Main proxy function with retry logic
-async function coinGeckoProxy(endpoint, params = {}, maxRetries = 3) {
+async function coinGeckoProxy(endpoint, params = {}, maxRetries = 3, minIntervalMs = MIN_REQUEST_INTERVAL) {
   const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`;
   
   // Check cache first
@@ -58,8 +58,8 @@ async function coinGeckoProxy(endpoint, params = {}, maxRetries = 3) {
   }
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    // Wait for rate limiting
-    await waitForRateLimit();
+    // Wait for rate limiting (adaptive per-call)
+    await waitForRateLimit(minIntervalMs);
     
     try {
       const url = `${CG_BASE}${endpoint}`;
@@ -150,9 +150,35 @@ app.get('/api/coingecko/contract-addresses', async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'id parameter is required' });
     }
-    
-    const result = await coinGeckoProxy(`/coins/${id}/contract/contract_addresses`);
-    res.json(result);
+
+    let address = null;
+    try {
+      const arr = await coinGeckoProxy(`/coins/${id}/contract/contract_addresses`, {}, 3, 800);
+      if (Array.isArray(arr) && arr.length > 0) {
+        address = arr[0]?.contract_address || null;
+      }
+    } catch (_) {}
+
+    if (!address) {
+      try {
+        const coin = await coinGeckoProxy(`/coins/${id}`, {
+          localization: false,
+          tickers: false,
+          market_data: false,
+          community_data: false,
+          developer_data: false,
+          sparkline: false,
+        }, 3, 800);
+        const platforms = coin?.platforms || {};
+        const preferred = ['ethereum','binance-smart-chain','arbitrum-one','base','polygon-pos','optimistic-ethereum'];
+        for (const chain of preferred) { if (platforms[chain]) { address = platforms[chain]; break; } }
+        if (!address) {
+          for (const val of Object.values(platforms)) { if (val) { address = val; break; } }
+        }
+      } catch (_) {}
+    }
+
+    res.json(address ? [{ contract_address: address }] : []);
   } catch (error) {
     console.error('Error in /api/coingecko/contract-addresses:', error);
     res.status(500).json({ error: error.message });
@@ -165,12 +191,19 @@ app.get('/api/coingecko/ath', async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'id parameter is required' });
     }
-    
-    const result = await coinGeckoProxy(`/coins/${id}/ohlc`, {
-      vs_currency,
-      days: 'max'
-    });
-    res.json(result);
+
+    // Use market_data.ath for accuracy and lower payload than OHLC max
+    const coin = await coinGeckoProxy(`/coins/${id}`, {
+      localization: false,
+      tickers: false,
+      community_data: false,
+      developer_data: false,
+      sparkline: false,
+      market_data: true,
+    }, 3, 1000);
+
+    const ath = coin?.market_data?.ath?.[vs_currency] ?? null;
+    res.json({ id, ath });
   } catch (error) {
     console.error('Error in /api/coingecko/ath:', error);
     res.status(500).json({ error: error.message });
@@ -202,7 +235,7 @@ app.get('/api/coingecko/batch-prices', async (req, res) => {
           ids: mainTokensToFetch.join(','),
           vs_currencies,
           include_last_updated_at: false
-        });
+        }, 3, 500);
         
         Object.assign(results, mainTokensResult);
         console.log(`✅ Main tokens completed: ${Object.keys(mainTokensResult).length} prices fetched`);
@@ -220,7 +253,7 @@ app.get('/api/coingecko/batch-prices', async (req, res) => {
     if (otherTokens.length > 0) {
       console.log(`📦 Fetching other tokens: ${otherTokens.length} tokens`);
       
-      const batchSize = 50;
+      const batchSize = 120;
       
       for (let i = 0; i < otherTokens.length; i += batchSize) {
         const batch = otherTokens.slice(i, i + batchSize);
@@ -234,7 +267,7 @@ app.get('/api/coingecko/batch-prices', async (req, res) => {
             ids: batch.join(','),
             vs_currencies,
             include_last_updated_at: false
-          });
+          }, 3, 500);
           
           Object.assign(results, batchResult);
           console.log(`✅ Other tokens batch ${batchNumber} completed: ${Object.keys(batchResult).length} prices fetched`);
@@ -269,7 +302,7 @@ app.get('/api/coingecko/batch-token-info', async (req, res) => {
     console.log(`📊 Total tokens to fetch info: ${idArray.length}`);
     
     const results = {};
-    const batchSize = 50;
+    const batchSize = 60;
     
     for (let i = 0; i < idArray.length; i += batchSize) {
       const batch = idArray.slice(i, i + batchSize);
@@ -336,21 +369,34 @@ app.get('/api/coingecko/batch-contract-addresses', async (req, res) => {
       console.log(`📦 Fetching contract addresses batch ${batchNumber}/${totalBatches}: ${batch.length} tokens`);
       
       for (const id of batch) {
+        let address = null;
         try {
-          const contracts = await coinGeckoProxy(`/coins/${id}/contract/contract_addresses`);
-          if (contracts && contracts.length > 0) {
-            results[id] = {
-              contractAddress: contracts[0].contract_address
-            };
-          }
-        } catch (error) {
-          console.error(`❌ Error fetching contract for ${id}:`, error);
+          const arr = await coinGeckoProxy(`/coins/${id}/contract/contract_addresses`, {}, 3, 800);
+          if (Array.isArray(arr) && arr.length > 0) address = arr[0]?.contract_address || null;
+        } catch (_) {}
+
+        if (!address) {
+          try {
+            const coin = await coinGeckoProxy(`/coins/${id}`, {
+              localization: false,
+              tickers: false,
+              market_data: false,
+              community_data: false,
+              developer_data: false,
+              sparkline: false,
+            }, 3, 800);
+            const platforms = coin?.platforms || {};
+            const preferred = ['ethereum','binance-smart-chain','arbitrum-one','base','polygon-pos','optimistic-ethereum'];
+            for (const chain of preferred) { if (platforms[chain]) { address = platforms[chain]; break; } }
+            if (!address) { for (const val of Object.values(platforms)) { if (val) { address = val; break; } } }
+          } catch (_) {}
         }
+
+        if (address) results[id] = { contractAddress: address };
       }
-      
+
       console.log(`✅ Contract addresses batch ${batchNumber} completed: ${Object.keys(results).length} total contracts found`);
-      
-      // Minimal delay between batches; global limiter handles spacing
+
       if (i + batchSize < idArray.length) {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
@@ -373,43 +419,43 @@ app.get('/api/coingecko/batch-ath', async (req, res) => {
     
     const idArray = ids.split(',');
     console.log(`📊 Total tokens to fetch ATH: ${idArray.length}`);
-    
+
     const results = {};
     const batchSize = 50;
-    
+
     for (let i = 0; i < idArray.length; i += batchSize) {
       const batch = idArray.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
       const totalBatches = Math.ceil(idArray.length / batchSize);
-      
+
       console.log(`📦 Fetching ATH batch ${batchNumber}/${totalBatches}: ${batch.length} tokens`);
-      
+
       for (const id of batch) {
         try {
-          const ohlc = await coinGeckoProxy(`/coins/${id}/ohlc`, {
-            vs_currency,
-            days: 'max'
-          });
-          if (ohlc && ohlc.length > 0) {
-            // Find highest price from OHLC data
-            const prices = ohlc.map(candle => candle[2]); // candle[2] is high price
-            const ath = Math.max(...prices);
+          const coin = await coinGeckoProxy(`/coins/${id}`, {
+            localization: false,
+            tickers: false,
+            community_data: false,
+            developer_data: false,
+            sparkline: false,
+            market_data: true,
+          }, 3, 1000);
+          const ath = coin?.market_data?.ath?.[vs_currency] ?? null;
+          if (ath !== null && ath !== undefined) {
             results[id] = ath;
           }
         } catch (error) {
-          console.error(`❌ Error fetching ATH for ${id}:`, error);
+          console.error(`❌ Error fetching ATH for ${id}:`, error?.response?.status || error.message);
         }
       }
-      
+
       console.log(`✅ ATH batch ${batchNumber} completed: ${Object.keys(results).length} total ATH values found`);
-      
-      // Add delay between batches
+
       if (i + batchSize < idArray.length) {
-        console.log(`⏳ Waiting 2 seconds before next batch...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
-    
+
     console.log(`🎉 All ATH batches completed. Total ATH values found: ${Object.keys(results).length}`);
     res.json(results);
   } catch (error) {

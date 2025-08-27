@@ -165,68 +165,64 @@ const TokenCard = ({
           </div>
         </div>
 
-                 {/* Point Priority and Highest Price */}
-         <div className="grid grid-cols-2 gap-4">
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
-             <div className="font-medium text-gray-900 dark:text-white">
-               {row.pointPriority || 'N/A'}
-             </div>
-           </div>
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Highest Price:</span>
-             <div className="font-medium text-green-600 dark:text-green-400">
-               {row.highestPrice && row.highestPrice > 0 ? `$${formatPrice(row.highestPrice)}` : 'N/A'}
-             </div>
-           </div>
-         </div>
+        {/* Point Priority and Highest Price */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
+            <div className="font-medium text-gray-900 dark:text-white">
+              {row.pointPriority || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Highest Price:</span>
+            <div className="font-medium text-green-600 dark:text-green-400">
+              {row.highestPrice && row.highestPrice > 0 ? `$${formatPrice(row.highestPrice)}` : 'N/A'}
+            </div>
+          </div>
+        </div>
 
-         {/* Points FCFS and ATH */}
-         <div className="grid grid-cols-2 gap-4">
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
-             <div className="font-medium text-gray-900 dark:text-white">
-               {row.pointFCFS || 'N/A'}
-             </div>
-           </div>
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
-             <div className="font-medium text-purple-600 dark:text-purple-400">
-               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
-             </div>
-           </div>
-         </div>
+        {/* Points FCFS and Reward */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
+            <div className="font-medium text-gray-900 dark:text-white">
+              {row.pointFCFS || 'N/A'}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
+            <div className="font-medium text-green-600 dark:text-green-400">
+              {row.value ? `$${formatPrice(row.value)}` : 'N/A'}
+            </div>
+          </div>
+        </div>
 
-                 {/* Reward */}
-         <div className="grid grid-cols-1 gap-4">
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
-             <div className="font-medium text-green-600 dark:text-green-400">
-               {row.value ? `$${formatPrice(row.value)}` : 'N/A'}
-             </div>
-           </div>
-         </div>
-
-                  {/* Contract Address */}
-         <div className="grid grid-cols-1 gap-4">
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Contract Address:</span>
-             <div className="font-medium text-gray-900 dark:text-white font-mono text-xs">
-               {row.contractAddress ? (
-                 <span className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" 
-                       title="Click to copy contract address"
-                       onClick={() => copyContractAddress(row.contractAddress, addNotification)}>
-                   {row.contractAddress.length > 20 
-                     ? `${row.contractAddress.substring(0, 10)}...${row.contractAddress.substring(row.contractAddress.length - 8)}`
-                     : row.contractAddress
-                   }
-                 </span>
-               ) : (
-                 <span className="text-gray-400 dark:text-gray-500">N/A</span>
-               )}
-             </div>
-           </div>
-         </div>
+        {/* ATH and Contract */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
+            <div className="font-medium text-purple-600 dark:text-purple-400">
+              {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Contract:</span>
+            <div className="font-medium text-gray-900 dark:text-white font-mono text-xs">
+              {row.contractAddress ? (
+                <span className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 cursor-pointer" 
+                      title="Click to copy contract address"
+                      onClick={() => copyContractAddress(row.contractAddress, addNotification)}>
+                  {row.contractAddress.length > 20 
+                    ? `${row.contractAddress.substring(0, 10)}...${row.contractAddress.substring(row.contractAddress.length - 8)}`
+                    : row.contractAddress
+                  }
+                </span>
+              ) : (
+                <span className="text-gray-400 dark:text-gray-500">N/A</span>
+              )}
+            </div>
+          </div>
+        </div>
 
         
 

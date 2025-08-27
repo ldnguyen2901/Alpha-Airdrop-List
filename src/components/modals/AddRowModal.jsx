@@ -198,11 +198,11 @@ export default function AddRowModal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Listing date & time (optional)
+                Listing date & time <span className='text-red-500'>*</span>
               </label>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                 <div>
-                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date (optional)</label>
+                  <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date <span className='text-red-500'>*</span></label>
                   <input
                     name='launchDate'
                     type='date'

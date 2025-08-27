@@ -150,3 +150,26 @@ export async function saveTokenLogoToDatabase(tokenId, tokenInfo) {
     console.error('Error saving token logo to database:', error);
   }
 }
+
+// Load token logos by ids from Firestore (tokenLogos collection)
+export async function loadTokenLogosFromDatabase(ids = []) {
+  const result = {};
+  try {
+    for (const id of ids) {
+      if (!id) continue;
+      const tokenDocRef = doc(db, 'tokenLogos', id);
+      const snap = await getDoc(tokenDocRef);
+      if (snap.exists()) {
+        const data = snap.data() || {};
+        result[id] = {
+          logo: data.logo || '',
+          symbol: data.symbol || '',
+          name: data.name || ''
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error loading token logos from database:', error);
+  }
+  return result;
+}

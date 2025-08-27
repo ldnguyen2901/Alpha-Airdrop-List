@@ -7,6 +7,7 @@ import {
   ExcelUpload
 } from './index';
 import { useNotifications } from '../contexts/NotificationContext';
+import { installConsoleBridge } from '../utils/consoleBridge';
 
 // Lazy load modals for better performance
 const AddRowModal = lazy(() => import('./modals/AddRowModal'));
@@ -109,6 +110,9 @@ export default function AppContent() {
 
   // Initial data loading with staggered API calls
   useEffect(() => {
+    // Install console bridge (warnings/errors -> in-app notifications)
+    const uninstall = installConsoleBridge(addNotification, { log: false, info: false, warn: true, error: true });
+    
     const initializeData = async () => {
       console.log('🚀 Initializing app data...');
       
@@ -124,6 +128,9 @@ export default function AppContent() {
     };
     
     initializeData();
+    return () => {
+      uninstall();
+    };
   }, []); // Remove apiOps dependency to prevent infinite loop
 
   // Handle add row submit

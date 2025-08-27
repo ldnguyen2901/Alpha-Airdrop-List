@@ -99,13 +99,17 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     });
   }, [setRows]);
 
-  // Validate add form - only API ID is required
+  // Validate add form - require API ID and Date
   const validateAddForm = useCallback((form) => {
     const errors = {};
     
-    // Only API ID is required
+    // Required: API ID
     if (!form.apiId.trim()) {
       errors.apiId = 'API ID is required';
+    }
+    // Required: Launch Date
+    if (!String(form.launchDate || '').trim()) {
+      errors.launchDate = 'Launch date is required';
     }
     
     return errors;
@@ -120,10 +124,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     }
     
     // Create new row data
+    const launchAt = normalizeDateTime(form.launchDate, form.launchTime) || '';
     const newRowData = newRow({
       name: form.name.trim(),
       amount: parseFloat(form.amount) || 0,
-      launchAt: form.launchAt.trim(),
+      launchAt,
       apiId: form.apiId.trim(),
       pointPriority: form.pointPriority.trim() || '',
       pointFCFS: form.pointFCFS.trim() || '',

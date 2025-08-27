@@ -13,14 +13,16 @@ export default async function handler(req, res) {
       const batch = idArray.slice(i, i + batchSize);
       for (const id of batch) {
         try {
-          const ohlc = await coinGeckoProxy(`/coins/${id}/ohlc`, {
-            vs_currency,
-            days: 'max',
+          const coin = await coinGeckoProxy(`/coins/${id}`, {
+            localization: false,
+            tickers: false,
+            community_data: false,
+            developer_data: false,
+            sparkline: false,
+            market_data: true,
           });
-          if (Array.isArray(ohlc) && ohlc.length) {
-            const ath = Math.max(...ohlc.map((c) => c[2]));
-            results[id] = ath;
-          }
+          const ath = coin?.market_data?.ath?.[vs_currency] ?? null;
+          if (ath !== null && ath !== undefined) results[id] = ath;
         } catch {}
       }
       if (i + batchSize < idArray.length) await new Promise(r => setTimeout(r, 200));

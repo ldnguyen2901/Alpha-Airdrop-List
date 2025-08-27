@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchContractAddresses, fetchATH } from '../services/api';
-import { saveTokenLogoToDatabase } from '../services/firebase';
+import { saveTokenLogoToDatabase, loadTokenLogosFromDatabase } from '../services/firebase';
 import { usePriceTracking } from './usePriceTracking';
 
 export const useApiOperations = (
@@ -27,21 +27,13 @@ export const useApiOperations = (
   // Load logos from database and fetch missing ones for main tokens
   const loadLogosFromDatabase = useCallback(async () => {
     try {
-      const logosFromDB = {};
-      
-      // Load logos from database (rows)
-      rows.forEach(row => {
-        if (row.apiId && row.logo) {
-          logosFromDB[row.apiId] = {
-            logo: row.logo,
-            symbol: row.symbol || '',
-            name: row.name || ''
-          };
-        }
-      });
+      // Try load from Firestore first (persisted logos)
+      const mainTokens = ['bitcoin', 'ethereum', 'binancecoin'];
+      const existingIds = Array.from(new Set([...mainTokens, ...rows.map(r => r.apiId).filter(Boolean)]));
+      const persisted = await loadTokenLogosFromDatabase(existingIds);
+      const logosFromDB = { ...persisted };
       
       // Fetch missing logos for main tokens (BTC, ETH, BNB)
-      const mainTokens = ['bitcoin', 'ethereum', 'binancecoin'];
       const missingMainTokens = mainTokens.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
       
       if (missingMainTokens.length > 0) {
@@ -51,18 +43,11 @@ export const useApiOperations = (
           // Update database with fetched logos for main tokens
           for (const tokenId of missingMainTokens) {
             if (fetchedLogos[tokenId]) {
-              // Update row if it exists in table
-              const rowIndex = rows.findIndex(row => row.apiId === tokenId);
-              if (rowIndex !== -1) {
-                updateRow(rowIndex, {
-                  logo: fetchedLogos[tokenId].logo,
-                  symbol: fetchedLogos[tokenId].symbol,
-                  name: fetchedLogos[tokenId].name
-                });
-              }
-              
               // Always save to database even if not in table
               await saveTokenLogoToDatabase(tokenId, fetchedLogos[tokenId]);
+              
+              // Update local state object
+              logosFromDB[tokenId] = fetchedLogos[tokenId];
             }
           }
           

@@ -30,8 +30,8 @@ export default function TableHeader({
         {TABLE_HEADERS.map((h) => {
           // Skip API ID column in table display (not shown to user)
           if (h === 'API ID') return null;
-          // Skip Highest Price column if not showing
-          if (h === 'Highest Price' && !showHighestPrice) return null;
+          // Skip Highest Price and ATH columns if not showing
+          if ((h === 'Highest Price' || h === 'ATH') && !showHighestPrice) return null;
 
           const columnKey = getColumnKey(h);
           const isSortable = columnKey && h !== '';

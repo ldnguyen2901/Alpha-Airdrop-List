@@ -109,9 +109,9 @@ export default function TableRow({
       return (
         <>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-            <div className="flex items-center justify-center gap-1">
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 mx-auto">
               <HourglassEmptyIcon sx={{ fontSize: 14 }} className="hourglass-blink" />
-              <span dangerouslySetInnerHTML={{ __html: cd }} />
+              <span className="tabular-nums" dangerouslySetInnerHTML={{ __html: cd }} />
             </div>
           </td>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
@@ -278,9 +278,11 @@ export default function TableRow({
       )}
 
       {/* ATH */}
-      <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-        ${formatPrice(row.ath || 0)}
-      </td>
+      {showHighestPrice && (
+        <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
+          {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
+        </td>
+      )}
 
       {/* Contract Address */}
       <td className='px-3 py-3 text-left text-xs dark:text-white font-mono max-w-[200px] truncate'>
