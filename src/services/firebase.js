@@ -93,21 +93,28 @@ const removeUndefinedValues = (obj) => {
 };
 
 export async function saveWorkspaceData(workspaceId, rows) {
-  // Always use shared workspace ID
-  const targetWorkspaceId = SHARED_WORKSPACE_ID;
-  
-  // Clean rows data by removing undefined values
-  const cleanedRows = removeUndefinedValues(rows);
-  
-  await setDoc(
-    workspaceDocRef(targetWorkspaceId),
-    {
+  try {
+    // Always use shared workspace ID
+    const targetWorkspaceId = SHARED_WORKSPACE_ID;
+    
+    // Clean rows data by removing undefined values
+    const cleanedRows = removeUndefinedValues(rows);
+    
+    const docData = {
       rows: cleanedRows,
       updatedAt: serverTimestamp(),
       lastUpdatedBy: workspaceId || 'anonymous', // Track who made the last update
-    },
-    { merge: true },
-  );
+    };
+    
+    await setDoc(
+      workspaceDocRef(targetWorkspaceId),
+      docData,
+      { merge: true },
+    );
+  } catch (error) {
+    console.error('Error saving workspace data:', error);
+    throw error;
+  }
 }
 
 export async function loadWorkspaceDataOnce(workspaceId) {

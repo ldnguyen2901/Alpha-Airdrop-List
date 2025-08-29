@@ -13,7 +13,7 @@ export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModa
     };
     
     // Check for duplicates
-    rows.forEach((row, index) => {
+    rows.filter(r => r && r !== null).forEach((row, index) => {
       // Check logo duplicates
       if (row.logo && row.logo.trim()) {
         if (!duplicates.logos[row.logo]) {

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { readExcelFile, parseExcelData } from '../utils';
+import { readExcelFile, parseExcelData } from '../utils/excel.js';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import TableChartIcon from '@mui/icons-material/TableChart';
 
@@ -8,6 +8,8 @@ export default function ExcelUpload({ onImportData }) {
   const [error, setError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const fileInputRef = useRef(null);
+
+
 
   useEffect(() => {
     if (isLoading && !isRefreshing) {
@@ -52,12 +54,17 @@ export default function ExcelUpload({ onImportData }) {
         return;
       }
 
-      onImportData(file);
-      setError('');
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      // Call onImportData with the file
+      const result = await onImportData(file);
+      
+      if (result && result.success) {
+        setError('');
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else if (result && result.error) {
+        setError(result.error);
       }
     } catch (err) {
       console.error('Excel upload error:', err);

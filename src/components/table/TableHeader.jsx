@@ -16,7 +16,7 @@ export default function TableHeader({
       'Point (Priority)': 'pointPriority',
       'Point (FCFS)': 'pointFCFS',
       'Token Price': 'price',
-      Reward: 'value',
+      Reward: 'reward',
       'Highest Price': 'highestPrice',
       'ATH': 'ath',
       'Contract Address': 'contractAddress',
