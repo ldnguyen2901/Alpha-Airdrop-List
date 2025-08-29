@@ -9,7 +9,6 @@ export function newRow(partial = {}) {
     pointFCFS: '', // Point (FCFS)
     price: 0, // Current price
     reward: 0, // Reward
-    value: 0, // Value = Amount x Price
     highestPrice: 0, // Highest price reached
     logo: '', // Token logo URL
     symbol: '', // Token symbol

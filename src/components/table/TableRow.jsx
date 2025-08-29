@@ -95,7 +95,7 @@ export default function TableRow({
             </span>
           </td>
           <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
-            ${formatPrice(row.value)}
+            ${formatPrice(row.reward)}
           </td>
         </>
       );

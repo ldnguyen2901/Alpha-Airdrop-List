@@ -124,9 +124,7 @@ export default function ActionButtons({
           </button>
           <PasteButton onPasteText={onPasteText} />
           <button
-                              onClick={() => {
-                    onImportExcel();
-                  }}
+            onClick={onImportExcel}
             className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
           >
             <TableChartIcon sx={{ fontSize: 16 }} />

@@ -19,7 +19,7 @@ export const useApiOperations = (
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
     return Array.from(
-      new Set(rows.map((r) => (r.apiId || '').trim()).filter(Boolean)),
+      new Set(rows.filter(r => r && r !== null).map((r) => (r.apiId || '').trim()).filter(Boolean)),
     );
   }, [rows]);
 
@@ -29,7 +29,7 @@ export const useApiOperations = (
       const logosFromDB = {};
       
       // Load logos from database (rows)
-      rows.forEach(row => {
+      rows.filter(r => r && r !== null).forEach(row => {
         if (row.apiId && row.logo) {
           logosFromDB[row.apiId] = {
             logo: row.logo,
@@ -51,7 +51,7 @@ export const useApiOperations = (
           for (const tokenId of missingMainTokens) {
             if (fetchedLogos[tokenId]) {
               // Update row if it exists in table
-              const rowIndex = rows.findIndex(row => row.apiId === tokenId);
+              const rowIndex = rows.findIndex(row => row && row !== null && row.apiId === tokenId);
               if (rowIndex !== -1) {
                 updateRow(rowIndex, {
                   logo: fetchedLogos[tokenId].logo,
@@ -129,10 +129,10 @@ export const useApiOperations = (
         const tokenPrices = await fetchCryptoPrices(ids);
         
         // Update rows with new prices and track highest prices using optimized algorithm
-        rows.forEach((row, index) => {
+        rows.filter(r => r && r !== null).forEach((row, index) => {
           if (row.apiId && tokenPrices[row.apiId]) {
             const currentPrice = tokenPrices[row.apiId].usd;
-            const value = currentPrice * row.amount;
+            const reward = currentPrice * row.amount;
             
             // Use optimized price tracking algorithm
             const trackingResult = trackPriceChange(
@@ -149,7 +149,7 @@ export const useApiOperations = (
             // Update row with new data
             const updateData = { 
               price: currentPrice, 
-              value,
+              reward,
               ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
             };
             

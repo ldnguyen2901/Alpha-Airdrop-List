@@ -51,8 +51,7 @@ export default function CardView({
     }
   };
   
-  const filteredRows = rows.filter((row) =>
-                (row.symbol || row.name || row.apiId).toLowerCase().includes(searchToken.toLowerCase())
+  const filteredRows = rows.filter((row) => row && row !== null && (row.symbol || row.name || row.apiId).toLowerCase().includes(searchToken.toLowerCase())
   );
   
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage);

@@ -148,7 +148,7 @@ export function parsePastedData(text) {
           pointPriority: pointPriority.trim() || '',
           pointFCFS: pointFCFS.trim() || '',
           price: 0,
-          value: 0,
+          reward: 0,
           highestPrice: 0,
         });
 

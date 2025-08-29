@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { splitCSV, CSV_HEADERS, readExcelFile, parsePastedData } from '../utils';
+import { splitCSV, CSV_HEADERS, parsePastedData } from '../utils';
+import { readExcelFile, parseExcelData } from '../utils/excel.js';
 import * as XLSX from 'xlsx';
 
 export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
@@ -44,7 +45,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
       // Prepare data for Excel
       const excelData = [
         CSV_HEADERS, // Headers row
-        ...rows.map(row => [
+        ...rows.filter(row => row && row !== null).map(row => [
           row.name || '',
           row.amount || '',
           row.launchAt || '',
@@ -52,7 +53,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
           row.pointPriority || '',
           row.pointFCFS || '',
           row.price || '',
-          row.value || '',
+          row.reward || '',
           row.highestPrice || '',
           row.logo || '',
           row.symbol || ''

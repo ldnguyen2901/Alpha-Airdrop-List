@@ -21,11 +21,13 @@ export function readExcelFile(file) {
 
         resolve(jsonData);
       } catch (error) {
+        console.error('Error reading Excel file:', error);
         reject(new Error('Không thể đọc file Excel: ' + error.message));
       }
     };
 
-    reader.onerror = function () {
+    reader.onerror = function (error) {
+      console.error('FileReader error:', error);
       reject(new Error('Lỗi khi đọc file'));
     };
 
@@ -43,74 +45,47 @@ export function parseExcelData(excelData) {
   const errors = [];
   const validRows = [];
 
+  // Expected column structure:
+  // A: Token Name (optional)
+  // B: Amount (optional)
+  // C: Launch Date (optional)
+  // D: API ID (required)
+  // E: Point Priority (optional)
+  // F: Point FCFS (optional)
+
   dataRows.forEach((row, idx) => {
     try {
       // Validate số cột
-      if (row.length < 2) {
-        errors.push(`Row ${idx + 2}: Too few columns (${row.length}), minimum 2 required (API ID and optionally Date)`);
+      if (row.length < 1) {
+        errors.push(`Row ${idx + 2}: Empty row`);
         return;
       }
       
       if (row.length > 6) {
         const extras = row.slice(6).some((v) => String(v || '').trim() !== '');
         if (extras) {
-          errors.push(`Row ${idx + 2}: Data found in columns beyond F`);
+          errors.push(`Row ${idx + 2}: Data found in columns beyond F (found ${row.length} columns, max 6 allowed)`);
           return;
         }
       }
 
       const [
-        token = '',
-        amount = '',
-        dateClaim = '',
-        fullName = '',
-        pointPriority = '',
-        pointFCFS = '',
+        tokenName = '',      // Column A: Token Name
+        amount = '',         // Column B: Amount
+        launchDate = '',     // Column C: Launch Date
+        apiId = '',          // Column D: API ID
+        pointPriority = '',  // Column E: Point Priority
+        pointFCFS = '',      // Column F: Point FCFS
       ] = row;
 
-      // Find API ID - it could be in different columns depending on the format
-      let apiId = '';
-      let actualToken = '';
-      let actualAmount = '';
-      let actualDate = '';
-
-             const columns = [token, amount, dateClaim, fullName, pointPriority, pointFCFS];
-       
-       // Super simple logic for ,ethereum,31/12/2024 format
-       if (columns.length >= 3 && !String(token || '').trim() && String(amount || '').trim() && String(dateClaim || '').trim()) {
-         // Format: ,API_ID,DATE
-         apiId = String(amount || '').trim();
-         actualDate = String(dateClaim || '').trim();
-       } else if (columns.length >= 2 && String(token || '').trim() && String(amount || '').trim()) {
-         // Format: API_ID,DATE
-         apiId = String(token || '').trim();
-         actualDate = String(amount || '').trim();
-       } else if (String(fullName || '').trim()) {
-         // Standard format: API ID in column D
-         apiId = String(fullName || '').trim();
-         actualToken = String(token || '').trim();
-         actualAmount = String(amount || '').trim();
-         actualDate = String(dateClaim || '').trim();
-       } else {
-         // Try to find any non-empty, non-date, non-number value
-         for (let i = 0; i < columns.length; i++) {
-           const col = String(columns[i] || '').trim();
-           if (!col) continue;
-           
-           if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(col)) {
-             actualDate = col;
-           } else if (!isNaN(parseFloat(col.replace(/[^\d.,]/g, '').replace(',', '.')))) {
-             actualAmount = col;
-           } else if (!apiId) {
-             apiId = col;
-           }
-         }
-       }
-       
-       actualToken = String(token || '').trim();
+      // Parse data from correct columns
+      let actualToken = String(tokenName || '').trim();
+      let actualAmount = String(amount || '').trim();
+      let actualDate = String(launchDate || '').trim();
+      let actualApiId = String(apiId || '').trim();
 
       // Only API ID is required, others are optional
-      if (!apiId) {
+      if (!actualApiId) {
         errors.push(`Row ${idx + 2}: API ID is required`);
         return;
       }
@@ -128,9 +103,9 @@ export function parseExcelData(excelData) {
         const dateStr = actualDate.trim();
         
         // Excel date number
-        if (typeof dateClaim === 'number' || /^\d+(\.\d+)?$/.test(dateStr)) {
+        if (typeof launchDate === 'number' || /^\d+(\.\d+)?$/.test(dateStr)) {
           try {
-            const date = new Date((parseFloat(dateClaim) - 25569) * 86400 * 1000);
+            const date = new Date((parseFloat(launchDate) - 25569) * 86400 * 1000);
             if (!isNaN(date.getTime())) {
               const day = String(date.getDate()).padStart(2, '0');
               const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -155,14 +130,14 @@ export function parseExcelData(excelData) {
       }
 
       validRows.push({
-        name: actualToken || apiId, // Use API ID as name if token name is empty
+        name: actualToken || actualApiId, // Use API ID as name if token name is empty
         amount: parsedAmount,
         launchAt: listingTime,
-        apiId: apiId,
+        apiId: actualApiId,
         pointPriority: String(pointPriority || '').trim(),
         pointFCFS: String(pointFCFS || '').trim(),
         price: 0,
-        value: 0,
+        reward: 0,
         highestPrice: 0,
       });
 

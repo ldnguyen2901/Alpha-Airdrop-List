@@ -189,7 +189,7 @@ const TokenCard = ({
            <div>
              <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
              <div className="font-medium text-green-600 dark:text-green-400">
-               {row.value ? `$${formatPrice(row.value)}` : 'N/A'}
+               {row.reward ? `$${formatPrice(row.reward)}` : 'N/A'}
              </div>
            </div>
          </div>

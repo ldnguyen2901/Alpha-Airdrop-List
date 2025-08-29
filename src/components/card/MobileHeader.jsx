@@ -53,7 +53,7 @@ const MobileHeader = ({
                 {sortConfig?.key === 'amount' && 'Amount'}
                 {sortConfig?.key === 'launchAt' && 'Date'}
                 {sortConfig?.key === 'price' && 'Price'}
-                {sortConfig?.key === 'value' && 'Reward'}
+                {sortConfig?.key === 'reward' && 'Reward'}
                 {sortConfig?.key === 'highestPrice' && 'High'}
                 {!sortConfig?.key && 'Date'}
               </span>
@@ -82,7 +82,7 @@ const MobileHeader = ({
                       { key: 'amount', label: 'Amount' },
                       { key: 'launchAt', label: 'Launch Date' },
                       { key: 'price', label: 'Price' },
-                      { key: 'value', label: 'Reward' },
+                      { key: 'reward', label: 'Reward' },
                       { key: 'highestPrice', label: 'Highest Price' }
                     ].map((item) => (
                       <button

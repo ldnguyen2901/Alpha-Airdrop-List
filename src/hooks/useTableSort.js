@@ -35,15 +35,15 @@ export function useTableSort() {
 
   const sortRows = (rows, searchToken) => {
     const filtered = searchToken
-      ? rows.filter((r) =>
-          (r.name || '').toLowerCase().includes(searchToken.toLowerCase()),
+      ? rows.filter((r) => r && r !== null && (r.name || '').toLowerCase().includes(searchToken.toLowerCase()),
         )
-      : rows;
+      : rows.filter(r => r && r !== null);
     const pinned = filtered.filter((r) => r._forceTop);
     const normal = filtered.filter((r) => !r._forceTop);
     if (!sortConfig.key) return [...pinned, ...normal];
 
     const sortedNormal = [...normal].sort((a, b) => {
+      if (!a || !b) return 0;
       let aValue = a[sortConfig.key];
       let bValue = b[sortConfig.key];
 
@@ -51,7 +51,7 @@ export function useTableSort() {
       if (
         sortConfig.key === 'amount' ||
         sortConfig.key === 'price' ||
-        sortConfig.key === 'value'
+        sortConfig.key === 'reward'
       ) {
         aValue = Number(aValue) || 0;
         bValue = Number(bValue) || 0;
