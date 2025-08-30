@@ -67,7 +67,6 @@ export const useAppState = () => {
     apiId: '',
     pointPriority: '',
     pointFCFS: '',
-    contractAddress: '',
   });
   const [addErrors, setAddErrors] = useState({});
 

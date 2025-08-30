@@ -185,19 +185,7 @@ export function formatNumber(n) {
 // - If only date provided, returns "DD/MM/YYYY" with zero-padded day/month
 // - If time provided, returns "DD/MM/YYYY HH:mm:ss" with zero-padded parts
 // If input is invalid, returns the original value unchanged.
-export function normalizeDateTime(value, timeOptional) {
-  // Overload: if two params provided, assume first is YYYY-MM-DD (date picker)
-  if (typeof timeOptional !== 'undefined') {
-    if (!value) return '';
-    const dateStr = String(value).trim();
-    const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (m) {
-      const [, y, mo, d] = m;
-      const hhmm = String(timeOptional || '00:00').trim() || '00:00';
-      return `${d}/${mo}/${y} ${hhmm}`;
-    }
-    // fallback to legacy single-arg behavior
-  }
+export function normalizeDateTime(value) {
   if (!value && value !== 0) return value;
   const v = String(value).trim();
 
@@ -219,18 +207,6 @@ export function normalizeDateTime(value, timeOptional) {
       2,
       '0',
     )}:${String(ss).padStart(2, '0')}`;
-  }
-
-  // Support YYYY-MM-DD and YYYY-MM-DD HH:mm
-  const isoDateOnly = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoDateOnly) {
-    const [, y, mo, d] = isoDateOnly;
-    return `${d}/${mo}/${y} 00:00`;
-  }
-  const isoDateTime = v.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
-  if (isoDateTime) {
-    const [, y, mo, d, hh, mm] = isoDateTime;
-    return `${d}/${mo}/${y} ${hh}:${mm}`;
   }
 
   // Not matching expected patterns -> return original
@@ -307,22 +283,3 @@ export function formatPrice(n) {
   if (fracPart) return sign + intFormatted + ',' + fracPart;
   return sign + intFormatted;
 }
-
-/**
- * Copy contract address to clipboard with notification
- * @param {string} contractAddress - The contract address to copy
- * @param {function} addNotification - Notification function from context
- */
-export const copyContractAddress = async (contractAddress, addNotification) => {
-  try {
-    await navigator.clipboard.writeText(contractAddress);
-    if (addNotification) {
-      addNotification('Contract address copied to clipboard!', 'success');
-    }
-  } catch (error) {
-    console.error('Failed to copy contract address:', error);
-    if (addNotification) {
-      addNotification('Failed to copy contract address', 'error');
-    }
-  }
-};

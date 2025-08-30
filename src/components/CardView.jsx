@@ -14,7 +14,6 @@ export default function CardView({
   loading,
   sortConfig,
   requestSort,
-
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [editButtonPosition, setEditButtonPosition] = useState({ top: 0, left: 0 });
@@ -89,7 +88,6 @@ export default function CardView({
             editButtonRefs={editButtonRefs}
             deleteButtonRefs={deleteButtonRefs}
             setEditButtonPosition={setEditButtonPosition}
-
           />
         ))}
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const useAutoRefresh = (
   refreshData,
@@ -10,10 +10,6 @@ export const useAutoRefresh = (
   const refreshDataRef = useRef(refreshData);
   const isInitializedRef = useRef(false);
   const refreshSecRef = useRef(refreshSec);
-  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(() => {
-    const saved = localStorage.getItem('autoRefreshEnabled');
-    return saved === null ? true : saved === 'true'; // Default to enabled
-  });
 
   // Update refs when props change
   useEffect(() => {
@@ -28,13 +24,13 @@ export const useAutoRefresh = (
       const isVisible = !document.hidden;
       setIsPageVisible(isVisible);
       
-      if (isVisible && isAutoRefreshEnabled) {
+      if (isVisible) {
         // Page became visible, refresh data immediately only if not initial load
         if (isInitializedRef.current) {
           refreshDataRef.current();
         }
         
-        // Restart timer only if auto refresh is enabled
+        // Restart timer
         if (timerRef.current) {
           clearInterval(timerRef.current);
         }
@@ -42,7 +38,7 @@ export const useAutoRefresh = (
           refreshDataRef.current();
         }, refreshSecRef.current * 1000);
       } else {
-        // Page became hidden or auto refresh disabled, clear timer
+        // Page became hidden, clear timer
         if (timerRef.current) {
           clearInterval(timerRef.current);
           timerRef.current = null;
@@ -53,49 +49,22 @@ export const useAutoRefresh = (
     // Set up visibility change listener
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Initial setup - only start timer if auto refresh is enabled
-    if (isPageVisible && !isInitializedRef.current && isAutoRefreshEnabled) {
+    // Initial setup - only start timer, don't refresh immediately
+    if (isPageVisible && !isInitializedRef.current) {
       isInitializedRef.current = true;
-      // Start timer if page is visible and auto refresh is enabled
+      // Start timer if page is visible
       timerRef.current = setInterval(() => {
         refreshDataRef.current();
       }, refreshSecRef.current * 1000);
     }
 
-      // Cleanup
-  return () => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-}, [isPageVisible, setIsPageVisible, timerRef, isAutoRefreshEnabled]); // Add isAutoRefreshEnabled dependency
-
-// Function to handle auto refresh toggle
-const handleAutoRefreshToggle = (enabled) => {
-  setIsAutoRefreshEnabled(enabled);
-  
-  if (enabled && isPageVisible) {
-    // Enable auto refresh - start timer if page is visible
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    timerRef.current = setInterval(() => {
-      refreshDataRef.current();
-    }, refreshSecRef.current * 1000);
-  } else {
-    // Disable auto refresh - clear timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }
-};
-
-// Return state and handler
-return {
-  isAutoRefreshEnabled,
-  handleAutoRefreshToggle
-};
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isPageVisible, setIsPageVisible, timerRef]); // Remove refreshSec dependency to prevent timer restart
 };

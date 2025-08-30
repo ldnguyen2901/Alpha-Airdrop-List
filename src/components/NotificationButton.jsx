@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
-import ClearAllIcon from '@mui/icons-material/ClearAll';
-import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 
 const NotificationButton = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +8,6 @@ const NotificationButton = () => {
     markAsRead, 
     markAllAsRead, 
     removeNotification, 
-    clearAllNotifications,
     getUnreadCount 
   } = useNotifications();
   const dropdownRef = useRef(null);
@@ -40,16 +37,6 @@ const NotificationButton = () => {
   const handleRemoveNotification = (e, id) => {
     e.stopPropagation();
     removeNotification(id);
-  };
-
-  const handleClearAllNotifications = (e) => {
-    e.stopPropagation();
-    clearAllNotifications();
-  };
-
-  const handleMarkAllAsRead = (e) => {
-    e.stopPropagation();
-    markAllAsRead();
   };
 
   const unreadCount = getUnreadCount();
@@ -115,26 +102,14 @@ const NotificationButton = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Thông báo
             </h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
-                  title="Đánh dấu đã đọc tất cả"
-                >
-                  <MarkEmailReadIcon sx={{ fontSize: 20 }} />
-                </button>
-              )}
-              {notifications.length > 0 && (
-                <button
-                  onClick={handleClearAllNotifications}
-                  className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                  title="Xóa tất cả thông báo"
-                >
-                  <ClearAllIcon sx={{ fontSize: 20 }} />
-                </button>
-              )}
-            </div>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Đánh dấu đã đọc tất cả
+              </button>
+            )}
           </div>
 
           {/* Notifications List */}

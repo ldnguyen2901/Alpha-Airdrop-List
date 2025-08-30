@@ -38,14 +38,4 @@ Thumbs.db
 serviceAccountKey.json
 *.key.json
 
-# Vercel
-.vercel
-
-# Test files
-test-cron.js
-
-# Temporary files
-*.tmp
-*.temp
-
 

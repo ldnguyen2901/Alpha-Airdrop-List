@@ -1,7 +1,7 @@
 // Export all custom hooks
 export { useAppState } from './useAppState';
 export { useDataOperations } from './useDataOperations';
-export { useApiOperations } from './useApiOperations.jsx';
+export { useApiOperations } from './useApiOperations';
 export { useFirebaseSync } from './useFirebaseSync';
 export { useImportExport } from './useImportExport';
 export { useDuplicateCheck } from './useDuplicateCheck';
