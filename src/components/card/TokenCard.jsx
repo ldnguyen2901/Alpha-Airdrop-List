@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import BlockIcon from '@mui/icons-material/Block';
 import { formatPrice, formatDateTime, getCountdownText } from '../../utils';
 
 const TokenCard = ({
@@ -124,23 +125,25 @@ const TokenCard = ({
             )}
           </div>
                      <div className="flex-1 min-w-0">
-             <div className="flex items-center justify-between">
-               <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                 {row.name || row.symbol || 'Unknown Token'}
-               </h3>
-               <div className={`text-lg font-bold ${priceChangeColor || 'text-gray-900 dark:text-white'} ml-2 transition-colors duration-500`}>
-                 {row.price ? `$${formatPrice(row.price)}` : (row.launchAt && !isTokenListed(row) ? (
-                   <div className={`px-2 py-1 ${getStatusColor(row)} border rounded-lg text-xs font-medium flex items-center gap-1`}>
-                     <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
-                     <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
-                   </div>
-                 ) : 'N/A')}
-               </div>
-             </div>
-             <p className="text-sm text-gray-500 dark:text-gray-400 truncate hidden sm:block">
-               {row.symbol && row.symbol !== row.name ? row.symbol : row.apiId || 'No API ID'}
-             </p>
-           </div>
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                    {(row.symbol || '?').toUpperCase()}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {row.name && row.name !== row.symbol ? row.name : row.apiId || 'No API ID'}
+                  </p>
+                </div>
+                <div className={`text-lg font-bold ${priceChangeColor || 'text-gray-900 dark:text-white'} ml-2 transition-colors duration-500`}>
+                  {row.price ? `$${formatPrice(row.price)}` : (row.launchAt && !isTokenListed(row) ? (
+                    <div className={`px-2 py-1 ${getStatusColor(row)} border rounded-lg text-xs font-medium flex items-center gap-1`}>
+                      <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
+                      <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
+                    </div>
+                  ) : 'N/A')}
+                </div>
+              </div>
+            </div>
         </div>
       </div>
 
@@ -151,7 +154,7 @@ const TokenCard = ({
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Amount:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.amount ? `${row.amount.toLocaleString()} ${row.symbol || ''}` : 'N/A'}
+              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || '').toUpperCase()}` : 'N/A'}
             </div>
           </div>
           <div>
@@ -162,30 +165,38 @@ const TokenCard = ({
           </div>
         </div>
 
-                 {/* Point Priority and Highest Price */}
+                 {/* Point Priority and ATH */}
          <div className="grid grid-cols-2 gap-4">
+                       <div>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {row.pointPriority ? (
+                  row.pointPriority
+                ) : (
+                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+                )}
+              </div>
+            </div>
            <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
-             <div className="font-medium text-gray-900 dark:text-white">
-               {row.pointPriority || 'N/A'}
-             </div>
-           </div>
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Highest Price:</span>
-             <div className="font-medium text-green-600 dark:text-green-400">
-               {row.highestPrice && row.highestPrice > 0 ? `$${formatPrice(row.highestPrice)}` : 'N/A'}
+             <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
+             <div className="font-medium text-purple-600 dark:text-purple-400">
+               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
              </div>
            </div>
          </div>
 
                  {/* Points FCFS and Reward */}
          <div className="grid grid-cols-2 gap-4">
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
-             <div className="font-medium text-gray-900 dark:text-white">
-               {row.pointFCFS || 'N/A'}
-             </div>
-           </div>
+                       <div>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {row.pointFCFS ? (
+                  row.pointFCFS
+                ) : (
+                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+                )}
+              </div>
+            </div>
            <div>
              <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
              <div className="font-medium text-green-600 dark:text-green-400">
@@ -193,6 +204,8 @@ const TokenCard = ({
              </div>
            </div>
          </div>
+
+
 
         
 

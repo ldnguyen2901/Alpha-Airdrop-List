@@ -5,7 +5,7 @@ export default function TableHeader({
   sortConfig, 
   requestSort, 
   getSortIcon, 
-  showHighestPrice 
+  showATH = true
 }) {
   const getColumnKey = (header) => {
     const mapping = {
@@ -17,7 +17,7 @@ export default function TableHeader({
       'Point (FCFS)': 'pointFCFS',
       'Token Price': 'price',
       Reward: 'reward',
-      'Highest Price': 'highestPrice',
+      'ATH': 'ath', // ⭐ (thay thế Highest Price)
     };
     return mapping[header];
   };
@@ -28,8 +28,8 @@ export default function TableHeader({
         {TABLE_HEADERS.map((h) => {
           // Always skip API ID column in table display
           if (h === 'API ID') return null;
-          // Skip Highest Price column if not showing
-          if (h === 'Highest Price' && !showHighestPrice) return null;
+          // Skip ATH column if not showing
+          if (h === 'ATH' && !showATH) return null;
 
           const columnKey = getColumnKey(h);
           const isSortable = columnKey && h !== '';
@@ -56,7 +56,7 @@ export default function TableHeader({
                 className={`flex items-center gap-1 ${
                   h === 'Token Price' ||
                   h === 'Reward' ||
-                  h === 'Highest Price' ||
+                  h === 'ATH' || // ⭐ (thay thế Highest Price)
                   h === 'Listing time' ||
                   h === 'Point (Priority)' ||
                   h === 'Point (FCFS)'

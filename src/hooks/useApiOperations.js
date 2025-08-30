@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo } from '../services/api';
-import { saveTokenLogoToDatabase } from '../services/firebase';
+import { saveTokenLogoToDatabase, saveStatscardPrices } from '../services/firebase';
 import { usePriceTracking } from './usePriceTracking';
 
 export const useApiOperations = (
@@ -18,6 +18,12 @@ export const useApiOperations = (
 
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
+    // Ensure rows is an array
+    if (!Array.isArray(rows)) {
+      console.warn('rows is not an array:', rows);
+      return [];
+    }
+    
     return Array.from(
       new Set(rows.filter(r => r && r !== null).map((r) => (r.apiId || '').trim()).filter(Boolean)),
     );
@@ -27,6 +33,13 @@ export const useApiOperations = (
   const loadLogosFromDatabase = useCallback(async () => {
     try {
       const logosFromDB = {};
+      
+      // Ensure rows is an array
+      if (!Array.isArray(rows)) {
+        console.warn('rows is not an array in loadLogosFromDatabase:', rows);
+        setTokenLogos(logosFromDB);
+        return;
+      }
       
       // Load logos from database (rows)
       rows.filter(r => r && r !== null).forEach(row => {
@@ -85,14 +98,12 @@ export const useApiOperations = (
     // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
     const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
     if (!validApiIdPattern.test(apiId.trim())) {
-  
       return;
     }
     
     // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
     const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
     if (invalidInputs.some(char => apiId.includes(char))) {
-  
       return;
     }
 
@@ -102,7 +113,9 @@ export const useApiOperations = (
         updateRow(rowIndex, {
           name: tokenInfo.name || '',
           symbol: tokenInfo.symbol || '',
-          logo: tokenInfo.logo || ''
+          logo: tokenInfo.logo || '',
+          ath: tokenInfo.ath || 0, // ⭐ (thêm mới)
+          price: tokenInfo.current_price || 0 // ⭐ (thêm mới)
         });
       }
     } catch (error) {
@@ -110,52 +123,144 @@ export const useApiOperations = (
     }
   }, [updateRow]);
 
-  // Refresh data function
+  // Refresh data function with optimized strategy
   const refreshData = useCallback(async () => {
-  
     setLoading(true);
+    
     try {
-  
-      // Fetch main crypto prices
+      // Step 1: Fetch main crypto prices for statscard (separate from table data)
       const prices = await fetchCryptoPrices(['bitcoin', 'ethereum', 'binancecoin']);
       
-      setBtcPrice(prices.bitcoin?.usd || 0);
-      setEthPrice(prices.ethereum?.usd || 0);
-      setBnbPrice(prices.binancecoin?.usd || 0);
-
-      // Fetch token prices for all rows
-      if (ids.length > 0) {
-
-        const tokenPrices = await fetchCryptoPrices(ids);
-        
-        // Update rows with new prices and track highest prices using optimized algorithm
-        rows.filter(r => r && r !== null).forEach((row, index) => {
-          if (row.apiId && tokenPrices[row.apiId]) {
-            const currentPrice = tokenPrices[row.apiId].usd;
-            const reward = currentPrice * row.amount;
-            
-            // Use optimized price tracking algorithm
-            const trackingResult = trackPriceChange(
-              row.apiId, 
-              currentPrice, 
-              row.price || 0, 
-              row.highestPrice || 0
-            );
-            
-            // Get additional price statistics
-            const priceStats = getPriceStats(row.apiId);
-            const trend = analyzeTrend(row.apiId);
-            
-            // Update row with new data
-            const updateData = { 
-              price: currentPrice, 
-              reward,
-              ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
-            };
-            
-            updateRow(index, updateData);
+      // Update statscard prices (these are managed separately)
+      const btcPrice = prices.bitcoin?.usd || 0;
+      const ethPrice = prices.ethereum?.usd || 0;
+      const bnbPrice = prices.binancecoin?.usd || 0;
+      
+      setBtcPrice(btcPrice);
+      setEthPrice(ethPrice);
+      setBnbPrice(bnbPrice);
+      
+      // Update statscard prices in Firebase
+      try {
+        const updatedStatscardData = [
+          {
+            apiId: 'bitcoin',
+            symbol: 'BTC',
+            logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+            current_price: btcPrice
+          },
+          {
+            apiId: 'ethereum',
+            symbol: 'ETH',
+            logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+            current_price: ethPrice
+          },
+          {
+            apiId: 'binancecoin',
+            symbol: 'BNB',
+            logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+            current_price: bnbPrice
           }
-        });
+        ];
+        
+        await saveStatscardPrices(updatedStatscardData);
+        console.log('Statscard prices updated in Firebase');
+      } catch (error) {
+        console.error('Error updating statscard prices in Firebase:', error);
+      }
+
+      // Step 2: Optimized token data fetching strategy
+      if (ids.length > 0) {
+        // Ensure rows is an array before processing
+        if (!Array.isArray(rows)) {
+          console.warn('rows is not an array in refreshData:', rows);
+          return;
+        }
+
+        // Classify tokens by completion status
+        const incompleteTokens = rows.filter(r => r && r !== null && (!r.symbol || !r.logo));
+        const completeTokens = rows.filter(r => r && r !== null && r.symbol && r.logo);
+        
+        console.log(`📊 Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens`);
+
+        // Step 2a: Fetch full data for incomplete tokens (priority)
+        if (incompleteTokens.length > 0) {
+          console.log(' Step 1: Fetching full data for incomplete tokens...');
+          for (const token of incompleteTokens) {
+            try {
+              const tokenInfo = await fetchTokenInfo(token.apiId);
+              if (tokenInfo) {
+                const currentPrice = tokenInfo.current_price;
+                const reward = currentPrice * token.amount;
+                
+                // Use optimized price tracking algorithm
+                const trackingResult = trackPriceChange(
+                  token.apiId, 
+                  currentPrice, 
+                  token.price || 0, 
+                  token.highestPrice || 0
+                );
+                
+                // Get additional price statistics
+                const priceStats = getPriceStats(token.apiId);
+                const trend = analyzeTrend(token.apiId);
+                
+                // Update row with complete data
+                const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
+                if (rowIndex !== -1) {
+                  updateRow(rowIndex, {
+                    name: tokenInfo.name || '',
+                    symbol: tokenInfo.symbol || '',
+                    logo: tokenInfo.logo || '',
+                    price: currentPrice,
+                    reward,
+                    ath: tokenInfo.ath || 0,
+                    ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
+                  });
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching token info for ${token.apiId}:`, error);
+            }
+          }
+        }
+
+        // Step 2b: Update prices for complete tokens (efficient)
+        if (completeTokens.length > 0) {
+          console.log('💰 Step 2: Updating prices for complete tokens...');
+          const completeApiIds = completeTokens.map(t => t.apiId);
+          const tokenPrices = await fetchCryptoPrices(completeApiIds);
+          
+          completeTokens.forEach((token) => {
+            if (token.apiId && tokenPrices[token.apiId]) {
+              const currentPrice = tokenPrices[token.apiId].usd;
+              const reward = currentPrice * token.amount;
+              
+              // Use optimized price tracking algorithm
+              const trackingResult = trackPriceChange(
+                token.apiId, 
+                currentPrice, 
+                token.price || 0, 
+                token.highestPrice || 0
+              );
+              
+              // Get additional price statistics
+              const priceStats = getPriceStats(token.apiId);
+              const trend = analyzeTrend(token.apiId);
+              
+              // Update row with only price data (efficient)
+              const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
+              if (rowIndex !== -1) {
+                updateRow(rowIndex, {
+                  price: currentPrice,
+                  reward,
+                  ath: tokenPrices[token.apiId].ath || token.ath || 0,
+                  ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
+                });
+              }
+            }
+          });
+        }
       }
 
       setLastUpdated(new Date());
@@ -165,7 +270,7 @@ export const useApiOperations = (
     } finally {
       setLoading(false);
     }
-  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend]); // Remove 'rows' from dependencies to prevent infinite loop
+  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend, rows]);
 
   return {
     ids,

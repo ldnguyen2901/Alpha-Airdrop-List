@@ -216,3 +216,40 @@ export const clearAllPriceHistory = () => {
     console.error('Error clearing all price history:', error);
   }
 };
+
+export function validateAndFixStorageData() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) {
+      console.log('No data found in storage, creating default data');
+      return null;
+    }
+    
+    const parsedData = JSON.parse(data);
+    if (!Array.isArray(parsedData)) {
+      console.warn('Data in storage is not an array, clearing corrupted data:', parsedData);
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    
+    // Validate each row has required structure
+    const validRows = parsedData.filter(row => {
+      if (!row || typeof row !== 'object') {
+        console.warn('Invalid row found:', row);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validRows.length !== parsedData.length) {
+      console.warn(`Filtered out ${parsedData.length - validRows.length} invalid rows`);
+      saveDataToStorage(validRows);
+    }
+    
+    return validRows;
+  } catch (error) {
+    console.error('Error validating storage data:', error);
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+}

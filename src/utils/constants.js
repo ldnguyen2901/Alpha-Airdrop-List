@@ -1,21 +1,25 @@
 // Kiểu dữ liệu một dòng
 export function newRow(partial = {}) {
   return {
-    name: '', // Token name (will be normalized by caller/newRow merging)
-    amount: 0, // Amount
-    launchAt: '', // Listing time
-    apiId: '', // API ID (CoinGecko id)
-    pointPriority: '', // Point (Priority)
-    pointFCFS: '', // Point (FCFS)
-    price: 0, // Current price
-    reward: 0, // Reward
-    highestPrice: 0, // Highest price reached
-    logo: '', // Token logo URL
-    symbol: '', // Token symbol
+    name: '', // Token name (từ API: name)
+    amount: 0, // Amount (user nhập sau)
+    launchAt: '', // Listing time (user nhập Date + Time)
+    apiId: '', // API ID (user nhập - required)
+    pointPriority: '', // Point (Priority) (user nhập - optional)
+    pointFCFS: '', // Point (FCFS) (user nhập - optional)
+    price: 0, // Current price (từ API: current_price)
+    reward: 0, // Reward (tính = Amount × Price)
+    highestPrice: 0, // Highest price reached (tự tracking)
+    ath: 0, // ATH (từ API: ath) ⭐ (thêm mới)
+    logo: '', // Token logo URL (từ API: image) ⭐ (thêm mới)
+    symbol: '', // Token symbol (từ API: symbol)
     _forceTop: false, // temporary pin to top until saved
     ...partial,
   };
 }
+
+// Auto refresh configuration
+export const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
 
 export const TABLE_HEADERS = [
   'Token', // Will be displayed as "Symbol" in TableHeader
@@ -26,7 +30,7 @@ export const TABLE_HEADERS = [
   'Point (FCFS)',
   'Token Price',
   'Reward',
-  'Highest Price',
+  'ATH', // ⭐ (thay thế Highest Price)
   '',
 ];
 
@@ -39,7 +43,7 @@ export const CSV_HEADERS = [
   'Point (FCFS)',
   'Token Price',
   'Reward',
-  'Highest Price',
+  'ATH', // ⭐ (thay thế Highest Price)
   'Logo',
   'Symbol',
 ];

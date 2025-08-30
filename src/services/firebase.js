@@ -44,8 +44,9 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Single workspace ID for all users
+// Workspace IDs
 export const SHARED_WORKSPACE_ID = 'shared-workspace';
+export const STATSCARD_WORKSPACE_ID = 'statscard-prices';
 
 export async function ensureAnonymousLogin() {
   try {
@@ -152,4 +153,41 @@ export async function saveTokenLogoToDatabase(tokenId, tokenInfo) {
   } catch (error) {
     console.error('Error saving token logo to database:', error);
   }
+}
+
+// Statscard prices management functions
+export async function saveStatscardPrices(prices) {
+  try {
+    const cleanedPrices = removeUndefinedValues(prices);
+    
+    const docData = {
+      prices: cleanedPrices,
+      updatedAt: serverTimestamp(),
+    };
+    
+    await setDoc(
+      workspaceDocRef(STATSCARD_WORKSPACE_ID),
+      docData,
+      { merge: true },
+    );
+  } catch (error) {
+    console.error('Error saving statscard prices:', error);
+    throw error;
+  }
+}
+
+export async function loadStatscardPrices() {
+  const snap = await getDoc(workspaceDocRef(STATSCARD_WORKSPACE_ID));
+  return snap.exists() ? snap.data().prices || [] : [];
+}
+
+export function subscribeStatscardPrices(callback) {
+  return onSnapshot(workspaceDocRef(STATSCARD_WORKSPACE_ID), (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      callback(Array.isArray(data.prices) ? data.prices : []);
+    } else {
+      callback([]);
+    }
+  });
 }

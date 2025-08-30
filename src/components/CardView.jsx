@@ -10,8 +10,6 @@ export default function CardView({
   searchToken,
   tokenLogos,
   highlightRowRef,
-  showHighestPrice,
-  setShowHighestPrice,
   onRefresh,
   loading,
   sortConfig,
@@ -84,7 +82,7 @@ export default function CardView({
             row={row}
             index={startIndex + index}
             tokenLogos={tokenLogos}
-            showHighestPrice={showHighestPrice}
+            showHighestPrice={false} // Removed showHighestPrice prop
             onEditRow={onEditRow}
             onDeleteRow={onDeleteRow}
             editButtonRefs={editButtonRefs}

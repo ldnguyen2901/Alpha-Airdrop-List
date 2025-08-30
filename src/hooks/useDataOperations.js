@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { newRow, saveDataToStorage, normalizeDateTime } from '../utils';
+import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory } from '../utils';
 import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services/firebase';
 
 export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
@@ -110,6 +110,34 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     return errors;
   }, []);
 
+  // Clear all data
+  const clearAllData = useCallback(async () => {
+    // Clear local state first
+    setRows([]);
+    
+    // Clear localStorage completely
+    localStorage.removeItem('airdrop-alpha-data');
+    
+    // Clear all price history data
+    clearAllPriceHistory();
+    
+    // Save empty array to Firebase to ensure all devices sync
+    try {
+      await saveWorkspaceData(SHARED_WORKSPACE_ID, []);
+      console.log('Successfully cleared data from Firebase database');
+      
+      if (addNotification) {
+        addNotification('All data cleared successfully from database!', 'success');
+      }
+    } catch (error) {
+      console.error('Failed to save to Firebase:', error);
+      
+      if (addNotification) {
+        addNotification('Failed to clear data from database. Local data cleared only.', 'error');
+      }
+    }
+  }, [setRows, addNotification]);
+
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {
   
@@ -172,5 +200,6 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     addMultipleRows,
     validateAddForm,
     handleAddRowSubmit,
+    clearAllData,
   };
 };

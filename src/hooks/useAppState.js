@@ -1,36 +1,24 @@
 import { useState, useRef } from 'react';
-import { newRow, loadDataFromStorage } from '../utils';
+import { newRow, loadDataFromStorage, validateAndFixStorageData } from '../utils';
 
 export const useAppState = () => {
   // Main data state
   const [rows, setRows] = useState(() => {
+    // First try to validate and fix any corrupted data
+    const validatedData = validateAndFixStorageData();
+    if (validatedData && Array.isArray(validatedData) && validatedData.length > 0) {
+      return validatedData;
+    }
+    
+    // If no valid data, try normal load
     const savedData = loadDataFromStorage();
-    if (savedData) {
+    if (savedData && Array.isArray(savedData)) {
       return savedData;
     }
-    return [
-      newRow({ 
-        name: 'Bitcoin', 
-        amount: 0.01, 
-        apiId: 'bitcoin',
-        logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-        symbol: 'BTC'
-      }),
-      newRow({ 
-        name: 'Ethereum', 
-        amount: 0.2, 
-        apiId: 'ethereum',
-        logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-        symbol: 'ETH'
-      }),
-      newRow({ 
-        name: 'BNB', 
-        amount: 0.5, 
-        apiId: 'binancecoin',
-        logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
-        symbol: 'BNB'
-      }),
-    ];
+    
+    // If savedData is not an array, return empty array (statscard tokens are managed separately)
+    console.warn('Invalid saved data format, using empty array:', savedData);
+    return [];
   });
 
   // Refs
@@ -54,16 +42,12 @@ export const useAppState = () => {
   const [tokenLogos, setTokenLogos] = useState({});
 
   // UI states
-  const [showHighestPrice, setShowHighestPrice] = useState(() => {
-    const isMobileInitial = window.innerWidth < 768;
-  
-    return isMobileInitial;
-  });
   const [isMobile, setIsMobile] = useState(() => {
     const mobileInitial = window.innerWidth < 768;
   
     return mobileInitial;
   });
+  const [showATH, setShowATH] = useState(true); // Thêm state cho ATH
   const [searchToken, setSearchToken] = useState('');
 
   // Modal states
@@ -121,10 +105,10 @@ export const useAppState = () => {
     setTokenLogos,
     
     // UI states
-    showHighestPrice,
-    setShowHighestPrice,
     isMobile,
     setIsMobile,
+    showATH,
+    setShowATH,
     searchToken,
     setSearchToken,
     

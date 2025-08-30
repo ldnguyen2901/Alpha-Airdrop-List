@@ -34,6 +34,12 @@ export function useTableSort() {
   };
 
   const sortRows = (rows, searchToken) => {
+    // Ensure rows is an array
+    if (!Array.isArray(rows)) {
+      console.warn('rows is not an array in useTableSort:', rows);
+      return [];
+    }
+    
     const filtered = searchToken
       ? rows.filter((r) => r && r !== null && (r.name || '').toLowerCase().includes(searchToken.toLowerCase()),
         )

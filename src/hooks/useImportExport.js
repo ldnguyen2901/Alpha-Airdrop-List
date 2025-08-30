@@ -42,6 +42,15 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
   // Export Excel
   const exportExcel = useCallback((rows) => {
     try {
+      // Ensure rows is an array
+      if (!Array.isArray(rows)) {
+        console.warn('rows is not an array in exportExcel:', rows);
+        if (addNotification) {
+          addNotification('No data to export', 'error');
+        }
+        return;
+      }
+      
       // Prepare data for Excel
       const excelData = [
         CSV_HEADERS, // Headers row

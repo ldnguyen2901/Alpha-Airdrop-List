@@ -6,6 +6,8 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import BlockIcon from '@mui/icons-material/Block';
 import { useState, useRef } from 'react';
 
 export default function ActionButtons({
@@ -15,10 +17,10 @@ export default function ActionButtons({
   onImportExcel,
   onRefresh,
   onCheckDuplicates,
-
+  onClearAll,
   loading,
-  showHighestPrice,
-  setShowHighestPrice,
+  showATH,
+  setShowATH,
   searchToken,
   setSearchToken,
 }) {
@@ -36,6 +38,7 @@ export default function ActionButtons({
   const [formPosition, setFormPosition] = useState({ top: 60, left: 16 });
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const addRowButtonRef = useRef(null);
 
 
@@ -55,6 +58,26 @@ export default function ActionButtons({
       }, 2000);
     }
   };
+
+  const handleClearAll = () => {
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearAll = async () => {
+    try {
+      await onClearAll();
+      setShowClearConfirm(false);
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      // Keep modal open if there's an error
+    }
+  };
+
+  const cancelClearAll = () => {
+    setShowClearConfirm(false);
+  };
+
+
 
   const handleInlineSubmit = async (e) => {
     e.preventDefault();
@@ -153,6 +176,17 @@ export default function ActionButtons({
             />
             Check Duplicates
           </button>
+                     {/* Clear All button temporarily disabled
+                     <button
+             onClick={handleClearAll}
+             className='px-3 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
+             title='Clear all data (cannot be undone)'
+           >
+             <DeleteSweepIcon sx={{ fontSize: 16 }} />
+             Clear All
+           </button>
+                     */}
+
           <div className='w-full sm:w-auto relative'>
             <input
               type='text'
@@ -168,23 +202,23 @@ export default function ActionButtons({
           </div>
         </div>
         <div className='flex items-center justify-between gap-2 sm:gap-4'>
-          {/* Show Highest Price button - only on desktop */}
+          {/* Show ATH button - only on desktop */}
           <button
             onClick={() => {
-              setShowHighestPrice(!showHighestPrice);
+              setShowATH(!showATH);
             }}
             className='hidden sm:flex px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
           >
             <div className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ease-in-out flex items-center justify-center ${
-              showHighestPrice 
-                ? 'bg-blue-500 border-blue-500' 
+              showATH 
+                ? 'bg-purple-500 border-purple-500' 
                 : 'bg-transparent border-gray-400 dark:border-gray-500'
             }`}>
-              {showHighestPrice && (
+              {showATH && (
                 <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
               )}
             </div>
-            Highest Price
+            ATH
           </button>
 
           <button
@@ -211,6 +245,47 @@ export default function ActionButtons({
 
         </div>
       </div>
+
+      {/* Clear All Confirmation Modal - temporarily disabled
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                <DeleteSweepIcon className="text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Clear All Data
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to delete all data? This will remove all tokens from the table and cannot be undone.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelClearAll}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmClearAll}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      */}
 
       {/* Mobile Modal Add Row Form */}
       {/* Inline form disabled - using modal for both mobile and desktop */}

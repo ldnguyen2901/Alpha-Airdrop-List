@@ -1,13 +1,10 @@
 import { useEffect } from 'react';
 
-export const useResponsive = (setIsMobile, setShowHighestPrice) => {
+export const useResponsive = (setIsMobile) => {
   useEffect(() => {
     const handleResize = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
-      
-      // Update showHighestPrice based on screen size
-      setShowHighestPrice(isMobileView);
     };
 
     // Initial check
@@ -20,5 +17,5 @@ export const useResponsive = (setIsMobile, setShowHighestPrice) => {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [setIsMobile, setShowHighestPrice]);
+  }, [setIsMobile]);
 };

@@ -1,10 +1,9 @@
 export async function fetchCryptoPrices(ids, currency = 'usd') {
-  
   if (!ids.length) return {};
   
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=${encodeURIComponent(currency)}`;
+  // Sử dụng API mới: /coins/markets thay vì /simple/price
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${encodeURIComponent(currency)}&ids=${encodeURIComponent(ids.join(","))}&order=market_cap_desc&per_page=250&page=1&sparkline=false`;
 
-  
   try {
     const res = await fetch(url);
     
@@ -13,8 +12,20 @@ export async function fetchCryptoPrices(ids, currency = 'usd') {
     }
     
     const data = await res.json();
+    
+    // Chuyển đổi format từ array sang object với key là coin id
+    const result = {};
+    data.forEach(coin => {
+      result[coin.id] = {
+        usd: coin.current_price,
+        ath: coin.ath,
+        image: coin.image,
+        symbol: coin.symbol,
+        name: coin.name
+      };
+    });
 
-    return data;
+    return result;
   } catch (error) {
     console.error('🌐 Error in fetchCryptoPrices:', error);
     throw error;
@@ -109,7 +120,8 @@ export async function fetchTokenInfo(apiId) {
   if (!apiId || !apiId.trim()) return null;
   
   try {
-    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(apiId.trim())}`;
+    // Sử dụng API mới: /coins/markets thay vì /coins/{id}
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(apiId.trim())}&order=market_cap_desc&per_page=1&page=1&sparkline=false`;
     const res = await fetch(url);
     
     if (!res.ok) {
@@ -117,11 +129,19 @@ export async function fetchTokenInfo(apiId) {
     }
     
     const data = await res.json();
+    
+    if (data.length === 0) {
+      return null;
+    }
+    
+    const coin = data[0];
     return {
-      id: data.id,
-      name: data.name,
-      symbol: data.symbol.toUpperCase(),
-      logo: data.image?.large || data.image?.small || data.image?.thumb
+      id: coin.id,
+      name: coin.name,
+      symbol: coin.symbol.toUpperCase(),
+      logo: coin.image,
+      ath: coin.ath,
+      current_price: coin.current_price
     };
   } catch (error) {
     console.error('Error fetching token info:', error);

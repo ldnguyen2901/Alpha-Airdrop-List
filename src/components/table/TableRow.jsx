@@ -3,6 +3,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import InfoIcon from '@mui/icons-material/Info';
+import BlockIcon from '@mui/icons-material/Block';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PriceTrackingInfo from '../PriceTrackingInfo';
@@ -13,6 +14,7 @@ export default function TableRow({
   onStartEdit,
   onDelete,
   showHighestPrice,
+  showATH = true,
   getCountdownText,
   isHighlighted,
   tokenLogos
@@ -105,10 +107,14 @@ export default function TableRow({
       return (
         <>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-            <div className="flex items-center justify-center gap-1">
-              <HourglassEmptyIcon sx={{ fontSize: 14 }} className="hourglass-blink" />
-              <span dangerouslySetInnerHTML={{ __html: cd }} />
-            </div>
+                          <div className="flex items-center justify-center gap-1">
+                <span 
+                  className="px-2 py-1 bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 rounded-lg text-xs font-medium flex items-center gap-1"
+                >
+                  <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
+                  <span dangerouslySetInnerHTML={{ __html: cd }} />
+                </span>
+              </div>
           </td>
           <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
             Wait for listing
@@ -211,7 +217,7 @@ export default function TableRow({
              />
            )}
                      <span className="text-sm dark:text-white font-medium">
-            {row.symbol || row.name || row.apiId}
+            {(row.symbol || row.name || row.apiId).toUpperCase()}
           </span>
          </div>
       </td>
@@ -233,43 +239,32 @@ export default function TableRow({
       {/* Point Priority */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
-          {row.pointPriority}
+                          {row.pointPriority ? (
+                  row.pointPriority
+                ) : (
+                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+                )}
         </span>
       </td>
 
       {/* Point FCFS */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
-          {row.pointFCFS}
+                          {row.pointFCFS ? (
+                  row.pointFCFS
+                ) : (
+                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+                )}
         </span>
       </td>
 
       {/* Price and Reward */}
       {renderPriceAndReward()}
 
-      {/* Highest Price */}
-      {showHighestPrice && (
-        <td className='px-1 py-2 text-center tabular-nums text-[11px] sm:text-sm dark:text-white relative group'>
-          <div className="flex items-center justify-center gap-1">
-            <span>${formatPrice(row.highestPrice)}</span>
-            {row.price > 0 && (
-              <button
-                ref={buttonRef}
-                onClick={() => setShowPriceInfo(!showPriceInfo)}
-                onBlur={() => setTimeout(() => setShowPriceInfo(false), 100)}
-                onMouseEnter={() => {
-                  setShowPriceInfo(true);
-                }}
-                onMouseLeave={() => {
-                  setShowPriceInfo(false);
-                }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                title="View price tracking info"
-              >
-                <InfoIcon sx={{ fontSize: 12 }} className="text-gray-400 hover:text-blue-500" />
-              </button>
-            )}
-          </div>
+      {/* ATH */}
+      {showATH && (
+        <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
+          <span>${formatPrice(row.ath || 0)}</span>
         </td>
       )}
 

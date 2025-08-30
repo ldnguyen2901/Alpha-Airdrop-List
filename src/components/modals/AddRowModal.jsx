@@ -57,20 +57,17 @@ export default function AddRowModal({
       // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
       const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
       if (!validApiIdPattern.test(apiId.trim())) {
-    
         return;
       }
       
       // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
       const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
       if (invalidInputs.some(char => apiId.includes(char))) {
-    
         return;
       }
       
       // Special handling for hidden tokens (containing ?)
       if (apiId.includes('?')) {
-    
         // For hidden tokens, keep the API ID as the name
         setAddForm((p) => ({
           ...p,
@@ -87,7 +84,11 @@ export default function AddRowModal({
           setAddForm((p) => ({
             ...p,
             name: tokenInfo.symbol || tokenInfo.name,
-            apiId: tokenInfo.id // Use the correct ID from API
+            apiId: tokenInfo.id, // Use the correct ID from API
+            logo: tokenInfo.logo || '', // ⭐ (thêm mới)
+            symbol: tokenInfo.symbol || '', // ⭐ (thêm mới)
+            ath: tokenInfo.ath || 0, // ⭐ (thêm mới)
+            price: tokenInfo.current_price || 0 // ⭐ (thêm mới)
           }));
         }
       } catch (error) {

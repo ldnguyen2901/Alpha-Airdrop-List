@@ -6,6 +6,7 @@ import {
   subscribeWorkspace,
   SHARED_WORKSPACE_ID,
 } from '../services/firebase';
+import { checkCacheSync, forceSyncWithFirebase } from '../utils/cacheManager';
 
 export const useFirebaseSync = (
   rows,
@@ -28,90 +29,66 @@ export const useFirebaseSync = (
       const newWorkspaceId = SHARED_WORKSPACE_ID;
       setWorkspaceId(newWorkspaceId);
       
+      // Check cache sync before loading data
+      const cacheCheck = await checkCacheSync();
+      if (cacheCheck.shouldClearCache) {
+        console.log('Cache sync check: Clearing local cache due to:', cacheCheck.reason);
+        
+        // Auto force sync when cache is out of sync
+        try {
+          console.log('Auto force syncing due to cache sync issues...');
+          const syncResult = await forceSyncWithFirebase();
+          if (syncResult.success) {
+            console.log('Auto force sync completed successfully');
+            isRemoteUpdateRef.current = true;
+            setRows(syncResult.data);
+            isRemoteUpdateRef.current = false;
+            return; // Skip normal loading since we already have synced data
+          }
+        } catch (error) {
+          console.error('Auto force sync failed:', error);
+        }
+      }
+      
       // Load initial data from Firebase shared workspace
       const firebaseData = await loadWorkspaceDataOnce(newWorkspaceId);
       
-      if (firebaseData && firebaseData.length > 0) {
+      if (firebaseData && Array.isArray(firebaseData)) {
+        // Always use Firebase data, even if it's empty (cleared)
         isRemoteUpdateRef.current = true;
         setRows(firebaseData);
         isRemoteUpdateRef.current = false;
+        
+        // If Firebase data is empty, also clear local storage to prevent conflicts
+        if (firebaseData.length === 0) {
+          localStorage.removeItem('airdrop-alpha-data');
+          console.log('Firebase data is empty, cleared local storage to prevent conflicts');
+        }
       } else {
-        // Load from local storage as fallback
-        const localData = localStorage.getItem('airdrop-data');
+        // Only fallback to local storage if Firebase data is null/undefined (not empty array)
+        console.warn('Firebase data is null/undefined, falling back to local storage');
+        const localData = localStorage.getItem('airdrop-alpha-data');
         if (localData) {
           try {
             const parsedData = JSON.parse(localData);
-            isRemoteUpdateRef.current = true;
-            setRows(parsedData);
-            isRemoteUpdateRef.current = false;
+            if (Array.isArray(parsedData)) {
+              isRemoteUpdateRef.current = true;
+              setRows(parsedData);
+              isRemoteUpdateRef.current = false;
+            } else {
+              console.warn('Parsed local data is not an array:', parsedData);
+              throw new Error('Invalid data format');
+            }
           } catch (e) {
-            // Set sample data if local storage is corrupted
-            const sampleData = [
-              {
-                name: 'Bitcoin',
-                amount: 1000,
-                launchAt: '31/12/2024 15:30',
-                apiId: 'bitcoin',
-                pointPriority: '100',
-                pointFCFS: '50',
-                price: 45000,
-                reward: 45000000,
-                highestPrice: 50000,
-                logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-                symbol: 'BTC',
-                id: 'bitcoin-2'
-              },
-              {
-                name: 'Ethereum',
-                amount: 500,
-                launchAt: '01/01/2025 10:00',
-                apiId: 'ethereum',
-                pointPriority: '80',
-                pointFCFS: '40',
-                price: 3000,
-                reward: 1500000,
-                highestPrice: 3500,
-                logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-                symbol: 'ETH',
-                id: 'ethereum-2'
-              }
-            ];
+            // Set sample data if local storage is corrupted (empty array - statscard tokens are managed separately)
+            const sampleData = [];
             isRemoteUpdateRef.current = true;
             setRows(sampleData);
             isRemoteUpdateRef.current = false;
           }
         } else {
-          // Set sample data if no local data
-          const sampleData = [
-            {
-              name: 'Bitcoin',
-              amount: 1000,
-              launchAt: '31/12/2024 15:30',
-              apiId: 'bitcoin',
-              pointPriority: '100',
-              pointFCFS: '50',
-              price: 45000,
-              reward: 45000000,
-              highestPrice: 50000,
-              logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-              symbol: 'BTC',
-              id: 'bitcoin-1'
-            },
-            {
-              name: 'Ethereum',
-              amount: 500,
-              launchAt: '01/01/2025 10:00',
-              apiId: 'ethereum',
-              pointPriority: '80',
-              pointFCFS: '40',
-              price: 3000,
-              reward: 1500000,
-              highestPrice: 3500,
-              logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-              symbol: 'ETH',
-              id: 'ethereum-1'
-            }
-          ];
+          // Set sample data if no local data (empty array - statscard tokens are managed separately)
+          const sampleData = [];
           isRemoteUpdateRef.current = true;
           setRows(sampleData);
           isRemoteUpdateRef.current = false;
@@ -120,12 +97,19 @@ export const useFirebaseSync = (
       
       // Subscribe to real-time updates from shared workspace
       const unsubscribe = subscribeWorkspace(newWorkspaceId, (data) => {
-        if (data && data.length > 0) {
+          if (data && Array.isArray(data)) {
           isRemoteUpdateRef.current = true;
           setRows(data);
           isRemoteUpdateRef.current = false;
+          
+          // If Firebase data is empty, also clear local storage to prevent conflicts
+          if (data.length === 0) {
+            localStorage.removeItem('airdrop-alpha-data');
+            console.log('Real-time update: Firebase data is empty, cleared local storage');
+          }
         } else {
-          // Handle empty data case
+          // Handle null/undefined data case
+          console.warn('Real-time update: Received null/undefined data from Firebase');
           isRemoteUpdateRef.current = true;
           setRows([]);
           isRemoteUpdateRef.current = false;
@@ -138,81 +122,28 @@ export const useFirebaseSync = (
       console.error('Firebase sync initialization failed:', error);
       
       // Load from local storage as fallback
-      const localData = localStorage.getItem('airdrop-data');
+      const localData = localStorage.getItem('airdrop-alpha-data');
       if (localData) {
         try {
           const parsedData = JSON.parse(localData);
-          isRemoteUpdateRef.current = true;
-          setRows(parsedData);
-          isRemoteUpdateRef.current = false;
+          if (Array.isArray(parsedData)) {
+            isRemoteUpdateRef.current = true;
+            setRows(parsedData);
+            isRemoteUpdateRef.current = false;
+          } else {
+            console.warn('Parsed local data is not an array in fallback:', parsedData);
+            throw new Error('Invalid data format');
+          }
         } catch (e) {
-          // Set sample data if local storage is corrupted
-          const sampleData = [
-            {
-              name: 'Bitcoin',
-              amount: 1000,
-              launchAt: '31/12/2024 15:30',
-              apiId: 'bitcoin',
-              pointPriority: '100',
-              pointFCFS: '50',
-              price: 45000,
-              reward: 45000000,
-              highestPrice: 50000,
-              logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-              symbol: 'BTC',
-              id: 'bitcoin-3'
-            },
-            {
-              name: 'Ethereum',
-              amount: 500,
-              launchAt: '01/01/2025 10:00',
-              apiId: 'ethereum',
-              pointPriority: '80',
-              pointFCFS: '40',
-              price: 3000,
-              reward: 1500000,
-              highestPrice: 3500,
-              logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-              symbol: 'ETH',
-              id: 'ethereum-3'
-            }
-          ];
+          // Set sample data if local storage is corrupted (empty array - statscard tokens are managed separately)
+          const sampleData = [];
           isRemoteUpdateRef.current = true;
           setRows(sampleData);
           isRemoteUpdateRef.current = false;
         }
       } else {
-        // Set sample data if no local data
-        const sampleData = [
-          {
-            name: 'Bitcoin',
-            amount: 1000,
-            launchAt: '31/12/2024 15:30',
-            apiId: 'bitcoin',
-            pointPriority: '100',
-            pointFCFS: '50',
-            price: 45000,
-            reward: 45000000,
-            highestPrice: 50000,
-            logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-            symbol: 'BTC',
-            id: 'bitcoin-4'
-          },
-          {
-            name: 'Ethereum',
-            amount: 500,
-            launchAt: '01/01/2025 10:00',
-            apiId: 'ethereum',
-            pointPriority: '80',
-            pointFCFS: '40',
-            price: 3000,
-            reward: 1500000,
-            highestPrice: 3500,
-            logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-            symbol: 'ETH',
-            id: 'ethereum-4'
-          }
-        ];
+        // Set sample data if no local data (empty array - statscard tokens are managed separately)
+        const sampleData = [];
         isRemoteUpdateRef.current = true;
         setRows(sampleData);
         isRemoteUpdateRef.current = false;
@@ -248,8 +179,28 @@ export const useFirebaseSync = (
     };
   }, [workspaceId]); // Remove function dependencies to prevent infinite loop
 
+  // Force sync function (for internal use)
+  const forceSync = useCallback(async () => {
+    try {
+      console.log('Force syncing with Firebase...');
+      const syncResult = await forceSyncWithFirebase();
+      if (syncResult.success) {
+        console.log('Force sync completed successfully');
+        isRemoteUpdateRef.current = true;
+        setRows(syncResult.data);
+        isRemoteUpdateRef.current = false;
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Force sync failed:', error);
+      return false;
+    }
+  }, [setRows, isRemoteUpdateRef]);
+
   return {
     initializeFirebaseSync,
     cleanupFirebaseSync,
+    forceSync, // Expose force sync function for potential future use
   };
 };

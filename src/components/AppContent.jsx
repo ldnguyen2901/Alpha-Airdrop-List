@@ -7,6 +7,7 @@ import {
   ExcelUpload
 } from './index';
 import { useNotifications } from '../contexts/NotificationContext';
+import { AUTO_REFRESH_INTERVAL } from '../utils/constants';
 
 // Lazy load modals for better performance
 const AddRowModal = lazy(() => import('./modals/AddRowModal'));
@@ -24,6 +25,7 @@ import {
   useAutoRefresh,
   useModalOperations
 } from '../hooks';
+import { useStatscardPrices } from '../hooks/useStatscardPrices';
 
 /**
  * React Airdrop Alpha Tracker
@@ -63,7 +65,7 @@ export default function AppContent() {
   );
   
   // Firebase sync
-  useFirebaseSync(
+  const firebaseSyncOps = useFirebaseSync(
     state.rows,
     state.setRows,
     state.workspaceId,
@@ -90,15 +92,15 @@ export default function AppContent() {
   );
   
   // Responsive design
-  useResponsive(state.setIsMobile, state.setShowHighestPrice);
+  useResponsive(state.setIsMobile);
   
-  // Auto refresh
+  // Auto refresh - reduced frequency to avoid overwhelming the database
   useAutoRefresh(
     apiOps.refreshData,
     state.isPageVisible,
     state.setIsPageVisible,
     state.timerRef,
-    60
+    AUTO_REFRESH_INTERVAL
   );
   
   // Modal operations
@@ -110,12 +112,44 @@ export default function AppContent() {
     state.setAddModalPosition
   );
 
+
+
+  // Statscard prices operations
+  const statscardOps = useStatscardPrices(
+    state.setBtcPrice,
+    state.setEthPrice,
+    state.setBnbPrice,
+    null, // updateStatscardPrices function will be passed from useApiOperations
+    state.setTokenLogos
+  );
+
   // Initial data loading
   useEffect(() => {
     apiOps.loadLogosFromDatabase();
+    // Initialize statscard prices
+    statscardOps.initializeStatscardPrices();
     // Only refresh data once on initial load, not on every apiOps change
     apiOps.refreshData();
   }, []); // Remove apiOps dependency to prevent infinite loop
+
+  // Auto force sync when page becomes visible (if needed)
+  useEffect(() => {
+    if (state.isPageVisible && !state.syncing) {
+      // Check if we need to force sync (e.g., after being away for a while)
+      const lastSync = localStorage.getItem('last-force-sync');
+      const now = Date.now();
+      const syncInterval = 5 * 60 * 1000; // 5 minutes
+      
+      if (!lastSync || (now - parseInt(lastSync)) > syncInterval) {
+        // Auto force sync every 5 minutes when page is visible
+        firebaseSyncOps.forceSync().then(success => {
+          if (success) {
+            localStorage.setItem('last-force-sync', now.toString());
+          }
+        });
+      }
+    }
+  }, [state.isPageVisible, state.syncing, firebaseSyncOps]);
 
   // Handle add row submit
   const handleAddRowSubmit = (form) => {
@@ -184,9 +218,10 @@ export default function AppContent() {
             apiOps.refreshData();
           }}
           onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
+          onClearAll={dataOps.clearAllData}
           loading={state.loading}
-          showHighestPrice={state.showHighestPrice}
-          setShowHighestPrice={state.setShowHighestPrice}
+          showATH={state.showATH}
+          setShowATH={state.setShowATH}
           searchToken={state.searchToken}
           setSearchToken={state.setSearchToken}
         />
@@ -195,12 +230,11 @@ export default function AppContent() {
           rows={state.rows}
           onUpdateRow={dataOps.updateRow}
           onRemoveRow={dataOps.removeRow}
-          showHighestPrice={state.showHighestPrice}
-          setShowHighestPrice={state.setShowHighestPrice}
           searchToken={state.searchToken}
           tokenLogos={state.tokenLogos}
           onRefresh={apiOps.refreshData}
           loading={state.loading}
+          showATH={state.showATH}
           ref={state.highlightRowRef}
         />
       </div>

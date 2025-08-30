@@ -12,6 +12,12 @@ export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModa
       apiIds: {}
     };
     
+    // Ensure rows is an array
+    if (!Array.isArray(rows)) {
+      console.warn('rows is not an array in useDuplicateCheck:', rows);
+      return;
+    }
+    
     // Check for duplicates
     rows.filter(r => r && r !== null).forEach((row, index) => {
       // Check logo duplicates

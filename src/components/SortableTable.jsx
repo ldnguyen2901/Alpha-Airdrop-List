@@ -12,13 +12,12 @@ const SortableTable = forwardRef(({
   rows,
   onUpdateRow,
   onRemoveRow,
-  showHighestPrice: showHighestPriceProp,
   searchToken,
   tokenLogos,
   onRefresh,
   loading,
+  showATH = true,
 }, ref) => {
-  const showHighestPrice = !!showHighestPriceProp;
   const [now, setNow] = useState(Date.now());
   const [highlightedRows, setHighlightedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -131,7 +130,7 @@ const SortableTable = forwardRef(({
           searchToken={searchToken}
           tokenLogos={tokenLogos}
           highlightRowRef={null}
-          showHighestPrice={showHighestPrice}
+          showHighestPrice={false}
           onRefresh={onRefresh}
           loading={loading}
           sortConfig={sortConfig}
@@ -168,21 +167,22 @@ const SortableTable = forwardRef(({
             sortConfig={sortConfig}
             requestSort={requestSort}
             getSortIcon={getSortIcon}
-            showHighestPrice={showHighestPrice}
+            showATH={showATH}
           />
         <tbody>
             {currentRows.map((row, idx) => (
-              <TableRow
-                key={startIndex + idx}
-                row={row}
-                index={startIndex + idx}
-                onStartEdit={handleStartEdit}
-                onDelete={handleDelete}
-                showHighestPrice={showHighestPrice}
-                getCountdownText={getCountdownTextForRow}
-                isHighlighted={highlightedRows.has(startIndex + idx)}
-                tokenLogos={tokenLogos}
-              />
+                              <TableRow
+                  key={startIndex + idx}
+                  row={row}
+                  index={startIndex + idx}
+                  onStartEdit={handleStartEdit}
+                  onDelete={handleDelete}
+                  showHighestPrice={false}
+                  showATH={showATH}
+                  getCountdownText={getCountdownTextForRow}
+                  isHighlighted={highlightedRows.has(startIndex + idx)}
+                  tokenLogos={tokenLogos}
+                />
             ))}
             {currentRows.length === 0 && (
             <tr>
@@ -190,8 +190,7 @@ const SortableTable = forwardRef(({
                 colSpan={
                   TABLE_HEADERS.filter((h) => {
                     if (h === 'API ID') return false;
-                    if (h === 'Highest Price' && !showHighestPrice)
-                      return false;
+                    if (h === 'ATH' && !showATH) return false;
                     return true;
                   }).length
                 }

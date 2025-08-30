@@ -4,7 +4,7 @@
 
 ## Tính năng
 
-- 📊 **Theo dõi giá thời gian thực**: Tự động cập nhật giá từ CoinGecko API mỗi 60 giây
+- 📊 **Theo dõi giá thời gian thực**: Tự động cập nhật giá từ CoinGecko API mỗi 5 phút
 - 🔄 **Refresh thủ công**: Nút Refresh với icon xoay khi loading
 - 📋 **Quản lý portfolio**: Thêm, sửa, xóa các token với giao diện modal
 - 💰 **Tính toán giá trị**: Tự động tính Reward = Amount × Price
@@ -23,6 +23,7 @@
 - 🎨 **Token logos**: Hiển thị logo token từ CoinGecko API
 - 📄 **Pagination**: Phân trang cho bảng dữ liệu
 - 🔥 **Firebase sync**: Đồng bộ dữ liệu đám mây qua Firebase Firestore
+- 🗑️ **Clear All**: Xóa tất cả dữ liệu với xác nhận an toàn
 
 ## Cấu trúc dữ liệu
 
@@ -40,6 +41,13 @@
 | H   | Reward           | B × G (tự động tính)                    |
 | I   | Highest Price    | Giá cao nhất đã đạt được                |
 
+## 📚 Documentation
+
+Xem [docs/README.md](./docs/README.md) để biết thêm chi tiết về:
+- Hướng dẫn cài đặt và sử dụng
+- Tài liệu kỹ thuật
+- Chiến lược tối ưu hóa
+
 ## Cài đặt
 
 1. **Cài đặt dependencies:**
@@ -56,6 +64,8 @@ npm run dev
 
 3. **Mở trình duyệt:**
    Truy cập http://localhost:3000
+
+**📖 Xem hướng dẫn chi tiết**: [HUONG_DAN_CAI_DAT.md](./docs/user-guides/HUONG_DAN_CAI_DAT.md)
 
 ## Sử dụng
 
@@ -87,8 +97,41 @@ npm run dev
 
 ### Export dữ liệu
 
-1. Click "Export CSV"
-2. File sẽ được tải về tự động với tên `crypto-tracker-{timestamp}.csv`
+1. Click "Export Excel"
+2. File sẽ được tải về tự động với tên `airdrop-data-{timestamp}.xlsx`
+
+### Xóa tất cả dữ liệu
+
+1. Click "Clear All" (nút đỏ)
+2. Xác nhận hành động trong modal
+3. Tất cả dữ liệu sẽ bị xóa khỏi:
+   - Bảng hiện tại
+   - localStorage
+   - Firebase (nếu có)
+   - Price history data
+4. **Lưu ý**: Hành động này không thể hoàn tác
+
+### Đồng bộ hóa dữ liệu
+
+#### Vấn đề đồng bộ hóa
+Khi nhiều thiết bị sử dụng cùng lúc, có thể xảy ra tình trạng:
+- Một thiết bị xóa dữ liệu (Clear All)
+- Thiết bị khác vẫn có dữ liệu cũ trong cache
+- Khi thiết bị khác mở app, dữ liệu cũ được đồng bộ lại vào database
+
+#### Giải pháp
+1. **Tự động**: App sẽ tự động kiểm tra và xóa cache khi phát hiện Firebase đã được xóa
+2. **Thủ công**: Sử dụng nút "Force Sync" (nút xanh dương) để:
+   - Xóa toàn bộ cache local
+   - Đồng bộ lại từ Firebase database
+   - Tải lại trang để áp dụng dữ liệu mới
+
+#### Nút Force Sync
+- **Màu xanh dương** với biểu tượng Sync
+- Xóa cache và đồng bộ lại từ Firebase
+- Hoạt động ngầm, không reload trang
+- Hiển thị thông báo trạng thái đồng bộ
+- Sử dụng khi gặp vấn đề đồng bộ hóa dữ liệu
 
 ### Tùy chỉnh
 
@@ -194,7 +237,7 @@ VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef123456
 ## Lưu ý
 
 - API ID phải chính xác để lấy được giá và logo
-- Chu kỳ làm mới tự động mỗi 60 giây
+- Chu kỳ làm mới tự động mỗi 5 phút (300 giây)
 - Dữ liệu được lưu trong localStorage và Firebase (nếu cấu hình)
 - Token logos được cache trong 5 phút để tối ưu performance
 - Responsive breakpoint: 768px (md)
