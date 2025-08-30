@@ -50,6 +50,8 @@ Xem [docs/README.md](./docs/README.md) để biết thêm chi tiết về:
 
 ## Cài đặt
 
+### Local Development
+
 1. **Cài đặt dependencies:**
 
 ```bash
@@ -66,6 +68,33 @@ npm run dev
    Truy cập http://localhost:3000
 
 **📖 Xem hướng dẫn chi tiết**: [HUONG_DAN_CAI_DAT.md](./docs/user-guides/HUONG_DAN_CAI_DAT.md)
+
+### Production Deployment (Vercel)
+
+1. **Deploy lên Vercel:**
+
+```bash
+npm install -g vercel
+vercel --prod
+```
+
+2. **Set Environment Variables trong Vercel Dashboard:**
+
+```
+CRON_SECRET=your-secret-key-here
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=airdrop-alpha-b59cf
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+```
+
+3. **Cron Jobs tự động chạy:**
+   - **Price Updates**: Mỗi 5 phút
+   - **Contract Fetch**: Mỗi giờ
+
+Xem chi tiết setup tại [VERCEL_SETUP.md](./VERCEL_SETUP.md)
 
 ## Sử dụng
 

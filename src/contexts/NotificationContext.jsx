@@ -19,9 +19,24 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications');
     if (savedNotifications) {
-      const parsed = JSON.parse(savedNotifications);
-      setNotifications(parsed.notifications || []);
-      setNextId(parsed.nextId || 1);
+      try {
+        const parsed = JSON.parse(savedNotifications);
+        const loadedNotifications = parsed.notifications || [];
+        
+        // Remove any duplicate IDs by keeping only the first occurrence
+        const uniqueNotifications = loadedNotifications.filter((notification, index, self) => 
+          index === self.findIndex(n => n.id === notification.id)
+        );
+        
+        setNotifications(uniqueNotifications);
+        // Ensure nextId is higher than any existing notification ID
+        const maxId = Math.max(...uniqueNotifications.map(n => n.id), 0);
+        setNextId(maxId + 1);
+      } catch (error) {
+        console.error('Error parsing notifications from localStorage:', error);
+        setNotifications([]);
+        setNextId(1);
+      }
     } else {
       // Add sample notifications for testing
       const sampleNotifications = [
@@ -107,8 +122,11 @@ export const NotificationProvider = ({ children }) => {
     const now = new Date();
     const timeAgo = getTimeAgo(now);
     
+    // Generate unique ID using timestamp + random number to avoid conflicts
+    const uniqueId = Date.now() + Math.floor(Math.random() * 1000);
+    
     const newNotification = {
-      id: nextId,
+      id: uniqueId,
       type,
       message,
       time: timeAgo,
@@ -118,7 +136,7 @@ export const NotificationProvider = ({ children }) => {
     };
 
     setNotifications(prev => [newNotification, ...prev.slice(0, 49)]); // Keep only last 50 notifications
-    setNextId(prev => prev + 1);
+    setNextId(prev => Math.max(prev, uniqueId + 1));
 
     // Also show toast notification if enabled (disabled by default)
     if (options.showToast === true) {
@@ -170,6 +188,8 @@ export const NotificationProvider = ({ children }) => {
 
   const clearAllNotifications = () => {
     setNotifications([]);
+    setNextId(1);
+    localStorage.removeItem('notifications');
   };
 
   const getUnreadCount = () => {

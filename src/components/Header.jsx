@@ -1,7 +1,7 @@
 import ThemeToggle from './ThemeToggle';
 import NotificationButton from './NotificationButton';
 
-export default function Header({ loading, onRefresh, syncing, isPageVisible }) {
+export default function Header() {
   return (
     <header className='flex items-center justify-between mb-4 sm:mb-6 gap-4'>
       {/* Left side - Title */}

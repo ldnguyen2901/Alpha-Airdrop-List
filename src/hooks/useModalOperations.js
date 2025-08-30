@@ -18,6 +18,7 @@ export const useModalOperations = (
       apiId: '',
       pointPriority: '',
       pointFCFS: '',
+      contractAddress: '',
     });
     setAddErrors({});
     setAddModalPosition(position);

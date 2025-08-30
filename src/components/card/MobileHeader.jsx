@@ -15,28 +15,32 @@ const MobileHeader = ({
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    onRefresh();
-    // Ensure animation completes full rotation
-    setTimeout(() => {
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    try {
+      setIsRefreshing(true);
+      await onRefresh();
+    } finally {
       setIsRefreshing(false);
-    }, 1000);
+    }
   };
   return (
     <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
       <div className="flex items-center justify-between">
         <button
           onClick={handleRefresh}
-          className='px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 sm:flex-shrink flex items-center gap-2'
+          disabled={isRefreshing}
+          className={`px-3 py-2 rounded-2xl text-sm flex-shrink-0 sm:flex-shrink flex items-center gap-2 shadow transition-all duration-300 ease-in-out ${
+            isRefreshing ? 'bg-gray-400 cursor-not-allowed opacity-90' : 'bg-black dark:bg-white dark:text-black text-white hover:opacity-90 hover:scale-105'
+          }`}
           title='Refresh prices'
         >
           <AutorenewIcon 
             sx={{ 
               fontSize:16,
-              animation: (loading || isRefreshing) ? 'spin 1s linear infinite' : 'none'
+              animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
             }}
-            className={(loading || isRefreshing) ? 'refresh-spin' : ''}
+            className={isRefreshing ? 'refresh-spin' : ''}
           />
           Refresh
         </button>
