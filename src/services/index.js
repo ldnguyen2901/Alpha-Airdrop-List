@@ -1,5 +1,5 @@
 // API services
 export * from './api';
 
-// Firebase services
-export * from './firebase';
+// Neon services
+export * from './neon';

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { savePriceHistory, loadPriceHistory, saveHighestPrices, loadHighestPrices } from '../utils/storage';
+import { savePriceHistory, loadPriceHistory, saveHighestPrices, loadHighestPrices } from '../utils';
 
 export const usePriceTracking = () => {
   // Store price history for trend analysis

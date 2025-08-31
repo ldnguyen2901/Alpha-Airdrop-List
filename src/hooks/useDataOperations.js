@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory } from '../utils';
-import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services/firebase';
+import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services';
 
 export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
   // Helper function to clean row data
@@ -25,7 +25,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       try {
         saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
       } catch (error) {
-        console.error('Failed to save to Firebase:', error);
+        console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
@@ -44,7 +44,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
         try {
           saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
         } catch (error) {
-          console.error('Failed to save to Firebase:', error);
+          console.error('Failed to save to Neon:', error);
         }
       }
       return updatedRows;
@@ -61,7 +61,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       try {
         saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
       } catch (error) {
-        console.error('Failed to save to Firebase:', error);
+        console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
@@ -76,7 +76,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     try {
       saveWorkspaceData(SHARED_WORKSPACE_ID, newRows);
     } catch (error) {
-      console.error('Failed to save to Firebase:', error);
+      console.error('Failed to save to Neon:', error);
     }
   }, [setRows]);
 
@@ -90,7 +90,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       try {
         saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
       } catch (error) {
-        console.error('Failed to save to Firebase:', error);
+        console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
@@ -121,19 +121,19 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     // Clear all price history data
     clearAllPriceHistory();
     
-    // Save empty array to Firebase to ensure all devices sync
+    // Save empty array to Neon to ensure all devices sync
     try {
       await saveWorkspaceData(SHARED_WORKSPACE_ID, []);
-      console.log('Successfully cleared data from Firebase database');
+      console.log('Successfully cleared data from Neon database');
       
       if (addNotification) {
-        addNotification('All data cleared successfully from database!', 'success');
+        addNotification('All data cleared successfully from Neon database!', 'success');
       }
     } catch (error) {
-      console.error('Failed to save to Firebase:', error);
+      console.error('Failed to save to Neon:', error);
       
       if (addNotification) {
-        addNotification('Failed to clear data from database. Local data cleared only.', 'error');
+        addNotification('Failed to clear data from Neon database. Local data cleared only.', 'error');
       }
     }
   }, [setRows, addNotification]);

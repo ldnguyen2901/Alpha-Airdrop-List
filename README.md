@@ -1,258 +1,257 @@
-# Binance Alpha Airdrop
+# 🚀 Alpha Airdrop Tracker
 
-Ứng dụng theo dõi giá tiền điện tử sử dụng CoinGecko API với giao diện React hiện đại, được thiết kế đặc biệt cho việc quản lý airdrop alpha.
+Ứng dụng theo dõi giá tiền điện tử sử dụng CoinGecko API, được thiết kế đặc biệt cho việc quản lý airdrop alpha.
 
-## Tính năng
+## ✨ Tính năng chính
 
-- 📊 **Theo dõi giá thời gian thực**: Tự động cập nhật giá từ CoinGecko API mỗi 5 phút
-- 🔄 **Refresh thủ công**: Nút Refresh với icon xoay khi loading
-- 📋 **Quản lý portfolio**: Thêm, sửa, xóa các token với giao diện modal
-- 💰 **Tính toán giá trị**: Tự động tính Reward = Amount × Price
-- 📥 **Import dữ liệu**: Dán dữ liệu từ Google Sheet (CSV/TSV) hoặc upload file Excel
-- 📤 **Export CSV**: Xuất dữ liệu ra file CSV với đầy đủ thông tin
-- 🌍 **Đa tiền tệ**: Hỗ trợ USD (hiện tại)
-- 🔄 **Tự động lưu**: Dữ liệu được lưu tự động và khôi phục khi tải lại trang
-- 📊 **Sort dữ liệu**: Click vào header để sort theo cột với icon chỉ thị
-- 🌐 **Multi-device**: Chạy trên nhiều thiết bị cùng mạng WiFi
-- 🌙 **Dark/Light Mode**: Hỗ trợ theme tối/sáng với toggle đẹp mắt
-- 📱 **Responsive**: Tối ưu cho desktop, tablet và mobile với giao diện card view
-- 🚫 **Kiểm tra trùng lặp**: Tự động phát hiện và xử lý dữ liệu trùng lặp khi import
-- ⏰ **Countdown timer**: Hiển thị thời gian còn lại đến ngày listing
-- 📈 **Highest Price tracking**: Theo dõi giá cao nhất đã đạt được (mặc định bật trên mobile)
-- 🔍 **Tìm kiếm**: Tìm kiếm token theo tên
-- 🎨 **Token logos**: Hiển thị logo token từ CoinGecko API
-- 📄 **Pagination**: Phân trang cho bảng dữ liệu
-- 🔥 **Firebase sync**: Đồng bộ dữ liệu đám mây qua Firebase Firestore
-- 🗑️ **Clear All**: Xóa tất cả dữ liệu với xác nhận an toàn
+- 📊 **Real-time price tracking**: Theo dõi giá BTC, ETH, BNB và các token khác
+- 🔄 **Auto refresh**: Tự động cập nhật giá mỗi 15 phút
+- 📱 **Responsive design**: Hoạt động tốt trên mobile và desktop
+- 🎨 **Dark/Light theme**: Chế độ tối/sáng
+- 📋 **Data management**: Thêm, sửa, xóa, import/export dữ liệu
+- 🔍 **Search & filter**: Tìm kiếm và lọc token
+- 📈 **Price tracking**: Theo dõi giá cao nhất và ATH
+- ⚡ **Neon sync**: Đồng bộ dữ liệu đám mây qua Neon PostgreSQL
+- 🔔 **Notifications**: Hệ thống thông báo thông minh
+- 📊 **Statistics**: Thống kê chi tiết về portfolio
 
-## Cấu trúc dữ liệu
+## 🛠️ Công nghệ sử dụng
 
-Ứng dụng sử dụng 9 cột tương ứng với Google Sheet:
+- **Frontend**: React 18 + Vite
+- **Styling**: Tailwind CSS + Material-UI
+- **Database**: Neon PostgreSQL (serverless)
+- **API**: CoinGecko API
+- **State Management**: React Hooks
+- **Build Tool**: Vite
 
-| Cột | Tên              | Mô tả                                   |
-| --- | ---------------- | --------------------------------------- |
-| A   | Token            | Tên hiển thị của token                  |
-| B   | Amount           | Số lượng token sở hữu                   |
-| C   | Listing time     | Ngày ra mắt token (DD/MM/YYYY HH:mm) |
-| D   | API ID           | ID CoinGecko (quan trọng để lấy giá)    |
-| E   | Point (Priority) | Điểm ưu tiên                            |
-| F   | Point (FCFS)     | Điểm FCFS                               |
-| G   | Token Price      | Giá token (tự động từ API)              |
-| H   | Reward           | B × G (tự động tính)                    |
-| I   | Highest Price    | Giá cao nhất đã đạt được                |
+## 🚀 Cài đặt
 
-## 📚 Documentation
+### Yêu cầu hệ thống
+- Node.js 16+ 
+- npm hoặc yarn
 
-Xem [docs/README.md](./docs/README.md) để biết thêm chi tiết về:
-- Hướng dẫn cài đặt và sử dụng
-- Tài liệu kỹ thuật
-- Chiến lược tối ưu hóa
+### Bước 1: Clone repository
+```bash
+git clone <repository-url>
+cd Alpha-Airdrop-List
+```
 
-## Cài đặt
-
-1. **Cài đặt dependencies:**
-
+### Bước 2: Cài đặt dependencies
 ```bash
 npm install
 ```
 
-2. **Chạy ứng dụng:**
+### Bước 3: Cấu hình environment
+Tạo file `.env` trong thư mục gốc:
 
+```env
+# Neon Database Configuration
+VITE_NEON_DATABASE_URL=postgresql://username:password@host/database
+
+# Optional: Custom API endpoints
+VITE_COINGECKO_API_URL=https://api.coingecko.com/api/v3
+```
+
+### Bước 4: Chạy ứng dụng
 ```bash
 npm run dev
 ```
 
-3. **Mở trình duyệt:**
-   Truy cập http://localhost:3000
+Ứng dụng sẽ chạy tại: `http://localhost:5173`
 
-**📖 Xem hướng dẫn chi tiết**: [HUONG_DAN_CAI_DAT.md](./docs/user-guides/HUONG_DAN_CAI_DAT.md)
+## 📊 Cấu trúc dữ liệu
 
-## Sử dụng
-
-### Thêm token mới
-
-1. Click "Add Row" (desktop) hoặc "Add Row" (mobile)
-2. Nhập tên token (cột A) - bắt buộc
-3. Nhập số lượng token (cột B)
-4. Nhập ngày listing (cột C) - bắt buộc, định dạng DD/MM/YYYY hoặc DD/MM/YYYY HH:mm
-5. **Quan trọng**: Nhập API ID chính xác (cột D)
-   - Ví dụ: `bitcoin`, `ethereum`, `binancecoin`
-   - Xem danh sách API ID tại: https://api.coingecko.com/api/v3/coins/list
-6. Nhập Point Priority và Point FCFS (tùy chọn)
-
-### Import từ Google Sheet
-
-1. Copy dữ liệu từ Google Sheet (chỉ cột A-F)
-2. Click "Dán từ Sheet"
-3. Paste dữ liệu vào hộp thoại
-4. Click "Thêm vào bảng"
-
-### Import từ file Excel
-
-1. Click "Import Excel"
-2. Kéo thả file Excel hoặc click để chọn file
-3. Hỗ trợ định dạng: .xlsx, .xls, .csv
-4. File Excel cần có cấu trúc cột A-F: Token, Amount, Date Claim, Full Name, Point (Priority), Point (FCFS)
-5. Dữ liệu sẽ được lưu tự động và khôi phục khi tải lại trang
-
-### Export dữ liệu
-
-1. Click "Export Excel"
-2. File sẽ được tải về tự động với tên `airdrop-data-{timestamp}.xlsx`
-
-### Xóa tất cả dữ liệu
-
-1. Click "Clear All" (nút đỏ)
-2. Xác nhận hành động trong modal
-3. Tất cả dữ liệu sẽ bị xóa khỏi:
-   - Bảng hiện tại
-   - localStorage
-   - Firebase (nếu có)
-   - Price history data
-4. **Lưu ý**: Hành động này không thể hoàn tác
-
-### Đồng bộ hóa dữ liệu
-
-#### Vấn đề đồng bộ hóa
-Khi nhiều thiết bị sử dụng cùng lúc, có thể xảy ra tình trạng:
-- Một thiết bị xóa dữ liệu (Clear All)
-- Thiết bị khác vẫn có dữ liệu cũ trong cache
-- Khi thiết bị khác mở app, dữ liệu cũ được đồng bộ lại vào database
-
-#### Giải pháp
-1. **Tự động**: App sẽ tự động kiểm tra và xóa cache khi phát hiện Firebase đã được xóa
-2. **Thủ công**: Sử dụng nút "Force Sync" (nút xanh dương) để:
-   - Xóa toàn bộ cache local
-   - Đồng bộ lại từ Firebase database
-   - Tải lại trang để áp dụng dữ liệu mới
-
-#### Nút Force Sync
-- **Màu xanh dương** với biểu tượng Sync
-- Xóa cache và đồng bộ lại từ Firebase
-- Hoạt động ngầm, không reload trang
-- Hiển thị thông báo trạng thái đồng bộ
-- Sử dụng khi gặp vấn đề đồng bộ hóa dữ liệu
-
-### Tùy chỉnh
-
-- **Show Highest Price**: Toggle để hiển thị/ẩn cột Highest Price (mặc định bật trên mobile)
-- **Refresh**: Click nút Refresh để cập nhật giá thủ công
-- **Search**: Tìm kiếm token theo tên
-- **Sort**: Click vào header cột để sắp xếp dữ liệu
-
-## Responsive Design
-
-### Desktop (≥ 768px)
-- Giao diện bảng với sticky columns
-- Show Highest Price mặc định tắt
-- Modal form cho thêm token
-- Nút Refresh hiển thị ở ActionButtons
-
-### Mobile (< 768px)
-- Giao diện card view với pagination
-- Show Highest Price mặc định bật
-- Inline form cho thêm token
-- Nút Refresh hiển thị ở header
-
-## Cấu trúc dự án
-
-```
-src/
-├── components/          # React components
-│   ├── Header.jsx      # Header với controls
-│   ├── StatsCards.jsx  # Thống kê tổng quan (BTC, ETH, BNB prices)
-│   ├── ActionButtons.jsx # Các nút hành động
-│   ├── SortableTable.jsx # Bảng dữ liệu chính với sorting
-│   ├── CardView.jsx    # Giao diện card cho mobile
-│   ├── Card.jsx        # Component card
-│   ├── PasteButton.jsx # Modal dán dữ liệu
-│   ├── ExcelUpload.jsx # Component upload Excel
-│   ├── ThemeToggle.jsx # Toggle dark/light mode
-│   ├── Pagination.jsx  # Component phân trang
-│   ├── modals/         # Modal components
-│   │   ├── AddRowModal.jsx
-│   │   ├── EditModal.jsx
-│   │   └── DeleteModal.jsx
-│   ├── table/          # Table components
-│   │   ├── TableHeader.jsx
-│   │   └── TableRow.jsx
-│   └── SortIcons.jsx   # Icons cho sorting
-├── services/           # API services
-│   ├── api.js         # CoinGecko API calls
-│   └── firebase.js    # Firebase integration
-├── utils/             # Utilities
-│   ├── constants.js   # Constants và helpers
-│   ├── helpers.js     # Helper functions
-│   ├── storage.js     # Local storage utilities
-│   ├── excel.js       # Excel processing
-│   └── dateTimeUtils.js # Date/time utilities
-├── hooks/             # Custom hooks
-│   ├── useTableSort.js
-│   └── useTableEditing.js
-├── contexts/          # React contexts
-│   └── ThemeContext.jsx
-├── App.jsx            # Component chính
-├── main.jsx           # Entry point
-└── index.css          # Styles
+### Token Data Structure
+```javascript
+{
+  name: '',           // Tên token
+  amount: 0,          // Số lượng
+  launchAt: '',       // Thời gian listing
+  apiId: '',          // CoinGecko API ID
+  pointPriority: '',  // Điểm ưu tiên
+  pointFCFS: '',      // Điểm FCFS
+  price: 0,           // Giá hiện tại
+  reward: 0,          // Phần thưởng (Amount × Price)
+  ath: 0,             // All-time high
+  logo: '',           // Logo URL
+  symbol: ''          // Ký hiệu token
+}
 ```
 
-## API Reference
+## 🔧 Tính năng chi tiết
 
-Ứng dụng sử dụng CoinGecko API:
+### 1. Price Tracking
+- Tự động fetch giá từ CoinGecko API
+- Cache thông minh để giảm API calls
+- Theo dõi ATH và giá cao nhất
+- Real-time updates
 
-### Simple Price API
+### 2. Data Management
+- **Thêm token**: Nhập thông tin token mới
+- **Import CSV/Excel**: Import dữ liệu từ file
+- **Export data**: Xuất dữ liệu ra CSV
+- **Duplicate detection**: Phát hiện token trùng lặp
+- **Bulk operations**: Thao tác hàng loạt
+
+### 3. Neon Database Integration
+- **Cloud sync**: Đồng bộ dữ liệu đám mây
+- **Real-time updates**: Cập nhật real-time
+- **Data persistence**: Lưu trữ bền vững
+- **Multi-device sync**: Đồng bộ đa thiết bị
+
+### 4. User Experience
+- **Responsive design**: Tương thích mọi thiết bị
+- **Dark/Light theme**: Chế độ tối/sáng
+- **Keyboard shortcuts**: Phím tắt
+- **Loading states**: Trạng thái loading
+- **Error handling**: Xử lý lỗi thông minh
+
+## 📱 Responsive Design
+
+Ứng dụng được thiết kế responsive với:
+- **Mobile**: Tối ưu cho màn hình nhỏ
+- **Tablet**: Layout trung bình
+- **Desktop**: Layout đầy đủ tính năng
+
+## 🎨 Theme System
+
+- **Light theme**: Giao diện sáng
+- **Dark theme**: Giao diện tối
+- **Auto-detect**: Tự động theo hệ thống
+- **Manual toggle**: Chuyển đổi thủ công
+
+## 🔔 Notification System
+
+- **Success notifications**: Thông báo thành công
+- **Error notifications**: Thông báo lỗi
+- **Warning notifications**: Cảnh báo
+- **Info notifications**: Thông tin
+
+## 📊 Performance Optimization
+
+- **Lazy loading**: Tải component theo nhu cầu
+- **Memoization**: Cache kết quả tính toán
+- **Debouncing**: Giảm số lần gọi API
+- **Virtual scrolling**: Tối ưu hiển thị danh sách lớn
+
+## 🔒 Security
+
+- **Environment variables**: Bảo vệ thông tin nhạy cảm
+- **Input validation**: Kiểm tra dữ liệu đầu vào
+- **XSS protection**: Bảo vệ khỏi XSS
+- **CSRF protection**: Bảo vệ khỏi CSRF
+
+## 🧪 Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
-GET https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies={currency}
+
+## 📦 Build & Deploy
+
+### Development
+```bash
+npm run dev
 ```
 
-### Coins Markets API (cho logos)
-```
-GET https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={ids}
-```
-
-## Firebase (Cloud sync)
-
-Ứng dụng hỗ trợ đồng bộ dữ liệu qua Firebase Firestore. Để bật tính năng này:
-
-1. Tạo một project trên Firebase Console và bật Firestore (in test mode hoặc cấu hình rules phù hợp).
-2. Trong phần Project settings lấy các biến cấu hình (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
-3. Tạo file `.env.local` (hoặc `.env`) ở gốc dự án và thêm các biến bắt đầu bằng `VITE_`:
-
-```
-VITE_FIREBASE_API_KEY=AIzA...your_key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=1234567890
-VITE_FIREBASE_APP_ID=1:1234567890:web:abcdef123456
+### Production Build
+```bash
+npm run build
 ```
 
-4. Khởi động lại dev server nếu đang chạy (`npm run dev`). Ứng dụng sẽ tự động đăng nhập ẩn danh và đồng bộ dữ liệu qua workspace `shared-workspace` cho tất cả user.
+### Preview Production Build
+```bash
+npm run preview
+```
 
-**Ghi chú bảo mật**: 
-- Không commit file `.env.local` chứa khóa vào git; giữ các khóa an toàn.
-- Tất cả user sẽ chia sẻ cùng một workspace `shared-workspace` trên Firebase.
-- Dữ liệu được đồng bộ real-time giữa tất cả user.
+## 🌐 Deployment
 
-## Lưu ý
+### Vercel (Recommended)
+1. Connect GitHub repository
+2. Configure environment variables
+3. Deploy automatically
 
-- API ID phải chính xác để lấy được giá và logo
-- Chu kỳ làm mới tự động mỗi 5 phút (300 giây)
-- Dữ liệu được lưu trong localStorage và Firebase (nếu cấu hình)
-- Token logos được cache trong 5 phút để tối ưu performance
-- Responsive breakpoint: 768px (md)
+### Netlify
+1. Connect repository
+2. Set build command: `npm run build`
+3. Set publish directory: `dist`
 
-## Công nghệ sử dụng
+### Manual Deployment
+1. Build project: `npm run build`
+2. Upload `dist` folder to web server
+3. Configure environment variables
 
-- **React 18** - UI Framework
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Material-UI Icons** - Icon library
-- **CoinGecko API** - Dữ liệu giá crypto
-- **Firebase Firestore** - Cloud database
-- **XLSX** - Excel file processing
-- **React Toastify** - Notifications
+## 📈 Monitoring & Analytics
 
-## Tác giả
+- **Error tracking**: Theo dõi lỗi
+- **Performance monitoring**: Giám sát hiệu suất
+- **User analytics**: Phân tích người dùng
+- **API usage**: Theo dõi sử dụng API
 
-© 2025 ~ **Nguyenwolf**
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **API Rate Limiting**
+   - Giảm tần suất fetch
+   - Sử dụng cache
+   - Implement retry logic
+
+2. **Database Connection Issues**
+   - Kiểm tra connection string
+   - Verify database credentials
+   - Check network connectivity
+
+3. **Build Errors**
+   - Clear node_modules: `rm -rf node_modules && npm install`
+   - Clear cache: `npm run clean`
+   - Check Node.js version
+
+### Performance Issues
+
+1. **Slow Loading**
+   - Enable lazy loading
+   - Optimize images
+   - Use CDN
+
+2. **High Memory Usage**
+   - Implement virtual scrolling
+   - Optimize re-renders
+   - Use memoization
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch
+3. Make changes
+4. Add tests
+5. Submit pull request
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 🙏 Acknowledgments
+
+- [CoinGecko](https://coingecko.com) - Crypto price data
+- [Neon](https://neon.tech) - Serverless PostgreSQL
+- [React](https://reactjs.org) - UI framework
+- [Tailwind CSS](https://tailwindcss.com) - CSS framework
+- [Material-UI](https://mui.com) - React components
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **Email**: your-email@example.com
+
+---
+
+**Made with ❤️ for the crypto community**

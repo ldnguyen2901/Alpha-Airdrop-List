@@ -68,7 +68,7 @@ export const NotificationProvider = ({ children }) => {
         {
           id: 6,
           type: 'info',
-          message: '🔄 Dữ liệu đã được đồng bộ với Firebase',
+          message: '🔄 Dữ liệu đã được đồng bộ với Neon',
           time: '20 phút trước',
           timestamp: Date.now() - 1200000,
           read: true

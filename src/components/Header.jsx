@@ -1,5 +1,4 @@
-import ThemeToggle from './ThemeToggle';
-import NotificationButton from './NotificationButton';
+import { ThemeToggle, NotificationButton } from './index';
 
 export default function Header({ loading, onRefresh, syncing, isPageVisible }) {
   return (

@@ -1,7 +1,6 @@
 import React from 'react';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import AppContent from './components/AppContent';
+import { ThemeProvider, NotificationProvider } from './contexts';
+import { AppContent } from './components';
 import 'react-toastify/dist/ReactToastify.css';
 
 /**

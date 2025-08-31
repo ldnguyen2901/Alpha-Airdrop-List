@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
+import { useNotifications } from '../contexts';
 
 const SimpleNotificationTester = () => {
   const { addNotification } = useNotifications();

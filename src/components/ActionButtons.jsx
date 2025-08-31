@@ -1,4 +1,4 @@
-import PasteButton from './PasteButton';
+import { PasteButton } from './index';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import AddIcon from '@mui/icons-material/Add';

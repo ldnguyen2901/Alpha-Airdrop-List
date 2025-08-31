@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { splitCSV, CSV_HEADERS, parsePastedData } from '../utils';
-import { readExcelFile, parseExcelData } from '../utils/excel.js';
+import { readExcelFile, parseExcelData } from '../utils';
 import * as XLSX from 'xlsx';
 
 export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
@@ -126,7 +126,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
 
       const rows = parseExcelData(excelData);
       if (rows && rows.length > 0) {
-        replaceRows(rows);
+        addMultipleRows(rows);
         if (addNotification) {
           addNotification(`Successfully imported ${rows.length} tokens from Excel!`, 'success');
         }
@@ -143,7 +143,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
       }
       return { success: false, error: error.message || 'Failed to read Excel file' };
     }
-  }, [replaceRows]);
+  }, [addMultipleRows]);
 
   // Create Excel template
   const createExcelTemplate = useCallback(() => {

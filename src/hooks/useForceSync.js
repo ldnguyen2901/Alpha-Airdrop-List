@@ -1,17 +1,17 @@
 import { useCallback } from 'react';
-import { forceSyncWithFirebase } from '../utils/cacheManager';
+import { forceSyncWithNeon } from '../utils';
 
 export const useForceSync = (setRows, addNotification) => {
   const handleForceSync = useCallback(async () => {
     try {
-      console.log('Starting force sync...');
+      console.log('Starting force sync with Neon...');
       
       // Show loading notification
       if (addNotification) {
-        addNotification('Đang đồng bộ với database...', 'info');
+        addNotification('Đang đồng bộ với Neon database...', 'info');
       }
       
-      const result = await forceSyncWithFirebase();
+      const result = await forceSyncWithNeon();
       
       if (result.success) {
         // Update the rows state with synced data
@@ -20,28 +20,28 @@ export const useForceSync = (setRows, addNotification) => {
         // Show success notification
         if (addNotification) {
           if (result.data.length === 0) {
-            addNotification('Đã đồng bộ: Database trống', 'success');
+            addNotification('Đã đồng bộ: Neon database trống', 'success');
           } else {
-            addNotification(`Đã đồng bộ: ${result.data.length} tokens`, 'success');
+            addNotification(`Đã đồng bộ: ${result.data.length} tokens từ Neon`, 'success');
           }
         }
         
-        console.log('Force sync completed successfully');
+        console.log('Force sync with Neon completed successfully');
         return true;
       } else {
         // Show error notification
         if (addNotification) {
-          addNotification('Lỗi đồng bộ với database', 'error');
+          addNotification('Lỗi đồng bộ với Neon database', 'error');
         }
-        console.error('Force sync failed:', result.error);
+        console.error('Force sync with Neon failed:', result.error);
         return false;
       }
     } catch (error) {
-      console.error('Error during force sync:', error);
+      console.error('Error during force sync with Neon:', error);
       
       // Show error notification
       if (addNotification) {
-        addNotification('Lỗi đồng bộ với database', 'error');
+        addNotification('Lỗi đồng bộ với Neon database', 'error');
       }
       return false;
     }

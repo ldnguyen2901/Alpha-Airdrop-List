@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { readExcelFile, parseExcelData } from '../utils/excel.js';
+import { readExcelFile, parseExcelData } from '../utils';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import TableChartIcon from '@mui/icons-material/TableChart';
 

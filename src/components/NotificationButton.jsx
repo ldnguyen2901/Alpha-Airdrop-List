@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
+import { useNotifications } from '../contexts';
 
 const NotificationButton = () => {
   const [isOpen, setIsOpen] = useState(false);

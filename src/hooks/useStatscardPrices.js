@@ -4,7 +4,7 @@ import {
   loadStatscardPrices, 
   subscribeStatscardPrices,
   STATSCARD_WORKSPACE_ID 
-} from '../services/firebase';
+} from '../services/neon';
 
 // Default statscard tokens data (simplified)
 const DEFAULT_STATSCARD_TOKENS = [
@@ -34,9 +34,9 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
   // Initialize statscard prices
   const initializeStatscardPrices = useCallback(async () => {
     try {
-      console.log('Initializing statscard prices...');
+      console.log('Initializing statscard prices with Neon...');
       
-      // Load existing data from Firebase
+      // Load existing data from Neon
       const existingData = await loadStatscardPrices();
       
       if (existingData && Array.isArray(existingData) && existingData.length > 0) {
@@ -74,8 +74,8 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
           setTokenLogos(newTokenLogos);
         }
       } else {
-        console.log('No existing statscard prices found, saving default data...');
-        // Save default data to Firebase
+        console.log('No existing statscard prices found, saving default data to Neon...');
+        // Save default data to Neon
         await saveStatscardPrices(DEFAULT_STATSCARD_TOKENS);
         
         // Set default prices
@@ -108,7 +108,7 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
       // Subscribe to real-time updates
       const unsubscribe = subscribeStatscardPrices((data) => {
         if (data && Array.isArray(data)) {
-          console.log('Statscard prices updated:', data.length, 'tokens');
+          console.log('Statscard prices updated from Neon:', data.length, 'tokens');
           
           // Update prices and logos from real-time data
           const newTokenLogos = {};
@@ -147,7 +147,7 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
       unsubRef.current = unsubscribe;
       
     } catch (error) {
-      console.error('Error initializing statscard prices:', error);
+      console.error('Error initializing statscard prices with Neon:', error);
       
       // Set default prices on error
       setBtcPrice(45000);
@@ -160,9 +160,9 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
   const updateStatscardPricesWithNewData = useCallback(async (newPrices) => {
     try {
       await saveStatscardPrices(newPrices);
-      console.log('Statscard prices updated successfully');
+      console.log('Statscard prices updated successfully in Neon');
     } catch (error) {
-      console.error('Error updating statscard prices:', error);
+      console.error('Error updating statscard prices in Neon:', error);
     }
   }, []);
 
@@ -175,9 +175,9 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
       }));
       
       await saveStatscardPrices(updatedStatscardData);
-      console.log('Statscard prices updated from API successfully');
+      console.log('Statscard prices updated from API successfully in Neon');
     } catch (error) {
-      console.error('Error updating statscard prices from API:', error);
+      console.error('Error updating statscard prices from API in Neon:', error);
     }
   }, []);
 

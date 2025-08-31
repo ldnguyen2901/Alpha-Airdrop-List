@@ -6,8 +6,9 @@ import {
   SortableTable, 
   ExcelUpload
 } from './index';
-import { useNotifications } from '../contexts/NotificationContext';
-import { AUTO_REFRESH_INTERVAL } from '../utils/constants';
+import { useNotifications } from '../contexts';
+import { AUTO_REFRESH_INTERVAL } from '../utils';
+
 
 // Lazy load modals for better performance
 const AddRowModal = lazy(() => import('./modals/AddRowModal'));
@@ -18,14 +19,14 @@ import {
   useAppState,
   useDataOperations,
   useApiOperations,
-  useFirebaseSync,
+  useNeonSync,
   useImportExport,
   useDuplicateCheck,
   useResponsive,
   useAutoRefresh,
-  useModalOperations
+  useModalOperations,
+  useStatscardPrices
 } from '../hooks';
-import { useStatscardPrices } from '../hooks/useStatscardPrices';
 
 /**
  * React Airdrop Alpha Tracker
@@ -64,8 +65,8 @@ export default function AppContent() {
     state.setLastUpdated
   );
   
-  // Firebase sync
-  const firebaseSyncOps = useFirebaseSync(
+  // Neon sync
+  const neonSyncOps = useNeonSync(
     state.rows,
     state.setRows,
     state.workspaceId,
@@ -130,26 +131,22 @@ export default function AppContent() {
     statscardOps.initializeStatscardPrices();
     // Only refresh data once on initial load, not on every apiOps change
     apiOps.refreshData();
+    
   }, []); // Remove apiOps dependency to prevent infinite loop
 
   // Auto force sync when page becomes visible (if needed)
   useEffect(() => {
-    if (state.isPageVisible && !state.syncing) {
-      // Check if we need to force sync (e.g., after being away for a while)
-      const lastSync = localStorage.getItem('last-force-sync');
-      const now = Date.now();
-      const syncInterval = 5 * 60 * 1000; // 5 minutes
-      
-      if (!lastSync || (now - parseInt(lastSync)) > syncInterval) {
-        // Auto force sync every 5 minutes when page is visible
-        firebaseSyncOps.forceSync().then(success => {
-          if (success) {
-            localStorage.setItem('last-force-sync', now.toString());
-          }
-        });
+    // Auto-force sync every 15 minutes
+    const syncInterval = setInterval(() => {
+      if (state.isPageVisible && !state.syncing) {
+        neonSyncOps.forceSync();
       }
-    }
-  }, [state.isPageVisible, state.syncing, firebaseSyncOps]);
+    }, 15 * 60 * 1000); // 15 minutes
+
+    return () => {
+      clearInterval(syncInterval);
+    };
+  }, [state.isPageVisible, state.syncing, neonSyncOps]);
 
   // Handle add row submit
   const handleAddRowSubmit = (form) => {
@@ -270,6 +267,7 @@ export default function AppContent() {
               <p>
                 A: Token Name (optional) | B: Amount (optional) | C: Listing Date (optional) | D: API ID (required) | E: Point (Priority) (optional) | F: Point (FCFS) (optional)
               </p>
+
               <p className='mt-1'>
                 <strong>Required fields:</strong> Only API ID (D) is mandatory
               </p>

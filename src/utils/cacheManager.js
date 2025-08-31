@@ -1,11 +1,11 @@
 // Cache management utilities
-import { loadWorkspaceDataOnce, loadStatscardPrices, SHARED_WORKSPACE_ID, STATSCARD_WORKSPACE_ID } from '../services/firebase';
+import { loadWorkspaceDataOnce, loadStatscardPrices, SHARED_WORKSPACE_ID, STATSCARD_WORKSPACE_ID } from '../services';
 
-// Check if local cache is out of sync with Firebase
+// Check if local cache is out of sync with Neon
 export const checkCacheSync = async () => {
   try {
-    // Get Firebase data
-    const firebaseData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
+    // Get Neon data
+    const neonData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
     
     // Get local data
     const localData = localStorage.getItem('airdrop-alpha-data');
@@ -20,20 +20,20 @@ export const checkCacheSync = async () => {
       }
     }
     
-    // If Firebase is empty but local has data, clear local cache
-    if (firebaseData && Array.isArray(firebaseData) && firebaseData.length === 0) {
+    // If Neon is empty but local has data, clear local cache
+    if (neonData && Array.isArray(neonData) && neonData.length === 0) {
       if (parsedLocalData && Array.isArray(parsedLocalData) && parsedLocalData.length > 0) {
-        console.log('Firebase is empty but local cache has data. Clearing local cache...');
+        console.log('Neon is empty but local cache has data. Clearing local cache...');
         localStorage.removeItem('airdrop-alpha-data');
-        return { shouldClearCache: true, reason: 'firebase_empty_local_has_data' };
+        return { shouldClearCache: true, reason: 'neon_empty_local_has_data' };
       }
     }
     
-    // If Firebase has data but local is empty, this is normal
-    if (firebaseData && Array.isArray(firebaseData) && firebaseData.length > 0) {
+    // If Neon has data but local is empty, this is normal
+    if (neonData && Array.isArray(neonData) && neonData.length > 0) {
       if (!parsedLocalData || !Array.isArray(parsedLocalData) || parsedLocalData.length === 0) {
-        console.log('Firebase has data but local cache is empty. This is normal.');
-        return { shouldClearCache: false, reason: 'firebase_has_data_local_empty' };
+        console.log('Neon has data but local cache is empty. This is normal.');
+        return { shouldClearCache: false, reason: 'neon_has_data_local_empty' };
       }
     }
     
@@ -70,26 +70,26 @@ export const clearAllCache = () => {
   }
 };
 
-// Force sync with Firebase (clear local cache and return Firebase data)
-export const forceSyncWithFirebase = async () => {
+// Force sync with Neon (clear local cache and return Neon data)
+export const forceSyncWithNeon = async () => {
   try {
-    console.log('Forcing sync with Firebase...');
+    console.log('Forcing sync with Neon...');
     
     // Clear local cache
     clearAllCache();
     
-    // Reload from Firebase
-    const firebaseData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
+    // Reload from Neon
+    const neonData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
     
-    if (firebaseData && Array.isArray(firebaseData)) {
-      console.log('Successfully synced with Firebase, data length:', firebaseData.length);
-      return { success: true, data: firebaseData };
+    if (neonData && Array.isArray(neonData)) {
+      console.log('Successfully synced with Neon, data length:', neonData.length);
+      return { success: true, data: neonData };
     } else {
-      console.log('Firebase data is empty or invalid');
+      console.log('Neon data is empty or invalid');
       return { success: true, data: [] };
     }
   } catch (error) {
-    console.error('Error forcing sync with Firebase:', error);
+    console.error('Error forcing sync with Neon:', error);
     return { success: false, error };
   }
 };

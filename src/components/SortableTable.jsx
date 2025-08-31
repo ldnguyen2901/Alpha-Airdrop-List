@@ -5,8 +5,7 @@ import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
 import DeleteModal from './modals/DeleteModal';
-import Pagination from './Pagination';
-import CardView from './CardView';
+import { Pagination, CardView } from './index';
 
 const SortableTable = forwardRef(({
   rows,

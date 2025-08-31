@@ -6,7 +6,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import BlockIcon from '@mui/icons-material/Block';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import PriceTrackingInfo from '../PriceTrackingInfo';
+import { PriceTrackingInfo } from '../index';
 
 export default function TableRow({
   row,

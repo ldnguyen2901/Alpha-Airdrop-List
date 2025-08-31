@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import SortableTable from './SortableTable';
-import CardView from './CardView';
+import { SortableTable, CardView } from './index';
 
 export default function ResponsiveDataView({
   rows,

@@ -14,13 +14,16 @@ export const handleError = (error, context = 'Unknown operation') => {
   };
 };
 
-// Firebase specific error handler
-export const handleFirebaseError = (error, operation = 'Firebase operation') => {
+// Neon specific error handler
+export const handleNeonError = (error, operation = 'Neon operation') => {
   if (error?.code === 'permission-denied') {
     return handleError(error, `${operation} - Permission denied`);
   }
   if (error?.code === 'unavailable') {
     return handleError(error, `${operation} - Service unavailable`);
+  }
+  if (error?.code === 'connection-error') {
+    return handleError(error, `${operation} - Connection error`);
   }
   return handleError(error, operation);
 };

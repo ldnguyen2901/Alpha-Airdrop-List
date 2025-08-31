@@ -3,7 +3,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import WarningIcon from '@mui/icons-material/Warning';
-import { usePriceTracking } from '../hooks/usePriceTracking';
+import { usePriceTracking } from '../hooks';
 
 const PriceTrackingInfo = ({ apiId, currentPrice, highestPrice, showDetails = false, onMouseLeave }) => {
   const { getPriceStats, analyzeTrend, getPriceAlerts } = usePriceTracking();

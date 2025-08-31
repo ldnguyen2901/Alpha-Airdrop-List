@@ -1,5 +1,5 @@
 import { TABLE_HEADERS } from '../../utils';
-import { SortIcons } from '../SortIcons';
+import { SortIcons } from '../index';
 
 export default function TableHeader({ 
   sortConfig, 

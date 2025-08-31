@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo } from '../services/api';
-import { saveTokenLogoToDatabase, saveStatscardPrices } from '../services/firebase';
+import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, saveStatscardPrices } from '../services';
 import { usePriceTracking } from './usePriceTracking';
 
 export const useApiOperations = (
@@ -74,7 +73,7 @@ export const useApiOperations = (
               }
               
               // Always save to database even if not in table
-              await saveTokenLogoToDatabase(tokenId, fetchedLogos[tokenId]);
+              // await saveTokenLogoToDatabase(tokenId, fetchedLogos[tokenId]); // Removed as per edit hint
             }
           }
           
@@ -140,34 +139,34 @@ export const useApiOperations = (
       setEthPrice(ethPrice);
       setBnbPrice(bnbPrice);
       
-      // Update statscard prices in Firebase
-      try {
-        const updatedStatscardData = [
-          {
-            apiId: 'bitcoin',
-            symbol: 'BTC',
-            logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-            current_price: btcPrice
-          },
-          {
-            apiId: 'ethereum',
-            symbol: 'ETH',
-            logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-            current_price: ethPrice
-          },
-          {
-            apiId: 'binancecoin',
-            symbol: 'BNB',
-            logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
-            current_price: bnbPrice
-          }
-        ];
-        
-        await saveStatscardPrices(updatedStatscardData);
-        console.log('Statscard prices updated in Firebase');
-      } catch (error) {
-        console.error('Error updating statscard prices in Firebase:', error);
-      }
+              // Update statscard prices in Neon
+        try {
+          const updatedStatscardData = [
+            {
+              apiId: 'bitcoin',
+              symbol: 'BTC',
+              logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+              current_price: btcPrice
+            },
+            {
+              apiId: 'ethereum',
+              symbol: 'ETH',
+              logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+              current_price: ethPrice
+            },
+            {
+              apiId: 'binancecoin',
+              symbol: 'BNB',
+              logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+              current_price: bnbPrice
+            }
+          ];
+          
+          await saveStatscardPrices(updatedStatscardData);
+          console.log('Statscard prices updated in Neon');
+        } catch (error) {
+          console.error('Error updating statscard prices in Neon:', error);
+        }
 
       // Step 2: Optimized token data fetching strategy
       if (ids.length > 0) {

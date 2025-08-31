@@ -15,3 +15,6 @@ export * from './excel';
 
 // Error handling utilities
 export * from './errorHandler';
+
+// Cache management utilities
+export * from './cacheManager';
