@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory } from '../utils';
+import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory, filterMainTokensFromRows, isMainToken } from '../utils';
 import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services';
 
 export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
@@ -21,9 +21,10 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       const updatedRows = [...prevRows, newRowData];
       saveDataToStorage(updatedRows);
       
-      // Always save to shared workspace
+      // Always save to shared workspace - exclude main tokens
       try {
-        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+        const filteredRows = filterMainTokensFromRows(updatedRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
@@ -39,10 +40,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
       saveDataToStorage(updatedRows);
       
-      // Always save to shared workspace if not a remote update
+      // Always save to shared workspace if not a remote update - exclude main tokens
       if (!isRemoteUpdateRef.current) {
         try {
-          saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+          const filteredRows = filterMainTokensFromRows(updatedRows);
+          saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
         } catch (error) {
           console.error('Failed to save to Neon:', error);
         }
@@ -57,9 +59,10 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       const updatedRows = prevRows.filter((_, i) => i !== index);
       saveDataToStorage(updatedRows);
       
-      // Always save to shared workspace
+      // Always save to shared workspace - exclude main tokens
       try {
-        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+        const filteredRows = filterMainTokensFromRows(updatedRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
@@ -72,9 +75,10 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     setRows(newRows);
     saveDataToStorage(newRows);
     
-    // Always save to shared workspace
+    // Always save to shared workspace - exclude main tokens
     try {
-      saveWorkspaceData(SHARED_WORKSPACE_ID, newRows);
+      const filteredRows = filterMainTokensFromRows(newRows);
+      saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
     } catch (error) {
       console.error('Failed to save to Neon:', error);
     }
@@ -86,9 +90,10 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       const updatedRows = [...prevRows, ...newRowsData];
       saveDataToStorage(updatedRows);
       
-      // Always save to shared workspace
+      // Always save to shared workspace - exclude main tokens
       try {
-        saveWorkspaceData(SHARED_WORKSPACE_ID, updatedRows);
+        const filteredRows = filterMainTokensFromRows(updatedRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
@@ -106,6 +111,10 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       errors.apiId = 'API ID is required';
     }
     
+    // Prevent adding main tokens (BTC, ETH, BNB)
+    if (isMainToken(form.apiId.trim())) {
+      errors.apiId = 'Cannot add main tokens (BTC, ETH, BNB) to the table. They are managed separately in statscard.';
+    }
 
     return errors;
   }, []);

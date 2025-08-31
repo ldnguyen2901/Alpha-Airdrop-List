@@ -5,6 +5,7 @@ import {
   subscribeWorkspace,
   initializeDatabase
 } from '../services/neon';
+import { filterMainTokensFromRows } from '../utils/helpers';
 
 export const useNeonSync = (
   rows,
@@ -33,9 +34,11 @@ export const useNeonSync = (
       setSyncing(true);
       const data = await loadWorkspaceDataOnce(workspaceId);
       if (data && data.length > 0) {
+        // Filter out main tokens from shared workspace data
+        const filteredData = filterMainTokensFromRows(data);
         isRemoteUpdateRef.current = true;
-        setRows(data);
-        console.log('Loaded data from Neon:', data.length, 'rows');
+        setRows(filteredData);
+        console.log('Loaded data from Neon:', filteredData.length, 'rows (excluding main tokens)');
       }
     } catch (error) {
       console.error('Error loading initial data from Neon:', error);
@@ -53,8 +56,10 @@ export const useNeonSync = (
       }
 
       setSyncing(true);
-      await saveWorkspaceData(workspaceId, dataToSave);
-      console.log('Saved data to Neon:', dataToSave.length, 'rows');
+      // Filter out main tokens before saving to shared workspace
+      const filteredData = filterMainTokensFromRows(dataToSave);
+      await saveWorkspaceData(workspaceId, filteredData);
+      console.log('Saved data to Neon:', filteredData.length, 'rows (excluding main tokens)');
     } catch (error) {
       console.error('Error saving data to Neon:', error);
     } finally {
@@ -70,9 +75,11 @@ export const useNeonSync = (
 
     unsubRef.current = subscribeWorkspace(workspaceId, (data) => {
       if (data && data.length > 0) {
+        // Filter out main tokens from real-time updates
+        const filteredData = filterMainTokensFromRows(data);
         isRemoteUpdateRef.current = true;
-        setRows(data);
-        console.log('Received real-time update from Neon:', data.length, 'rows');
+        setRows(filteredData);
+        console.log('Received real-time update from Neon:', filteredData.length, 'rows (excluding main tokens)');
       }
     });
   };

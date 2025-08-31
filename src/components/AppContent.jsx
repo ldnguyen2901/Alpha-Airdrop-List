@@ -7,7 +7,6 @@ import {
   ExcelUpload
 } from './index';
 import { useNotifications } from '../contexts';
-import { AUTO_REFRESH_INTERVAL } from '../utils';
 
 
 // Lazy load modals for better performance
@@ -95,13 +94,13 @@ export default function AppContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Auto refresh - reduced frequency to avoid overwhelming the database
+  // Auto refresh - separate intervals for table data and statscard prices
   useAutoRefresh(
     apiOps.refreshData,
+    apiOps.refreshStatscardPrices,
     state.isPageVisible,
     state.setIsPageVisible,
-    state.timerRef,
-    AUTO_REFRESH_INTERVAL
+    state.timerRef
   );
   
   // Modal operations
@@ -129,8 +128,10 @@ export default function AppContent() {
     apiOps.loadLogosFromDatabase();
     // Initialize statscard prices
     statscardOps.initializeStatscardPrices();
-    // Only refresh data once on initial load, not on every apiOps change
+    // Refresh table data once on initial load
     apiOps.refreshData();
+    // Refresh statscard prices once on initial load
+    apiOps.refreshStatscardPrices();
     
   }, []); // Remove apiOps dependency to prevent infinite loop
 

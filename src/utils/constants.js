@@ -19,7 +19,8 @@ export function newRow(partial = {}) {
 }
 
 // Auto refresh configuration
-export const AUTO_REFRESH_INTERVAL = 300; // 5 minutes in seconds
+export const AUTO_REFRESH_INTERVAL = 120; // 2 minutes for table data
+export const STATSCARD_REFRESH_INTERVAL = 300; // 5 minutes for statscard prices
 
 export const TABLE_HEADERS = [
   'Token', // Will be displayed as "Symbol" in TableHeader

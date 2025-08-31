@@ -283,3 +283,25 @@ export function formatPrice(n) {
   if (fracPart) return sign + intFormatted + ',' + fracPart;
   return sign + intFormatted;
 }
+
+// Main tokens that should only be in statscard-prices workspace
+export const MAIN_TOKENS = ['bitcoin', 'ethereum', 'binancecoin'];
+
+// Filter out main tokens from shared workspace data
+export const filterMainTokensFromRows = (rows) => {
+  if (!Array.isArray(rows)) {
+    console.warn('filterMainTokensFromRows: rows is not an array:', rows);
+    return [];
+  }
+  
+  return rows.filter(row => {
+    if (!row || !row.apiId) return true;
+    return !MAIN_TOKENS.includes(row.apiId.trim().toLowerCase());
+  });
+};
+
+// Check if a token is a main token
+export const isMainToken = (apiId) => {
+  if (!apiId) return false;
+  return MAIN_TOKENS.includes(apiId.trim().toLowerCase());
+};

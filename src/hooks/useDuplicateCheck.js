@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { isMainToken } from '../utils/helpers';
 
 export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModal) => {
   // Function to check for duplicate logos and token names
@@ -18,8 +19,8 @@ export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModa
       return;
     }
     
-    // Check for duplicates
-    rows.filter(r => r && r !== null).forEach((row, index) => {
+    // Check for duplicates - exclude main tokens
+    rows.filter(r => r && r !== null && !isMainToken(r.apiId)).forEach((row, index) => {
       // Check logo duplicates
       if (row.logo && row.logo.trim()) {
         if (!duplicates.logos[row.logo]) {
@@ -91,6 +92,7 @@ export const useDuplicateCheck = (rows, setDuplicatesData, setShowDuplicatesModa
       
       
     }
+    
     
     
     

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, saveStatscardPrices } from '../services';
 import { usePriceTracking } from './usePriceTracking';
+import { MAIN_TOKENS, isMainToken } from '../utils/helpers';
 
 export const useApiOperations = (
   rows, 
@@ -40,8 +41,8 @@ export const useApiOperations = (
         return;
       }
       
-      // Load logos from database (rows)
-      rows.filter(r => r && r !== null).forEach(row => {
+      // Load logos from database (rows) - exclude main tokens from table data
+      rows.filter(r => r && r !== null && !isMainToken(r.apiId)).forEach(row => {
         if (row.apiId && row.logo) {
           logosFromDB[row.apiId] = {
             logo: row.logo,
@@ -51,33 +52,22 @@ export const useApiOperations = (
         }
       });
       
-      // Fetch missing logos for main tokens (BTC, ETH, BNB)
-      const mainTokens = ['bitcoin', 'ethereum', 'binancecoin'];
-      const missingMainTokens = mainTokens.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
+      // Fetch missing logos for main tokens (BTC, ETH, BNB) - only for statscard display
+      const missingMainTokens = MAIN_TOKENS.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
       
       if (missingMainTokens.length > 0) {
         try {
           const fetchedLogos = await fetchTokenLogos(missingMainTokens);
           
-          // Update database with fetched logos for main tokens
+          // Only update logos for statscard display, don't update table rows
           for (const tokenId of missingMainTokens) {
             if (fetchedLogos[tokenId]) {
-              // Update row if it exists in table
-              const rowIndex = rows.findIndex(row => row && row !== null && row.apiId === tokenId);
-              if (rowIndex !== -1) {
-                updateRow(rowIndex, {
-                  logo: fetchedLogos[tokenId].logo,
-                  symbol: fetchedLogos[tokenId].symbol,
-                  name: fetchedLogos[tokenId].name
-                });
-              }
-              
-              // Always save to database even if not in table
-              // await saveTokenLogoToDatabase(tokenId, fetchedLogos[tokenId]); // Removed as per edit hint
+              // Don't update table rows for main tokens - they should not be in shared-workspace
+              // Just add to logos for statscard display
             }
           }
           
-          // Merge fetched logos into logosFromDB
+          // Merge fetched logos into logosFromDB for statscard display
           Object.assign(logosFromDB, fetchedLogos);
         } catch (error) {
           console.error('Failed to fetch main token logos:', error);
@@ -88,11 +78,17 @@ export const useApiOperations = (
     } catch (e) {
       console.error('loadLogosFromDatabase error', e);
     }
-  }, [rows, updateRow, setTokenLogos]);
+  }, [rows, setTokenLogos]);
 
   // Auto fetch token info when API ID is entered
   const fetchAndUpdateTokenInfo = useCallback(async (apiId, rowIndex) => {
     if (!apiId || !apiId.trim()) return;
+    
+    // Prevent updating main tokens (BTC, ETH, BNB)
+    if (isMainToken(apiId.trim())) {
+      console.log('Skipping main token update:', apiId);
+      return;
+    }
     
     // Validate API ID format - allow alphanumeric, hyphens, underscores, and question mark for hidden tokens
     const validApiIdPattern = /^[a-zA-Z0-9_\-?]+$/;
@@ -122,15 +118,13 @@ export const useApiOperations = (
     }
   }, [updateRow]);
 
-  // Refresh data function with optimized strategy
-  const refreshData = useCallback(async () => {
-    setLoading(true);
-    
+  // Refresh statscard prices only (BTC, ETH, BNB)
+  const refreshStatscardPrices = useCallback(async () => {
     try {
-      // Step 1: Fetch main crypto prices for statscard (separate from table data)
-      const prices = await fetchCryptoPrices(['bitcoin', 'ethereum', 'binancecoin']);
+      // Fetch main crypto prices for statscard only
+      const prices = await fetchCryptoPrices(MAIN_TOKENS);
       
-      // Update statscard prices (these are managed separately)
+      // Update statscard prices
       const btcPrice = prices.bitcoin?.usd || 0;
       const ethPrice = prices.ethereum?.usd || 0;
       const bnbPrice = prices.binancecoin?.usd || 0;
@@ -139,52 +133,63 @@ export const useApiOperations = (
       setEthPrice(ethPrice);
       setBnbPrice(bnbPrice);
       
-              // Update statscard prices in Neon
-        try {
-          const updatedStatscardData = [
-            {
-              apiId: 'bitcoin',
-              symbol: 'BTC',
-              logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-              current_price: btcPrice
-            },
-            {
-              apiId: 'ethereum',
-              symbol: 'ETH',
-              logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-              current_price: ethPrice
-            },
-            {
-              apiId: 'binancecoin',
-              symbol: 'BNB',
-              logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
-              current_price: bnbPrice
-            }
-          ];
-          
-          await saveStatscardPrices(updatedStatscardData);
-          console.log('Statscard prices updated in Neon');
-        } catch (error) {
-          console.error('Error updating statscard prices in Neon:', error);
-        }
+      // Update statscard prices in Neon
+      try {
+        const updatedStatscardData = [
+          {
+            apiId: 'bitcoin',
+            symbol: 'BTC',
+            logo: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
+            current_price: btcPrice
+          },
+          {
+            apiId: 'ethereum',
+            symbol: 'ETH',
+            logo: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
+            current_price: ethPrice
+          },
+          {
+            apiId: 'binancecoin',
+            symbol: 'BNB',
+            logo: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
+            current_price: bnbPrice
+          }
+        ];
+        
+        await saveStatscardPrices(updatedStatscardData);
+        console.log('Statscard prices updated in Neon');
+      } catch (error) {
+        console.error('Error updating statscard prices in Neon:', error);
+      }
+    } catch (error) {
+      console.error('Error refreshing statscard prices:', error);
+    }
+  }, [setBtcPrice, setEthPrice, setBnbPrice]);
 
-      // Step 2: Optimized token data fetching strategy
-      if (ids.length > 0) {
+  // Refresh data function with optimized strategy (table data only, excluding statscard)
+  const refreshData = useCallback(async () => {
+    setLoading(true);
+    
+    try {
+      // Step 1: Optimized token data fetching strategy - exclude main tokens
+      const filteredIds = ids.filter(id => !isMainToken(id));
+      
+      if (filteredIds.length > 0) {
         // Ensure rows is an array before processing
         if (!Array.isArray(rows)) {
           console.warn('rows is not an array in refreshData:', rows);
           return;
         }
 
-        // Classify tokens by completion status
-        const incompleteTokens = rows.filter(r => r && r !== null && (!r.symbol || !r.logo));
-        const completeTokens = rows.filter(r => r && r !== null && r.symbol && r.logo);
+        // Classify tokens by completion status - exclude main tokens
+        const incompleteTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && (!r.symbol || !r.logo));
+        const completeTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && r.symbol && r.logo);
         
-        console.log(`📊 Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens`);
+        console.log(`📊 Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens (excluding main tokens)`);
 
-        // Step 2a: Fetch full data for incomplete tokens (priority)
+        // Step 1a: Fetch full data for incomplete tokens (priority)
         if (incompleteTokens.length > 0) {
-          console.log(' Step 1: Fetching full data for incomplete tokens...');
+          console.log('🔄 Step 1: Fetching full data for incomplete tokens...');
           for (const token of incompleteTokens) {
             try {
               const tokenInfo = await fetchTokenInfo(token.apiId);
@@ -224,7 +229,7 @@ export const useApiOperations = (
           }
         }
 
-        // Step 2b: Update prices for complete tokens (efficient)
+        // Step 1b: Update prices for complete tokens (efficient)
         if (completeTokens.length > 0) {
           console.log('💰 Step 2: Updating prices for complete tokens...');
           const completeApiIds = completeTokens.map(t => t.apiId);
@@ -247,13 +252,12 @@ export const useApiOperations = (
               const priceStats = getPriceStats(token.apiId);
               const trend = analyzeTrend(token.apiId);
               
-              // Update row with only price data (efficient)
+              // Update row with new price data
               const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
               if (rowIndex !== -1) {
                 updateRow(rowIndex, {
                   price: currentPrice,
                   reward,
-                  ath: tokenPrices[token.apiId].ath || token.ath || 0,
                   ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                 });
               }
@@ -263,18 +267,18 @@ export const useApiOperations = (
       }
 
       setLastUpdated(new Date());
-
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('Error in refreshData:', error);
     } finally {
       setLoading(false);
     }
-  }, [ids, setBtcPrice, setEthPrice, setBnbPrice, updateRow, setLoading, setLastUpdated, trackPriceChange, getPriceStats, analyzeTrend, rows]);
+  }, [ids, rows, updateRow, setLastUpdated, setLoading, trackPriceChange, getPriceStats, analyzeTrend]);
 
   return {
     ids,
     loadLogosFromDatabase,
     fetchAndUpdateTokenInfo,
     refreshData,
+    refreshStatscardPrices,
   };
 };

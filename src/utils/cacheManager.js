@@ -1,11 +1,13 @@
 // Cache management utilities
 import { loadWorkspaceDataOnce, loadStatscardPrices, SHARED_WORKSPACE_ID, STATSCARD_WORKSPACE_ID } from '../services';
+import { filterMainTokensFromRows } from './helpers';
 
 // Check if local cache is out of sync with Neon
 export const checkCacheSync = async () => {
   try {
-    // Get Neon data
+    // Get Neon data - filter out main tokens
     const neonData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
+    const filteredNeonData = filterMainTokensFromRows(neonData || []);
     
     // Get local data
     const localData = localStorage.getItem('airdrop-alpha-data');
@@ -21,7 +23,7 @@ export const checkCacheSync = async () => {
     }
     
     // If Neon is empty but local has data, clear local cache
-    if (neonData && Array.isArray(neonData) && neonData.length === 0) {
+    if (filteredNeonData && Array.isArray(filteredNeonData) && filteredNeonData.length === 0) {
       if (parsedLocalData && Array.isArray(parsedLocalData) && parsedLocalData.length > 0) {
         console.log('Neon is empty but local cache has data. Clearing local cache...');
         localStorage.removeItem('airdrop-alpha-data');
@@ -30,7 +32,7 @@ export const checkCacheSync = async () => {
     }
     
     // If Neon has data but local is empty, this is normal
-    if (neonData && Array.isArray(neonData) && neonData.length > 0) {
+    if (filteredNeonData && Array.isArray(filteredNeonData) && filteredNeonData.length > 0) {
       if (!parsedLocalData || !Array.isArray(parsedLocalData) || parsedLocalData.length === 0) {
         console.log('Neon has data but local cache is empty. This is normal.');
         return { shouldClearCache: false, reason: 'neon_has_data_local_empty' };
@@ -78,12 +80,13 @@ export const forceSyncWithNeon = async () => {
     // Clear local cache
     clearAllCache();
     
-    // Reload from Neon
+    // Reload from Neon - filter out main tokens
     const neonData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
+    const filteredNeonData = filterMainTokensFromRows(neonData || []);
     
-    if (neonData && Array.isArray(neonData)) {
-      console.log('Successfully synced with Neon, data length:', neonData.length);
-      return { success: true, data: neonData };
+    if (filteredNeonData && Array.isArray(filteredNeonData)) {
+      console.log('Successfully synced with Neon, data length:', filteredNeonData.length, '(excluding main tokens)');
+      return { success: true, data: filteredNeonData };
     } else {
       console.log('Neon data is empty or invalid');
       return { success: true, data: [] };

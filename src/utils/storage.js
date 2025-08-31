@@ -1,3 +1,5 @@
+import { filterMainTokensFromRows } from './helpers';
+
 const STORAGE_KEY = 'airdrop-alpha-data';
 const SORT_STORAGE_KEY = 'airdrop-alpha-sort';
 const BACKUP_KEY = 'airdrop-alpha-backup';
@@ -5,11 +7,13 @@ const WORKSPACE_ID_KEY = 'airdrop-alpha-workspace-id';
 
 export function saveDataToStorage(data) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    // Filter out main tokens before saving to localStorage
+    const filteredData = filterMainTokensFromRows(data);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredData));
 
     // Create backup with timestamp
     const backup = {
-      data: data,
+      data: filteredData,
       timestamp: new Date().toISOString(),
       version: '1.0',
     };
@@ -25,7 +29,14 @@ export function saveDataToStorage(data) {
 export function loadDataFromStorage() {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    
+    const parsedData = JSON.parse(data);
+    if (!Array.isArray(parsedData)) return null;
+    
+    // Filter out main tokens from loaded data
+    const filteredData = filterMainTokensFromRows(parsedData);
+    return filteredData;
   } catch (error) {
     console.error('Error loading data:', error);
     return null;
@@ -72,9 +83,11 @@ export function importDataFromFile(file) {
           importData.data &&
           Array.isArray(importData.data)
         ) {
+          // Filter out main tokens from imported data
+          const filteredData = filterMainTokensFromRows(importData.data);
           // Save imported data
-          saveDataToStorage(importData.data);
-          resolve(importData.data);
+          saveDataToStorage(filteredData);
+          resolve(filteredData);
         } else {
           reject(new Error('Invalid backup file format'));
         }
@@ -246,7 +259,9 @@ export function validateAndFixStorageData() {
       saveDataToStorage(validRows);
     }
     
-    return validRows;
+    // Filter out main tokens from validated data
+    const filteredData = filterMainTokensFromRows(validRows);
+    return filteredData;
   } catch (error) {
     console.error('Error validating storage data:', error);
     localStorage.removeItem(STORAGE_KEY);

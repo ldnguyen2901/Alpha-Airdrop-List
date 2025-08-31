@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { splitCSV, CSV_HEADERS, parsePastedData } from '../utils';
+import { splitCSV, CSV_HEADERS, parsePastedData, filterMainTokensFromRows } from '../utils';
 import { readExcelFile, parseExcelData } from '../utils';
 import * as XLSX from 'xlsx';
 
@@ -10,21 +10,25 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
       const result = parsePastedData(text);
       
       if (result.success) {
-        addMultipleRows(result.data);
+        // Filter out main tokens from pasted data
+        const filteredData = filterMainTokensFromRows(result.data);
+        addMultipleRows(filteredData);
         if (addNotification) {
-          addNotification(`Added ${result.data.length} tokens from pasted data!`, 'success');
+          addNotification(`Added ${filteredData.length} tokens from pasted data!`, 'success');
         }
-        return { success: true, count: result.data.length };
+        return { success: true, count: filteredData.length };
       } else {
         // Nếu có lỗi validation nhưng có partial data, vẫn thêm data hợp lệ
         if (result.partialData && result.partialData.length > 0) {
-          addMultipleRows(result.partialData);
+          // Filter out main tokens from partial data
+          const filteredPartialData = filterMainTokensFromRows(result.partialData);
+          addMultipleRows(filteredPartialData);
           if (addNotification) {
-            addNotification(`Added ${result.partialData.length} tokens with warnings: ${result.error}`, 'warning');
+            addNotification(`Added ${filteredPartialData.length} tokens with warnings: ${result.error}`, 'warning');
           }
           return { 
             success: true, 
-            count: result.partialData.length,
+            count: filteredPartialData.length,
             warning: result.error 
           };
         }
@@ -51,10 +55,13 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         return;
       }
       
+      // Filter out main tokens from export data
+      const filteredRows = filterMainTokensFromRows(rows);
+      
       // Prepare data for Excel
       const excelData = [
         CSV_HEADERS, // Headers row
-        ...rows.filter(row => row && row !== null).map(row => [
+        ...filteredRows.filter(row => row && row !== null).map(row => [
           row.name || '',
           row.amount || '',
           row.launchAt || '',
@@ -126,11 +133,13 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
 
       const rows = parseExcelData(excelData);
       if (rows && rows.length > 0) {
-        addMultipleRows(rows);
+        // Filter out main tokens from imported data
+        const filteredRows = filterMainTokensFromRows(rows);
+        addMultipleRows(filteredRows);
         if (addNotification) {
-          addNotification(`Successfully imported ${rows.length} tokens from Excel!`, 'success');
+          addNotification(`Successfully imported ${filteredRows.length} tokens from Excel!`, 'success');
         }
-        return { success: true, count: rows.length };
+        return { success: true, count: filteredRows.length };
       }
       if (addNotification) {
         addNotification('No valid data found in Excel file', 'error');
@@ -139,11 +148,11 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
     } catch (error) {
       console.error('Error importing Excel:', error);
       if (addNotification) {
-        addNotification(error.message || 'Failed to read Excel file', 'error');
+        addNotification('Failed to import Excel file', 'error');
       }
-      return { success: false, error: error.message || 'Failed to read Excel file' };
+      return { success: false, error: 'Failed to import Excel file' };
     }
-  }, [addMultipleRows]);
+  }, [addMultipleRows, addNotification]);
 
   // Create Excel template
   const createExcelTemplate = useCallback(() => {
