@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { 
   saveStatscardPrices, 
-  loadStatscardPrices, 
-  subscribeStatscardPrices,
+  loadStatscardPrices,
   STATSCARD_WORKSPACE_ID 
 } from '../services/neon';
 
@@ -29,7 +28,6 @@ const DEFAULT_STATSCARD_TOKENS = [
 ];
 
 export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, updateStatscardPrices, setTokenLogos) => {
-  const unsubRef = useRef(null);
 
   // Initialize statscard prices
   const initializeStatscardPrices = useCallback(async () => {
@@ -105,46 +103,9 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
         }
       }
       
-      // Subscribe to real-time updates
-      const unsubscribe = subscribeStatscardPrices((data) => {
-        if (data && Array.isArray(data)) {
-          console.log('Statscard prices updated from Neon:', data.length, 'tokens');
-          
-          // Update prices and logos from real-time data
-          const newTokenLogos = {};
-          data.forEach(token => {
-            if (token.apiId === 'bitcoin' && token.current_price) {
-              setBtcPrice(token.current_price);
-              newTokenLogos.bitcoin = {
-                logo: token.logo || token.image,
-                symbol: token.symbol,
-                name: token.name
-              };
-            } else if (token.apiId === 'ethereum' && token.current_price) {
-              setEthPrice(token.current_price);
-              newTokenLogos.ethereum = {
-                logo: token.logo || token.image,
-                symbol: token.symbol,
-                name: token.name
-              };
-            } else if (token.apiId === 'binancecoin' && token.current_price) {
-              setBnbPrice(token.current_price);
-              newTokenLogos.binancecoin = {
-                logo: token.logo || token.image,
-                symbol: token.symbol,
-                name: token.name
-              };
-            }
-          });
-          
-          // Update tokenLogos state
-          if (setTokenLogos) {
-            setTokenLogos(newTokenLogos);
-          }
-        }
-      });
-      
-      unsubRef.current = unsubscribe;
+      // Note: Removed real-time subscription to avoid double refresh
+      // Statscard prices are now managed by useAutoRefresh hook
+      console.log('Statscard prices initialized - auto refresh enabled');
       
     } catch (error) {
       console.error('Error initializing statscard prices with Neon:', error);
@@ -181,14 +142,14 @@ export const useStatscardPrices = (setBtcPrice, setEthPrice, setBnbPrice, update
     }
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (unsubRef.current) {
-        unsubRef.current();
-      }
-    };
-  }, []);
+  // Cleanup on unmount (no longer needed since we removed subscription)
+  // useEffect(() => {
+  //   return () => {
+  //     if (unsubRef.current) {
+  //       unsubRef.current();
+  //     }
+  //   };
+  // }, []);
 
   return {
     initializeStatscardPrices,

@@ -252,12 +252,13 @@ export const useApiOperations = (
               const priceStats = getPriceStats(token.apiId);
               const trend = analyzeTrend(token.apiId);
               
-              // Update row with new price data
+              // Update row with new price data and ATH
               const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
               if (rowIndex !== -1) {
                 updateRow(rowIndex, {
                   price: currentPrice,
                   reward,
+                  ath: tokenPrices[token.apiId].ath || token.ath || 0,
                   ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                 });
               }

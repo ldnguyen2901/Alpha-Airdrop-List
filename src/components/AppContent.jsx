@@ -123,16 +123,30 @@ export default function AppContent() {
     state.setTokenLogos
   );
 
-  // Initial data loading
+  // Initial data loading - ensure proper order
   useEffect(() => {
-    apiOps.loadLogosFromDatabase();
-    // Initialize statscard prices
-    statscardOps.initializeStatscardPrices();
-    // Refresh table data once on initial load
-    apiOps.refreshData();
-    // Refresh statscard prices once on initial load
-    apiOps.refreshStatscardPrices();
-    
+    // First, load data from Neon database
+    const loadDataFromDatabase = async () => {
+      try {
+        // Wait for Neon sync to complete
+        await neonSyncOps.loadInitialData();
+        
+        // Then load logos and refresh data
+        apiOps.loadLogosFromDatabase();
+        statscardOps.initializeStatscardPrices();
+        apiOps.refreshData();
+        apiOps.refreshStatscardPrices();
+      } catch (error) {
+        console.error('Error in initial data loading:', error);
+        // Fallback: load data anyway
+        apiOps.loadLogosFromDatabase();
+        statscardOps.initializeStatscardPrices();
+        apiOps.refreshData();
+        apiOps.refreshStatscardPrices();
+      }
+    };
+
+    loadDataFromDatabase();
   }, []); // Remove apiOps dependency to prevent infinite loop
 
   // Auto force sync when page becomes visible (if needed)
@@ -263,23 +277,17 @@ export default function AppContent() {
             <ExcelUpload onImportData={handleImportExcel} />
             <div className='mt-4 text-xs text-gray-500 dark:text-gray-400'>
               <p>
-                <strong>Required Excel format:</strong> Columns A-F as follows:
+                <strong>Required Excel format:</strong> Columns A-K as follows:
               </p>
               <p>
-                A: Token Name (optional) | B: Amount (optional) | C: Listing Date (optional) | D: API ID (required) | E: Point (Priority) (optional) | F: Point (FCFS) (optional)
+                A: Token Name (optional) | B: Amount (optional) | C: Listing Date (optional) | D: API ID (required) | E: Point (Priority) (optional) | F: Point (FCFS) (optional) | G: Token Price (optional) | H: Reward (optional) | I: ATH (optional) | J: Logo (optional) | K: Symbol (optional)
               </p>
 
               <p className='mt-1'>
-                <strong>Required fields:</strong> Only API ID (D) is mandatory
+                <strong>Required fields:</strong> Only API ID (D) is mandatory. All other fields are optional and will be preserved if provided.
               </p>
               <p className='mt-1'>
-                <strong>Date format:</strong> DD/MM/YYYY or DD/MM/YYYY HH:mm or Excel date number
-              </p>
-              <p className='mt-1'>
-                <strong>Supported formats:</strong> Standard (A-F) or simple (API_ID,DATE) or minimal (,API_ID,DATE)
-              </p>
-              <p className='mt-2'>
-                <strong>Export:</strong> Data will be exported as Excel (.xlsx) file with all columns including prices and metadata.
+                <strong>Note:</strong> Import now supports full data preservation - exported files can be imported back with all data intact.
               </p>
             </div>
           </div>

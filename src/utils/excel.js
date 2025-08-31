@@ -21,13 +21,11 @@ export function readExcelFile(file) {
 
         resolve(jsonData);
       } catch (error) {
-        console.error('Error reading Excel file:', error);
         reject(new Error('Không thể đọc file Excel: ' + error.message));
       }
     };
 
     reader.onerror = function (error) {
-      console.error('FileReader error:', error);
       reject(new Error('Lỗi khi đọc file'));
     };
 
@@ -40,31 +38,56 @@ export function parseExcelData(excelData) {
     return [];
   }
 
-  // Bỏ qua header nếu có
-  const dataRows = excelData.slice(1);
   const errors = [];
   const validRows = [];
 
-  // Expected column structure:
+  // Expected column structure (11 columns to match export format):
   // A: Token Name (optional)
   // B: Amount (optional)
   // C: Launch Date (optional)
   // D: API ID (required)
   // E: Point Priority (optional)
   // F: Point FCFS (optional)
+  // G: Token Price (optional)
+  // H: Reward (optional)
+  // I: ATH (optional)
+  // J: Logo (optional)
+  // K: Symbol (optional)
+
+  // Check if first row looks like header (contains text like "Token", "Amount", etc.)
+  const firstRow = excelData[0] || [];
+  const isFirstRowHeader = firstRow.some(cell => 
+    String(cell || '').toLowerCase().includes('token') || 
+    String(cell || '').toLowerCase().includes('amount') ||
+    String(cell || '').toLowerCase().includes('api') ||
+    String(cell || '').toLowerCase().includes('point')
+  );
+
+  // Start from row 1 if first row is header, otherwise start from row 0
+  const dataRows = isFirstRowHeader ? excelData.slice(1) : excelData;
+
+  // If no data rows after header check, return empty
+  if (dataRows.length === 0) {
+    return [];
+  }
 
   dataRows.forEach((row, idx) => {
     try {
+      // Skip completely empty rows
+      if (!row || row.length === 0 || row.every(cell => !cell || String(cell).trim() === '')) {
+        return;
+      }
+
       // Validate số cột
       if (row.length < 1) {
-        errors.push(`Row ${idx + 2}: Empty row`);
+        errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Empty row`);
         return;
       }
       
-      if (row.length > 6) {
-        const extras = row.slice(6).some((v) => String(v || '').trim() !== '');
+      if (row.length > 11) {
+        const extras = row.slice(11).some((v) => String(v || '').trim() !== '');
         if (extras) {
-          errors.push(`Row ${idx + 2}: Data found in columns beyond F (found ${row.length} columns, max 6 allowed)`);
+          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond K (found ${row.length} columns, max 11 allowed)`);
           return;
         }
       }
@@ -76,6 +99,11 @@ export function parseExcelData(excelData) {
         apiId = '',          // Column D: API ID
         pointPriority = '',  // Column E: Point Priority
         pointFCFS = '',      // Column F: Point FCFS
+        tokenPrice = '',     // Column G: Token Price
+        reward = '',         // Column H: Reward
+        ath = '',            // Column I: ATH
+        logo = '',           // Column J: Logo
+        symbol = '',         // Column K: Symbol
       ] = row;
 
       // Parse data from correct columns
@@ -83,10 +111,12 @@ export function parseExcelData(excelData) {
       let actualAmount = String(amount || '').trim();
       let actualDate = String(launchDate || '').trim();
       let actualApiId = String(apiId || '').trim();
+      let actualSymbol = String(symbol || '').trim();
+      let actualLogo = String(logo || '').trim();
 
       // Only API ID is required, others are optional
       if (!actualApiId) {
-        errors.push(`Row ${idx + 2}: API ID is required`);
+        errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: API ID is required`);
         return;
       }
 
@@ -95,6 +125,27 @@ export function parseExcelData(excelData) {
       if (actualAmount) {
         const cleanAmount = actualAmount.replace(/[^\d.,]/g, '').replace(',', '.');
         parsedAmount = parseFloat(cleanAmount) || 0;
+      }
+
+      // Parse token price
+      let parsedPrice = 0;
+      if (tokenPrice) {
+        const cleanPrice = String(tokenPrice).replace(/[^\d.,]/g, '').replace(',', '.');
+        parsedPrice = parseFloat(cleanPrice) || 0;
+      }
+
+      // Parse reward
+      let parsedReward = 0;
+      if (reward) {
+        const cleanReward = String(reward).replace(/[^\d.,]/g, '').replace(',', '.');
+        parsedReward = parseFloat(cleanReward) || 0;
+      }
+
+      // Parse ATH
+      let parsedATH = 0;
+      if (ath) {
+        const cleanATH = String(ath).replace(/[^\d.,]/g, '').replace(',', '.');
+        parsedATH = parseFloat(cleanATH) || 0;
       }
 
       // Parse date
@@ -129,20 +180,25 @@ export function parseExcelData(excelData) {
         }
       }
 
-      validRows.push({
+      const finalRow = {
         name: actualToken || actualApiId, // Use API ID as name if token name is empty
         amount: parsedAmount,
         launchAt: listingTime,
         apiId: actualApiId,
         pointPriority: String(pointPriority || '').trim(),
         pointFCFS: String(pointFCFS || '').trim(),
-        price: 0,
-        reward: 0,
-        highestPrice: 0,
-      });
+        price: parsedPrice,
+        reward: parsedReward,
+        highestPrice: parsedATH, // Map ATH to highestPrice for backward compatibility
+        ath: parsedATH,
+        logo: actualLogo,
+        symbol: actualSymbol,
+      };
+
+      validRows.push(finalRow);
 
     } catch (error) {
-      errors.push(`Row ${idx + 2}: ${error.message}`);
+      errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: ${error.message}`);
     }
   });
 

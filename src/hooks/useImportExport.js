@@ -158,10 +158,10 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
   const createExcelTemplate = useCallback(() => {
     try {
       const templateData = [
-        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)'],
-        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50'],
-        ['', '', '', 'ethereum', '', ''], // Example with only API ID
-        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40'], // Example without token name
+        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)', 'Token Price (optional)', 'Reward (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
+        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50', '45000', '45000000', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
+        ['', '', '', 'ethereum', '', '', '', '', '', '', ''], // Example with only API ID
+        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40', '0.5', '250', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
       ];
 
       // Create workbook and worksheet
@@ -176,6 +176,11 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         { wch: 15 }, // API ID
         { wch: 15 }, // Point (Priority)
         { wch: 15 }, // Point (FCFS)
+        { wch: 12 }, // Token Price
+        { wch: 12 }, // Reward
+        { wch: 12 }, // ATH
+        { wch: 30 }, // Logo
+        { wch: 10 }, // Symbol
       ];
       worksheet['!cols'] = columnWidths;
 

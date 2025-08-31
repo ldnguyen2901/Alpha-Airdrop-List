@@ -31,7 +31,7 @@ export default function StatsCards({
     }
   }, [loading, isRefreshing]);
   return (
-    <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6'>
+    <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6'>
       <Card className="card-hover">
         <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300 flex items-center gap-2'>
           {tokenLogos.bitcoin?.logo ? (
@@ -49,10 +49,11 @@ export default function StatsCards({
               ₿
             </div>
           )}
-          {tokenLogos.bitcoin?.symbol || 'BTC'} Price
+          <span className="hidden sm:inline">{tokenLogos.bitcoin?.symbol || 'BTC'} Price</span>
+          <span className="sm:hidden">{tokenLogos.bitcoin?.symbol || 'BTC'}</span>
         </div>
         <div
-          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
+          className='text-lg sm:text-xl lg:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(247, 147, 26)' }}
         >
           {(loading || isRefreshing) ? (
@@ -82,10 +83,11 @@ export default function StatsCards({
               Ξ
             </div>
           )}
-          {tokenLogos.ethereum?.symbol || 'ETH'} Price
+          <span className="hidden sm:inline">{tokenLogos.ethereum?.symbol || 'ETH'} Price</span>
+          <span className="sm:hidden">{tokenLogos.ethereum?.symbol || 'ETH'}</span>
         </div>
         <div
-          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
+          className='text-lg sm:text-xl lg:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(140,140,140)' }}
         >
           {(loading || isRefreshing) ? (
@@ -115,10 +117,11 @@ export default function StatsCards({
               B
             </div>
           )}
-          {tokenLogos.binancecoin?.symbol || 'BNB'} Price
+          <span className="hidden sm:inline">{tokenLogos.binancecoin?.symbol || 'BNB'} Price</span>
+          <span className="sm:hidden">{tokenLogos.binancecoin?.symbol || 'BNB'}</span>
         </div>
         <div
-          className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out'
+          className='text-lg sm:text-xl lg:text-2xl font-semibold transition-all duration-300 ease-in-out'
           style={{ color: 'rgb(240,185,11)' }}
         >
           {(loading || isRefreshing) ? (
@@ -134,17 +137,19 @@ export default function StatsCards({
       <Card className="card-hover">
         <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300 flex items-center gap-2'>
           <span className="text-purple-500">⚡</span>
-          Alpha Projects
+          <span className="hidden sm:inline">Alpha Projects</span>
+          <span className="sm:hidden">Projects</span>
         </div>
-        <div className='text-xl sm:text-2xl font-semibold transition-all duration-300 ease-in-out text-purple-600'>{rowsCount}</div>
-        <div className='mt-1 text-[11px] text-gray-500 transition-colors duration-300'>
+        <div className='text-lg sm:text-xl lg:text-2xl font-semibold transition-all duration-300 ease-in-out text-purple-600'>{rowsCount}</div>
+        <div className='mt-1 text-[10px] sm:text-[11px] text-gray-500 transition-colors duration-300'>
           {(loading || isRefreshing) ? (
             <span className="flex items-center gap-2">
               <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
-              Updating…
+              <span className="hidden sm:inline">Updating…</span>
+              <span className="sm:hidden">Updating</span>
             </span>
           ) : lastUpdated ? (
-            `Updated: ${new Date(lastUpdated).toLocaleTimeString()}`
+            <span className="hidden sm:inline">Updated: {new Date(lastUpdated).toLocaleTimeString()}</span>
           ) : (
             'Ready'
           )}
@@ -154,24 +159,30 @@ export default function StatsCards({
       <Card className="card-hover">
         <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300 flex items-center gap-2'>
           <span className="text-blue-500">🔄</span>
-          Status
+          <span className="hidden sm:inline">Status</span>
+          <span className="sm:hidden">Sync</span>
         </div>
         <div
-          className={`text-2xl font-semibold transition-all duration-300 ease-in-out ${
+          className={`text-lg sm:text-xl lg:text-2xl font-semibold transition-all duration-300 ease-in-out ${
             syncing ? 'text-blue-500' : !isPageVisible ? 'text-yellow-500' : 'text-emerald-600'
           }`}
         >
           {syncing ? (
             <span className="flex items-center gap-2">
               <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
-              Syncing…
+              <span className="hidden sm:inline">Syncing…</span>
+              <span className="sm:hidden">Sync</span>
             </span>
           ) : !isPageVisible ? (
             <span className="flex items-center gap-2">
-              <span>Background</span>
+              <span className="hidden sm:inline">Background</span>
+              <span className="sm:hidden">BG</span>
             </span>
           ) : (
-            'Synced'
+            <>
+              <span className="hidden sm:inline">Synced</span>
+              <span className="sm:hidden">OK</span>
+            </>
           )}
         </div>
       </Card>
