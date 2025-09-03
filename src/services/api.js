@@ -76,10 +76,15 @@ export async function fetchTokenLogos(ids) {
     const logos = {};
     
     data.forEach(coin => {
+      if (!coin || !coin.symbol) {
+        console.warn('Invalid coin data received:', coin);
+        return;
+      }
+      
       const logoData = {
-        logo: coin.image,
+        logo: coin.image || '',
         symbol: coin.symbol.toUpperCase(),
-        name: coin.name
+        name: coin.name || ''
       };
       
       logos[coin.id] = logoData;
@@ -135,13 +140,18 @@ export async function fetchTokenInfo(apiId) {
     }
     
     const coin = data[0];
+    if (!coin || !coin.symbol) {
+      console.warn('Invalid coin data received:', coin);
+      return null;
+    }
+    
     return {
-      id: coin.id,
-      name: coin.name,
+      id: coin.id || '',
+      name: coin.name || '',
       symbol: coin.symbol.toUpperCase(),
-      logo: coin.image,
-      ath: coin.ath,
-      current_price: coin.current_price
+      logo: coin.image || '',
+      ath: coin.ath || 0,
+      current_price: coin.current_price || 0
     };
   } catch (error) {
     console.error('Error fetching token info:', error);

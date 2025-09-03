@@ -64,8 +64,11 @@ export function useTableSort() {
       } else if (sortConfig.key === 'launchAt') {
         // Sort by parsed Date object: accept DD/MM/YYYY or DD/MM/YYYY HH:mm:ss
         const parse = (v) => {
-          if (!v) return null;
-          const parts = v.trim().split(' ');
+          if (!v || typeof v !== 'string') return null;
+          const trimmedV = v.trim();
+          if (!trimmedV) return null;
+          
+          const parts = trimmedV.split(' ');
           const dateParts = parts[0].split('/');
           if (dateParts.length !== 3) return null;
           const d = Number(dateParts[0]);

@@ -98,7 +98,7 @@ export const useApiOperations = (
     
     // Additional validation - prevent common invalid inputs (but allow ? for hidden tokens)
     const invalidInputs = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '+', '=', '[', ']', '{', '}', '|', '\\', ':', ';', '"', "'", '<', '>', ',', '.', '/'];
-    if (invalidInputs.some(char => apiId.includes(char))) {
+    if (invalidInputs.some(char => apiId && apiId.includes(char))) {
       return;
     }
 

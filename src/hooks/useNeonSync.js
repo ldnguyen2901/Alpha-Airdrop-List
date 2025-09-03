@@ -33,7 +33,7 @@ export const useNeonSync = (
     try {
       setSyncing(true);
       const data = await loadWorkspaceDataOnce(workspaceId);
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data) && data.length > 0) {
         // Filter out main tokens from shared workspace data
         const filteredData = filterMainTokensFromRows(data);
         isRemoteUpdateRef.current = true;
@@ -74,7 +74,7 @@ export const useNeonSync = (
     }
 
     unsubRef.current = subscribeWorkspace(workspaceId, (data) => {
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data) && data.length > 0) {
         // Filter out main tokens from real-time updates
         const filteredData = filterMainTokensFromRows(data);
         isRemoteUpdateRef.current = true;
@@ -137,10 +137,12 @@ export const useNeonSync = (
       // Load fresh data from database
       const freshData = await loadWorkspaceDataOnce(workspaceId);
       
-      if (freshData && Array.isArray(freshData)) {
+      if (freshData && Array.isArray(freshData) && freshData.length > 0) {
+        // Filter out main tokens from fresh data
+        const filteredData = filterMainTokensFromRows(freshData);
         isRemoteUpdateRef.current = true;
-        setRows(freshData);
-        console.log('Force sync completed with Neon, loaded:', freshData.length, 'rows');
+        setRows(filteredData);
+        console.log('Force sync completed with Neon, loaded:', filteredData.length, 'rows (excluding main tokens)');
         return true;
       } else {
         console.log('Force sync completed with Neon, no data found');

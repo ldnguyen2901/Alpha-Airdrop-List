@@ -61,37 +61,38 @@ export function parsePastedData(text) {
         let actualDate = '';
 
         // Super simple logic for ,ethereum,31/12/2024 format
-        if (columns.length >= 3 && !token.trim() && amount.trim() && dateClaim.trim()) {
+        if (columns.length >= 3 && !(token && token.trim()) && (amount && amount.trim()) && (dateClaim && dateClaim.trim())) {
           // Format: ,API_ID,DATE
           apiId = amount.trim();
           actualDate = dateClaim.trim();
-        } else if (columns.length >= 2 && token.trim() && amount.trim()) {
+        } else if (columns.length >= 2 && (token && token.trim()) && (amount && amount.trim())) {
           // Format: API_ID,DATE
           apiId = token.trim();
           actualDate = amount.trim();
-        } else if (fullName.trim()) {
+        } else if (fullName && fullName.trim()) {
           // Standard format: API ID in column D
           apiId = fullName.trim();
-          actualToken = token.trim();
-          actualAmount = amount.trim();
-          actualDate = dateClaim.trim();
+          actualToken = token && token.trim() ? token.trim() : '';
+          actualAmount = amount && amount.trim() ? amount.trim() : '';
+          actualDate = dateClaim && dateClaim.trim() ? dateClaim.trim() : '';
         } else {
           // Try to find any non-empty, non-date, non-number value
           for (let i = 0; i < columns.length; i++) {
-            const col = columns[i].trim();
-            if (!col) continue;
+            const col = columns[i];
+            if (!col || !col.trim()) continue;
             
-            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(col)) {
-              actualDate = col;
-            } else if (!isNaN(parseFloat(col.replace(/[^\d.,]/g, '').replace(',', '.')))) {
-              actualAmount = col;
+            const trimmedCol = col.trim();
+            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(trimmedCol)) {
+              actualDate = trimmedCol;
+            } else if (!isNaN(parseFloat(trimmedCol.replace(/[^\d.,]/g, '').replace(',', '.')))) {
+              actualAmount = trimmedCol;
             } else if (!apiId) {
-              apiId = col;
+              apiId = trimmedCol;
             }
           }
         }
         
-        actualToken = token.trim();
+        actualToken = token && token.trim() ? token.trim() : '';
 
         // Only API ID is required, others are optional
         if (!apiId) {
@@ -101,14 +102,14 @@ export function parsePastedData(text) {
 
         // Parse và validate amount
         let parsedAmount = 0;
-        if (actualAmount) {
+        if (actualAmount && actualAmount.trim()) {
           const cleanAmount = actualAmount.replace(/[^\d.,]/g, '').replace(',', '.');
           parsedAmount = parseFloat(cleanAmount) || 0;
         }
 
         // Parse và validate date
         let listingTime = '';
-        if (actualDate) {
+        if (actualDate && actualDate.trim()) {
           // Try to parse various date formats
           const dateStr = actualDate.trim();
           
@@ -145,8 +146,8 @@ export function parsePastedData(text) {
           amount: parsedAmount,
           launchAt: listingTime,
           apiId: apiId,
-          pointPriority: pointPriority.trim() || '',
-          pointFCFS: pointFCFS.trim() || '',
+          pointPriority: (pointPriority && pointPriority.trim()) || '',
+          pointFCFS: (pointFCFS && pointFCFS.trim()) || '',
           price: 0,
           reward: 0,
           highestPrice: 0,
@@ -295,13 +296,13 @@ export const filterMainTokensFromRows = (rows) => {
   }
   
   return rows.filter(row => {
-    if (!row || !row.apiId) return true;
+    if (!row || !row.apiId || typeof row.apiId !== 'string') return true;
     return !MAIN_TOKENS.includes(row.apiId.trim().toLowerCase());
   });
 };
 
 // Check if a token is a main token
 export const isMainToken = (apiId) => {
-  if (!apiId) return false;
+  if (!apiId || typeof apiId !== 'string') return false;
   return MAIN_TOKENS.includes(apiId.trim().toLowerCase());
 };
