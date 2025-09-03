@@ -7,6 +7,7 @@ export default function CardView({
   rows,
   onEditRow,
   onDeleteRow,
+  onRefreshToken,
   searchToken,
   tokenLogos,
   highlightRowRef,
@@ -85,6 +86,7 @@ export default function CardView({
             showHighestPrice={false} // Removed showHighestPrice prop
             onEditRow={onEditRow}
             onDeleteRow={onDeleteRow}
+            onRefreshToken={onRefreshToken}
             editButtonRefs={editButtonRefs}
             deleteButtonRefs={deleteButtonRefs}
             setEditButtonPosition={setEditButtonPosition}

@@ -14,6 +14,7 @@ const SortableTable = forwardRef(({
   searchToken,
   tokenLogos,
   onRefresh,
+  onRefreshToken,
   loading,
   showATH = true,
 }, ref) => {
@@ -126,6 +127,7 @@ const SortableTable = forwardRef(({
           rows={sortedRows}
           onEditRow={handleStartEdit}
           onDeleteRow={handleDelete}
+          onRefreshToken={onRefreshToken}
           searchToken={searchToken}
           tokenLogos={tokenLogos}
           highlightRowRef={null}
@@ -176,6 +178,7 @@ const SortableTable = forwardRef(({
                   index={startIndex + idx}
                   onStartEdit={handleStartEdit}
                   onDelete={handleDelete}
+                  onRefreshToken={onRefreshToken}
                   showHighestPrice={false}
                   showATH={showATH}
                   getCountdownText={getCountdownTextForRow}

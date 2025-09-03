@@ -4,6 +4,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import InfoIcon from '@mui/icons-material/Info';
 import BlockIcon from '@mui/icons-material/Block';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { PriceTrackingInfo } from '../index';
@@ -13,6 +14,7 @@ export default function TableRow({
   index,
   onStartEdit,
   onDelete,
+  onRefreshToken,
   showHighestPrice,
   showATH = true,
   getCountdownText,
@@ -26,6 +28,7 @@ export default function TableRow({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [priceChangeColor, setPriceChangeColor] = useState('');
   const [previousPrice, setPreviousPrice] = useState(null);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   // Calculate tooltip position when showing
   useEffect(() => {
@@ -59,6 +62,23 @@ export default function TableRow({
   // Handle mouse leave from PriceTrackingInfo
   const handlePriceInfoMouseLeave = () => {
     setShowPriceInfo(false);
+  };
+
+  // Handle refresh token
+  const handleRefreshToken = async () => {
+    if (!onRefreshToken) return;
+    
+    setIsRefreshingToken(true);
+    try {
+      await onRefreshToken(row.apiId || row.id);
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+    } finally {
+      // Ensure animation completes
+      setTimeout(() => {
+        setIsRefreshingToken(false);
+      }, 1000);
+    }
   };
 
   // Track price changes and update color
@@ -271,36 +291,52 @@ export default function TableRow({
       {/* Actions */}
        <td className='px-3 py-3 text-right sticky right-0 z-10 actions-column' style={{ backgroundColor: 'inherit' }}>
          <div className='flex items-center justify-end gap-2'>
-           <button
-             onClick={() => onStartEdit(index)}
-             className='inline-flex items-center px-3 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md gap-2'
-             title='Edit'
-           >
-             <EditIcon sx={{ fontSize: 16 }} />
-             Edit
-           </button>
-           <button
-             ref={deleteButtonRef}
-             onClick={() => {
-               const buttonElement = deleteButtonRef.current;
-               if (buttonElement) {
-                 const rect = buttonElement.getBoundingClientRect();
-                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                 const position = {
-                   top: rect.bottom + scrollTop + 8,
-                   left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
-                 };
-                 onDelete(index, position);
-               } else {
-                 onDelete(index);
-               }
-             }}
-             className='inline-flex items-center px-3 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md gap-2'
-             title='Delete'
-           >
-             <DeleteIcon sx={{ fontSize: 16 }} />
-             Delete
-           </button>
+                       {/* Refresh Token Button */}
+            {onRefreshToken && (
+              <button
+                onClick={handleRefreshToken}
+                disabled={isRefreshingToken}
+                className='inline-flex items-center justify-center px-2 py-2 rounded-2xl bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+                title='Refresh token data'
+              >
+                <RefreshIcon 
+                  sx={{ 
+                    fontSize: 16,
+                    animation: isRefreshingToken ? 'spin 1s linear infinite' : 'none'
+                  }}
+                  className={isRefreshingToken ? 'refresh-spin' : ''}
+                />
+              </button>
+            )}
+            
+            <button
+              onClick={() => onStartEdit(index)}
+              className='inline-flex items-center justify-center px-2 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+              title='Edit'
+            >
+              <EditIcon sx={{ fontSize: 16 }} />
+            </button>
+            <button
+              ref={deleteButtonRef}
+              onClick={() => {
+                const buttonElement = deleteButtonRef.current;
+                if (buttonElement) {
+                  const rect = buttonElement.getBoundingClientRect();
+                  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                  const position = {
+                    top: rect.bottom + scrollTop + 8,
+                    left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
+                  };
+                  onDelete(index, position);
+                } else {
+                  onDelete(index);
+                }
+              }}
+              className='inline-flex items-center justify-center px-2 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
+              title='Delete'
+            >
+              <DeleteIcon sx={{ fontSize: 16 }} />
+            </button>
          </div>
        </td>
     </tr>

@@ -68,7 +68,7 @@ export function parsePastedData(text) {
         } else if (columns.length >= 2 && (token && token.trim()) && (amount && amount.trim())) {
           // Format: API_ID,DATE
           apiId = token.trim();
-          actualDate = amount.trim();
+          actualDate = dateClaim.trim();
         } else if (fullName && fullName.trim()) {
           // Standard format: API ID in column D
           apiId = fullName.trim();
@@ -297,12 +297,16 @@ export const filterMainTokensFromRows = (rows) => {
   
   return rows.filter(row => {
     if (!row || !row.apiId || typeof row.apiId !== 'string') return true;
-    return !MAIN_TOKENS.includes(row.apiId.trim().toLowerCase());
+    const trimmedApiId = row.apiId.trim();
+    if (!trimmedApiId) return true;
+    return !MAIN_TOKENS.includes(trimmedApiId.toLowerCase());
   });
 };
 
 // Check if a token is a main token
 export const isMainToken = (apiId) => {
   if (!apiId || typeof apiId !== 'string') return false;
-  return MAIN_TOKENS.includes(apiId.trim().toLowerCase());
+  const trimmedApiId = apiId.trim();
+  if (!trimmedApiId) return false;
+  return MAIN_TOKENS.includes(trimmedApiId.toLowerCase());
 };

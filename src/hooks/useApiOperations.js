@@ -275,11 +275,60 @@ export const useApiOperations = (
     }
   }, [ids, rows, updateRow, setLastUpdated, setLoading, trackPriceChange, getPriceStats, analyzeTrend]);
 
+  // Refresh single token data
+  const refreshSingleToken = useCallback(async (apiId) => {
+    if (!apiId || !apiId.trim()) return;
+    
+    try {
+      // Prevent updating main tokens (BTC, ETH, BNB)
+      if (isMainToken(apiId.trim())) {
+        console.log('Skipping main token refresh:', apiId);
+        return;
+      }
+      
+      // Fetch token info and update
+      const tokenInfo = await fetchTokenInfo(apiId);
+      if (tokenInfo) {
+        const currentPrice = tokenInfo.current_price;
+        
+        // Find the row with this API ID
+        const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        if (rowIndex !== -1) {
+          const token = rows[rowIndex];
+          const reward = currentPrice * (token.amount || 0);
+          
+          // Use price tracking
+          const trackingResult = trackPriceChange(
+            apiId, 
+            currentPrice, 
+            token.price || 0, 
+            token.highestPrice || 0
+          );
+          
+          // Update row with new data
+          updateRow(rowIndex, {
+            name: tokenInfo.name || token.name || '',
+            symbol: tokenInfo.symbol || token.symbol || '',
+            logo: tokenInfo.logo || token.logo || '',
+            price: currentPrice,
+            reward,
+            ath: tokenInfo.ath || token.ath || 0,
+            ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Error refreshing single token ${apiId}:`, error);
+      throw error;
+    }
+  }, [rows, updateRow, trackPriceChange]);
+
   return {
     ids,
     loadLogosFromDatabase,
     fetchAndUpdateTokenInfo,
     refreshData,
     refreshStatscardPrices,
+    refreshSingleToken,
   };
 };

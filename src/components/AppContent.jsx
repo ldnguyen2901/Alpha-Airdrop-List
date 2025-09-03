@@ -245,6 +245,7 @@ export default function AppContent() {
           searchToken={state.searchToken}
           tokenLogos={state.tokenLogos}
           onRefresh={apiOps.refreshData}
+          onRefreshToken={apiOps.refreshSingleToken}
           loading={state.loading}
           showATH={state.showATH}
           ref={state.highlightRowRef}

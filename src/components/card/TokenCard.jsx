@@ -3,6 +3,7 @@ import Edit from '@mui/icons-material/Edit';
 import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import BlockIcon from '@mui/icons-material/Block';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { formatPrice, formatDateTime, getCountdownText } from '../../utils';
 
 const TokenCard = ({
@@ -12,12 +13,14 @@ const TokenCard = ({
   showHighestPrice,
   onEditRow,
   onDeleteRow,
+  onRefreshToken,
   editButtonRefs,
   deleteButtonRefs,
   setEditButtonPosition
 }) => {
   const [previousPrice, setPreviousPrice] = useState(row.price || 0);
   const [priceChangeColor, setPriceChangeColor] = useState('');
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   // Track price changes and set color
   useEffect(() => {
@@ -96,6 +99,23 @@ const TokenCard = ({
     
     const now = new Date();
     return launchDate.getTime() <= now.getTime();
+  };
+
+  // Handle refresh token
+  const handleRefreshToken = async () => {
+    if (!onRefreshToken) return;
+    
+    setIsRefreshingToken(true);
+    try {
+      await onRefreshToken(row.apiId || row.id);
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+    } finally {
+      // Ensure animation completes
+      setTimeout(() => {
+        setIsRefreshingToken(false);
+      }, 1000);
+    }
   };
 
   return (
@@ -209,51 +229,67 @@ const TokenCard = ({
 
         
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-3">
-          <button
-            ref={el => editButtonRefs.current[index] = el}
-            onClick={(e) => {
-              // Calculate button position for mobile modal
-              let position = null;
-              if (window.innerWidth < 768 && editButtonRefs.current[index]) {
-                const rect = editButtonRefs.current[index].getBoundingClientRect();
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                position = {
-                  top: rect.bottom + scrollTop + 8,
-                  left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
-                };
-                setEditButtonPosition(position);
-              }
-              onEditRow(index, position);
-            }}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
-          >
-            <Edit sx={{ fontSize: 16 }} />
-            Edit
-          </button>
-          <button
-            ref={(el) => (deleteButtonRefs.current[index] = el)}
-            onClick={() => {
-              const buttonElement = deleteButtonRefs.current[index];
-              if (buttonElement) {
-                const rect = buttonElement.getBoundingClientRect();
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const position = {
-                  top: rect.bottom + scrollTop + 8,
-                  left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
-                };
-                onDeleteRow(index, position);
-              } else {
-                onDeleteRow(index);
-              }
-            }}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
-          >
-            <Delete sx={{ fontSize: 16 }} />
-            Delete
-          </button>
-        </div>
+                          {/* Action Buttons */}
+          <div className="flex gap-2 pt-3">
+            {/* Refresh Token Button */}
+            {onRefreshToken && (
+              <button
+                onClick={handleRefreshToken}
+                disabled={isRefreshingToken}
+                className="flex-1 flex items-center justify-center px-2 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white rounded-2xl shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
+                title="Refresh token data"
+              >
+                <RefreshIcon 
+                  sx={{ 
+                    fontSize: 16,
+                    animation: isRefreshingToken ? 'spin 1s linear infinite' : 'none'
+                  }}
+                  className={isRefreshingToken ? 'refresh-spin' : ''}
+                />
+              </button>
+            )}
+            
+            <button
+              ref={el => editButtonRefs.current[index] = el}
+              onClick={(e) => {
+                // Calculate button position for mobile modal
+                let position = null;
+                if (window.innerWidth < 768 && editButtonRefs.current[index]) {
+                  const rect = editButtonRefs.current[index].getBoundingClientRect();
+                  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                  position = {
+                    top: rect.bottom + scrollTop + 8,
+                    left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
+                  };
+                  setEditButtonPosition(position);
+                }
+                onEditRow(index, position);
+              }}
+              className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
+            >
+              <Edit sx={{ fontSize: 16 }} />
+            </button>
+            <button
+              ref={(el) => (deleteButtonRefs.current[index] = el)}
+              onClick={() => {
+                const buttonElement = deleteButtonRefs.current[index];
+                if (buttonElement) {
+                  const rect = buttonElement.getBoundingClientRect();
+                  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                  const position = {
+                    top: rect.bottom + scrollTop + 8,
+                    left: Math.max(16, Math.min(rect.left, window.innerWidth - 384 - 16))
+                  };
+                  onDeleteRow(index, position);
+                } else {
+                  onDeleteRow(index);
+                }
+              }}
+              className="flex-1 flex items-center justify-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-2xl shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md"
+            >
+              <Delete sx={{ fontSize: 16 }} />
+            </button>
+          </div>
       </div>
     </div>
   );

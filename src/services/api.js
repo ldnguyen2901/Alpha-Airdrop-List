@@ -83,7 +83,7 @@ export async function fetchTokenLogos(ids) {
       
       const logoData = {
         logo: coin.image || '',
-        symbol: coin.symbol.toUpperCase(),
+        symbol: String(coin.symbol || '').toUpperCase(),
         name: coin.name || ''
       };
       
@@ -148,7 +148,7 @@ export async function fetchTokenInfo(apiId) {
     return {
       id: coin.id || '',
       name: coin.name || '',
-      symbol: coin.symbol.toUpperCase(),
+      symbol: String(coin.symbol || '').toUpperCase(),
       logo: coin.image || '',
       ath: coin.ath || 0,
       current_price: coin.current_price || 0
