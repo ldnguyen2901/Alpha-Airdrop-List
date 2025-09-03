@@ -1,16 +1,24 @@
 import { useCallback } from 'react';
 import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory, filterMainTokensFromRows, isMainToken } from '../utils';
-import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services';
+import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services/neon';
 
-export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef, addNotification) => {
-  // Helper function to clean row data
-  const cleanRowData = useCallback((row) => {
-    const cleaned = {};
-    for (const [key, value] of Object.entries(row)) {
-      if (value !== undefined && value !== null) {
-        cleaned[key] = value;
+export const useDataOperations = (
+  rows,
+  setRows,
+  workspaceId,
+  isRemoteUpdateRef,
+  addNotification
+) => {
+  // Clean row data function
+  const cleanRowData = useCallback((rowData) => {
+    if (!rowData) return rowData;
+    
+    const cleaned = { ...rowData };
+    Object.keys(cleaned).forEach(key => {
+      if (cleaned[key] === undefined || cleaned[key] === null) {
+        cleaned[key] = '';
       }
-    }
+    });
     return cleaned;
   }, []);
 
@@ -19,7 +27,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     const newRowData = rowData ? cleanRowData(rowData) : newRow();
     setRows(prevRows => {
       const updatedRows = [...prevRows, newRowData];
-      saveDataToStorage(updatedRows);
+      
+      // CHỈ save localStorage khi KHÔNG phải remote update
+      if (!isRemoteUpdateRef.current) {
+        saveDataToStorage(updatedRows);
+      }
       
       // Always save to shared workspace - exclude main tokens
       try {
@@ -30,7 +42,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       }
       return updatedRows;
     });
-  }, [setRows, cleanRowData]);
+  }, [setRows, cleanRowData, isRemoteUpdateRef]);
 
   // Update specific row
   const updateRow = useCallback((index, updates) => {
@@ -38,7 +50,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       const updatedRows = [...prevRows];
       const cleanedUpdates = cleanRowData(updates);
       updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
-      saveDataToStorage(updatedRows);
+      
+      // CHỈ save localStorage khi KHÔNG phải remote update
+      if (!isRemoteUpdateRef.current) {
+        saveDataToStorage(updatedRows);
+      }
       
       // Always save to shared workspace if not a remote update - exclude main tokens
       if (!isRemoteUpdateRef.current) {
@@ -57,7 +73,11 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
   const removeRow = useCallback((index) => {
     setRows(prevRows => {
       const updatedRows = prevRows.filter((_, i) => i !== index);
-      saveDataToStorage(updatedRows);
+      
+      // CHỈ save localStorage khi KHÔNG phải remote update
+      if (!isRemoteUpdateRef.current) {
+        saveDataToStorage(updatedRows);
+      }
       
       // Always save to shared workspace - exclude main tokens
       try {
@@ -68,12 +88,16 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       }
       return updatedRows;
     });
-  }, [setRows]);
+  }, [setRows, isRemoteUpdateRef]);
 
   // Replace all rows
   const replaceRows = useCallback((newRows) => {
     setRows(newRows);
-    saveDataToStorage(newRows);
+    
+    // CHỈ save localStorage khi KHÔNG phải remote update
+    if (!isRemoteUpdateRef.current) {
+      saveDataToStorage(newRows);
+    }
     
     // Always save to shared workspace - exclude main tokens
     try {
@@ -82,13 +106,17 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
     } catch (error) {
       console.error('Failed to save to Neon:', error);
     }
-  }, [setRows]);
+  }, [setRows, isRemoteUpdateRef]);
 
   // Add multiple rows
   const addMultipleRows = useCallback((newRowsData) => {
     setRows(prevRows => {
       const updatedRows = [...prevRows, ...newRowsData];
-      saveDataToStorage(updatedRows);
+      
+      // CHỈ save localStorage khi KHÔNG phải remote update
+      if (!isRemoteUpdateRef.current) {
+        saveDataToStorage(updatedRows);
+      }
       
       // Always save to shared workspace - exclude main tokens
       try {
@@ -99,7 +127,7 @@ export const useDataOperations = (rows, setRows, workspaceId, isRemoteUpdateRef,
       }
       return updatedRows;
     });
-  }, [setRows]);
+  }, [setRows, isRemoteUpdateRef]);
 
   // Validate add form - only API ID is required
   const validateAddForm = useCallback((form) => {

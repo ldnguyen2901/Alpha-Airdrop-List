@@ -122,13 +122,23 @@ export async function loadWorkspaceDataOnce(workspaceId) {
 export function subscribeWorkspace(workspaceId, callback) {
   const targetWorkspaceId = SHARED_WORKSPACE_ID;
   let isSubscribed = true;
+  let lastDataHash = null; // Thêm hash để detect thay đổi
   
   const pollData = async () => {
     if (!isSubscribed) return;
     
     try {
       const data = await loadWorkspaceDataOnce(targetWorkspaceId);
-      callback(data);
+      
+      // CHỈ callback khi data thực sự thay đổi
+      const currentHash = JSON.stringify(data);
+      if (currentHash !== lastDataHash) {
+        lastDataHash = currentHash;
+        callback(data);
+        console.log('🔄 Data changed, triggering update from Neon');
+      } else {
+        console.log('✅ No data change detected, skipping update');
+      }
     } catch (error) {
       console.error('Error polling workspace data from Neon:', error);
     }
@@ -137,8 +147,8 @@ export function subscribeWorkspace(workspaceId, callback) {
   // Initial load
   pollData();
   
-  // Poll every 5 seconds
-  const interval = setInterval(pollData, 5000);
+  // Tăng polling interval lên 30 giây thay vì 5 giây để tiết kiệm tài nguyên
+  const interval = setInterval(pollData, 30000);
   
   // Return unsubscribe function
   return () => {

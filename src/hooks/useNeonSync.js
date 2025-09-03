@@ -77,9 +77,19 @@ export const useNeonSync = (
       if (data && Array.isArray(data) && data.length > 0) {
         // Filter out main tokens from real-time updates
         const filteredData = filterMainTokensFromRows(data);
+        
+        // Set remote update flag BEFORE updating rows
         isRemoteUpdateRef.current = true;
+        
+        // Update rows with new data
         setRows(filteredData);
-        console.log('Received real-time update from Neon:', filteredData.length, 'rows (excluding main tokens)');
+        
+        console.log('🔄 Received real-time update from Neon:', filteredData.length, 'rows (excluding main tokens)');
+        
+        // Reset remote update flag after a short delay to allow state to settle
+        setTimeout(() => {
+          isRemoteUpdateRef.current = false;
+        }, 100);
       }
     });
   };
@@ -116,8 +126,11 @@ export const useNeonSync = (
         const lastSavedData = localStorage.getItem('last-saved-data');
         
         if (currentData !== lastSavedData) {
+          console.log('💾 Saving local changes to Neon...');
           saveData();
           localStorage.setItem('last-saved-data', currentData);
+        } else {
+          console.log('✅ No local changes detected, skipping save');
         }
       }, 2000); // Increased debounce time to 2 seconds
     }

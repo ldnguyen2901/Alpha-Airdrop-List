@@ -151,7 +151,7 @@ export default function StatsCards({
           ) : lastUpdated ? (
             <span className="hidden sm:inline">Updated: {new Date(lastUpdated).toLocaleTimeString()}</span>
           ) : (
-            'Ready'
+            <span className="hidden sm:inline">Last sync: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</span>
           )}
         </div>
       </Card>
@@ -159,7 +159,7 @@ export default function StatsCards({
       <Card className="card-hover">
         <div className='text-xs sm:text-sm text-gray-500 transition-colors duration-300 flex items-center gap-2'>
           <span className="text-blue-500">🔄</span>
-          <span className="hidden sm:inline">Status</span>
+          <span className="hidden sm:inline">Database Sync</span>
           <span className="sm:hidden">Sync</span>
         </div>
         <div
@@ -170,7 +170,7 @@ export default function StatsCards({
           {syncing ? (
             <span className="flex items-center gap-2">
               <AutorenewIcon sx={{ fontSize: 16, animation: 'spin 1s linear infinite' }} className="refresh-spin" />
-              <span className="hidden sm:inline">Syncing…</span>
+              <span className="hidden sm:inline">Syncing...</span>
               <span className="sm:hidden">Sync</span>
             </span>
           ) : !isPageVisible ? (
@@ -183,6 +183,22 @@ export default function StatsCards({
               <span className="hidden sm:inline">Synced</span>
               <span className="sm:hidden">OK</span>
             </>
+          )}
+        </div>
+        <div className='mt-1 text-[10px] sm:text-[11px] text-gray-500 transition-colors duration-300'>
+          {syncing ? (
+            <span className="hidden sm:inline">Saving to Neon DB...</span>
+          ) : !isPageVisible ? (
+            <span className="hidden sm:inline">Auto-refresh paused</span>
+          ) : (
+            <span className="hidden sm:inline"></span>
+          )}
+        </div>
+        <div className='mt-1 text-[9px] sm:text-[10px] text-gray-400 transition-colors duration-300'>
+          {lastUpdated ? (
+            <span className="hidden sm:inline">Last sync: {new Date(lastUpdated).toLocaleTimeString()}</span>
+          ) : (
+            <span className="hidden sm:inline">Ready to sync</span>
           )}
         </div>
       </Card>

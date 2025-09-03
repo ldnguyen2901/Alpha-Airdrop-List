@@ -1,31 +1,54 @@
+// Helper function to chunk array into smaller arrays
+const chunkArray = (array, chunkSize) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
+// Maximum IDs per API call
+const MAX_IDS_PER_CALL = 100;
+
 export async function fetchCryptoPrices(ids, currency = 'usd') {
   if (!ids.length) return {};
   
-  // Sử dụng API mới: /coins/markets thay vì /simple/price
-  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${encodeURIComponent(currency)}&ids=${encodeURIComponent(ids.join(","))}&order=market_cap_desc&per_page=250&page=1&sparkline=false`;
-
   try {
-    const res = await fetch(url);
-    
-    if (!res.ok) {
-      throw new Error(`API lỗi ${res.status}`);
-    }
-    
-    const data = await res.json();
-    
-    // Chuyển đổi format từ array sang object với key là coin id
     const result = {};
-    data.forEach(coin => {
-      result[coin.id] = {
-        usd: coin.current_price,
-        ath: coin.ath,
-        image: coin.image,
-        symbol: coin.symbol,
-        name: coin.name
+    
+    // Chunk IDs into groups of MAX_IDS_PER_CALL
+    const idChunks = chunkArray(ids, MAX_IDS_PER_CALL);
+    
+    // Fetch prices for each chunk using /simple/price API
+    const fetchPromises = idChunks.map(async (idChunk) => {
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(idChunk.join(","))}&vs_currencies=${encodeURIComponent(currency)}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`API lỗi ${res.status}`);
+      }
+      
+      const data = await res.json();
+      return data;
+    });
+    
+    // Wait for all chunks to complete
+    const chunkResults = await Promise.all(fetchPromises);
+    
+    // Merge all results
+    chunkResults.forEach(chunkData => {
+      Object.assign(result, chunkData);
+    });
+    
+    // Transform format to match existing structure
+    const transformedResult = {};
+    Object.keys(result).forEach(coinId => {
+      transformedResult[coinId] = {
+        usd: result[coinId][currency] || 0
       };
     });
-
-    return result;
+    
+    return transformedResult;
   } catch (error) {
     console.error('🌐 Error in fetchCryptoPrices:', error);
     throw error;
@@ -62,50 +85,62 @@ export async function fetchTokenLogos(ids) {
     return result;
   }
   
-  // Fetch only uncached IDs
-  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(uncachedIds.join(","))}&order=market_cap_desc&per_page=250&page=1&sparkline=false&locale=en`;
-  
   try {
-    const res = await fetch(url);
+    const result = {};
     
-    if (!res.ok) {
-      throw new Error(`API lỗi ${res.status}`);
-    }
+    // Chunk uncached IDs into groups of MAX_IDS_PER_CALL
+    const idChunks = chunkArray(uncachedIds, MAX_IDS_PER_CALL);
     
-    const data = await res.json();
-    const logos = {};
-    
-    data.forEach(coin => {
-      if (!coin || !coin.symbol) {
-        console.warn('Invalid coin data received:', coin);
-        return;
+    // Fetch logos for each chunk using /coins/markets API
+    const fetchPromises = idChunks.map(async (idChunk) => {
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(idChunk.join(","))}&order=market_cap_desc&per_page=250&page=1&sparkline=false&locale=en`;
+      
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`API lỗi ${res.status}`);
       }
       
-      const logoData = {
-        logo: coin.image || '',
-        symbol: String(coin.symbol || '').toUpperCase(),
-        name: coin.name || ''
-      };
-      
-      logos[coin.id] = logoData;
-      // Cache the logo data
-      logoCache.set(coin.id, {
-        data: logoData,
-        timestamp: now
+      const data = await res.json();
+      return data;
+    });
+    
+    // Wait for all chunks to complete
+    const chunkResults = await Promise.all(fetchPromises);
+    
+    // Process all results
+    chunkResults.forEach(chunkData => {
+      chunkData.forEach(coin => {
+        if (!coin || !coin.symbol) {
+          console.warn('Invalid coin data received:', coin);
+          return;
+        }
+        
+        const logoData = {
+          logo: coin.image || '',
+          symbol: String(coin.symbol || '').toUpperCase(),
+          name: coin.name || ''
+        };
+        
+        result[coin.id] = logoData;
+        // Cache the logo data
+        logoCache.set(coin.id, {
+          data: logoData,
+          timestamp: now
+        });
       });
     });
     
     // Add cached logos for IDs that weren't fetched
     ids.forEach(id => {
-      if (!logos[id]) {
+      if (!result[id]) {
         const cached = logoCache.get(id);
         if (cached) {
-          logos[id] = cached.data;
+          result[id] = cached.data;
         }
       }
     });
     
-    return logos;
+    return result;
   } catch (error) {
     console.error('Error fetching logos:', error);
     // Return cached data if available, even if expired
@@ -125,7 +160,7 @@ export async function fetchTokenInfo(apiId) {
   if (!apiId || !apiId.trim()) return null;
   
   try {
-    // Sử dụng API mới: /coins/markets thay vì /coins/{id}
+    // Sử dụng API /coins/markets cho single token
     const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(apiId.trim())}&order=market_cap_desc&per_page=1&page=1&sparkline=false`;
     const res = await fetch(url);
     

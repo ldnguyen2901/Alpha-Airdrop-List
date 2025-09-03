@@ -171,6 +171,8 @@ export const useApiOperations = (
     setLoading(true);
     
     try {
+      console.log('🔄 Starting data refresh with optimized API strategy...');
+      
       // Step 1: Optimized token data fetching strategy - exclude main tokens
       const filteredIds = ids.filter(id => !isMainToken(id));
       
@@ -185,13 +187,14 @@ export const useApiOperations = (
         const incompleteTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && (!r.symbol || !r.logo));
         const completeTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && r.symbol && r.logo);
         
-        console.log(`📊 Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens (excluding main tokens)`);
+        console.log(`📊 Refresh Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens (excluding main tokens)`);
 
         // Step 1a: Fetch full data for incomplete tokens (priority)
         if (incompleteTokens.length > 0) {
-          console.log('🔄 Step 1: Fetching full data for incomplete tokens...');
+          console.log(`🔄 Step 1: Fetching full data for ${incompleteTokens.length} incomplete tokens...`);
           for (const token of incompleteTokens) {
             try {
+              console.log(`📥 Fetching full info for: ${token.apiId}`);
               const tokenInfo = await fetchTokenInfo(token.apiId);
               if (tokenInfo) {
                 const currentPrice = tokenInfo.current_price;
@@ -221,20 +224,30 @@ export const useApiOperations = (
                     ath: tokenInfo.ath || 0,
                     ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                   });
+                  
+                  console.log(`✅ Updated ${token.apiId}: ${tokenInfo.name} (${tokenInfo.symbol}) - Price: $${currentPrice}`);
                 }
+              } else {
+                console.warn(`⚠️ No data received for token: ${token.apiId}`);
               }
             } catch (error) {
-              console.error(`Error fetching token info for ${token.apiId}:`, error);
+              console.error(`❌ Error fetching token info for ${token.apiId}:`, error);
             }
           }
+          
+          console.log(`✅ Step 1 completed: ${incompleteTokens.length} incomplete tokens processed`);
         }
 
         // Step 1b: Update prices for complete tokens (efficient)
         if (completeTokens.length > 0) {
-          console.log('💰 Step 2: Updating prices for complete tokens...');
+          console.log(`💰 Step 2: Updating prices for ${completeTokens.length} complete tokens...`);
           const completeApiIds = completeTokens.map(t => t.apiId);
-          const tokenPrices = await fetchCryptoPrices(completeApiIds);
+          console.log(`📦 Fetching prices for ${completeApiIds.length} complete tokens...`);
           
+          const tokenPrices = await fetchCryptoPrices(completeApiIds);
+          console.log(`📊 Received prices for ${Object.keys(tokenPrices).length} tokens`);
+          
+          let updatedCount = 0;
           completeTokens.forEach((token) => {
             if (token.apiId && tokenPrices[token.apiId]) {
               const currentPrice = tokenPrices[token.apiId].usd;
@@ -252,24 +265,34 @@ export const useApiOperations = (
               const priceStats = getPriceStats(token.apiId);
               const trend = analyzeTrend(token.apiId);
               
-              // Update row with new price data and ATH
+              // Update row with new price data (keep existing name, symbol, logo, ath)
               const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
               if (rowIndex !== -1) {
                 updateRow(rowIndex, {
                   price: currentPrice,
                   reward,
-                  ath: tokenPrices[token.apiId].ath || token.ath || 0,
                   ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                 });
+                
+                updatedCount++;
+                console.log(`💰 Updated price for ${token.apiId}: $${currentPrice} (${token.symbol})`);
               }
+            } else {
+              console.warn(`⚠️ No price data for token: ${token.apiId}`);
             }
           });
+          
+          console.log(`✅ Step 2 completed: ${updatedCount}/${completeTokens.length} complete tokens updated`);
         }
+      } else {
+        console.log('ℹ️ No tokens to refresh (all are main tokens or empty)');
       }
 
       setLastUpdated(new Date());
+      console.log('🎉 Data refresh completed successfully!');
+      
     } catch (error) {
-      console.error('Error in refreshData:', error);
+      console.error('❌ Error in refreshData:', error);
     } finally {
       setLoading(false);
     }
