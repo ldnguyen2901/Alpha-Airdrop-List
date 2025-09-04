@@ -16,7 +16,8 @@ export const useNeonSync = (
   setSyncing,
   isRemoteUpdateRef,
   unsubRef,
-  timerRef
+  timerRef,
+  setLastSyncTime
 ) => {
   const isInitializedRef = useRef(false);
 
@@ -32,12 +33,18 @@ export const useNeonSync = (
   const loadInitialData = async () => {
     try {
       setSyncing(true);
-      const data = await loadWorkspaceDataOnce(workspaceId);
-      if (data && Array.isArray(data) && data.length > 0) {
+      const result = await loadWorkspaceDataOnce(workspaceId);
+      if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
         // Filter out main tokens from shared workspace data
-        const filteredData = filterMainTokensFromRows(data);
+        const filteredData = filterMainTokensFromRows(result.data);
         isRemoteUpdateRef.current = true;
         setRows(filteredData);
+        
+        // Set last sync time from database
+        if (result.updatedAt && setLastSyncTime) {
+          setLastSyncTime(new Date(result.updatedAt));
+        }
+        
         console.log('Loaded data from Neon:', filteredData.length, 'rows (excluding main tokens)');
       }
     } catch (error) {
@@ -50,8 +57,9 @@ export const useNeonSync = (
   // Save data to Neon
   const saveData = async (dataToSave = rows) => {
     try {
+      // Skip save if this is a remote update to prevent infinite loops
       if (isRemoteUpdateRef.current) {
-        isRemoteUpdateRef.current = false;
+        console.log('Skipping save - remote update in progress');
         return;
       }
 
@@ -73,7 +81,7 @@ export const useNeonSync = (
       unsubRef.current();
     }
 
-    unsubRef.current = subscribeWorkspace(workspaceId, (data) => {
+    unsubRef.current = subscribeWorkspace(workspaceId, (data, updatedAt) => {
       if (data && Array.isArray(data) && data.length > 0) {
         // Filter out main tokens from real-time updates
         const filteredData = filterMainTokensFromRows(data);
@@ -83,6 +91,11 @@ export const useNeonSync = (
         
         // Update rows with new data
         setRows(filteredData);
+        
+        // Update last sync time from database
+        if (updatedAt && setLastSyncTime) {
+          setLastSyncTime(new Date(updatedAt));
+        }
         
         console.log('🔄 Received real-time update from Neon:', filteredData.length, 'rows (excluding main tokens)');
         
@@ -148,13 +161,19 @@ export const useNeonSync = (
       setSyncing(true);
       
       // Load fresh data from database
-      const freshData = await loadWorkspaceDataOnce(workspaceId);
+      const result = await loadWorkspaceDataOnce(workspaceId);
       
-      if (freshData && Array.isArray(freshData) && freshData.length > 0) {
+      if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
         // Filter out main tokens from fresh data
-        const filteredData = filterMainTokensFromRows(freshData);
+        const filteredData = filterMainTokensFromRows(result.data);
         isRemoteUpdateRef.current = true;
         setRows(filteredData);
+        
+        // Update last sync time from database
+        if (result.updatedAt && setLastSyncTime) {
+          setLastSyncTime(new Date(result.updatedAt));
+        }
+        
         console.log('Force sync completed with Neon, loaded:', filteredData.length, 'rows (excluding main tokens)');
         return true;
       } else {

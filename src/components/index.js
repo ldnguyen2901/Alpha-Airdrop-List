@@ -20,7 +20,7 @@ export { default as TableHeader } from './table/TableHeader';
 export { default as TableRow } from './table/TableRow';
 
 // Other components
-export { default as Card } from './Card';
+export { default as MainCard } from './MainCard';
 export { default as PriceTrackingInfo } from './PriceTrackingInfo';
 export { default as Pagination } from './Pagination';
 export { default as PasteButton } from './PasteButton';

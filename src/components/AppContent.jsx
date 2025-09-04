@@ -49,7 +49,8 @@ export default function AppContent() {
     state.setRows,
     state.workspaceId,
     state.isRemoteUpdateRef,
-    addNotification
+    addNotification,
+    state.setLastSyncTime
   );
   
   // API operations
@@ -74,7 +75,8 @@ export default function AppContent() {
     state.setSyncing,
     state.isRemoteUpdateRef,
     state.unsubRef,
-    state.timerRef
+    state.timerRef,
+    state.setLastSyncTime
   );
   
   // Import/Export operations
@@ -214,6 +216,7 @@ export default function AppContent() {
           bnbPrice={state.bnbPrice}
           syncing={state.syncing}
           lastUpdated={state.lastUpdated}
+          lastSyncTime={state.lastSyncTime}
           tokenLogos={state.tokenLogos}
           loading={state.loading}
           isPageVisible={state.isPageVisible}

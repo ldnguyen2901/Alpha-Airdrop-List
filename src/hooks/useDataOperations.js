@@ -7,7 +7,8 @@ export const useDataOperations = (
   setRows,
   workspaceId,
   isRemoteUpdateRef,
-  addNotification
+  addNotification,
+  setLastSyncTime
 ) => {
   // Clean row data function
   const cleanRowData = useCallback((rowData) => {
@@ -37,15 +38,26 @@ export const useDataOperations = (
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
         saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
-  }, [setRows, cleanRowData, isRemoteUpdateRef]);
+  }, [setRows, cleanRowData, isRemoteUpdateRef, setLastSyncTime]);
 
   // Update specific row
   const updateRow = useCallback((index, updates) => {
+    // Ensure we're not in a remote update state when user manually edits
+    if (isRemoteUpdateRef.current) {
+      console.log('Resetting remote update flag for manual edit');
+      isRemoteUpdateRef.current = false;
+    }
+    
     setRows(prevRows => {
       const updatedRows = [...prevRows];
       const cleanedUpdates = cleanRowData(updates);
@@ -61,13 +73,19 @@ export const useDataOperations = (
         try {
           const filteredRows = filterMainTokensFromRows(updatedRows);
           saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+          console.log('✅ Successfully saved row update to Neon');
+          
+          // Update last sync time when successfully saved to database
+          if (setLastSyncTime) {
+            setLastSyncTime(new Date());
+          }
         } catch (error) {
           console.error('Failed to save to Neon:', error);
         }
       }
       return updatedRows;
     });
-  }, [setRows, isRemoteUpdateRef, cleanRowData]);
+  }, [setRows, isRemoteUpdateRef, cleanRowData, setLastSyncTime]);
 
   // Remove row
   const removeRow = useCallback((index) => {
@@ -83,12 +101,17 @@ export const useDataOperations = (
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
         saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
-  }, [setRows, isRemoteUpdateRef]);
+  }, [setRows, isRemoteUpdateRef, setLastSyncTime]);
 
   // Replace all rows
   const replaceRows = useCallback((newRows) => {
@@ -103,10 +126,15 @@ export const useDataOperations = (
     try {
       const filteredRows = filterMainTokensFromRows(newRows);
       saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+      
+      // Update last sync time when successfully saved to database
+      if (setLastSyncTime) {
+        setLastSyncTime(new Date());
+      }
     } catch (error) {
       console.error('Failed to save to Neon:', error);
     }
-  }, [setRows, isRemoteUpdateRef]);
+  }, [setRows, isRemoteUpdateRef, setLastSyncTime]);
 
   // Add multiple rows
   const addMultipleRows = useCallback((newRowsData) => {
@@ -122,12 +150,17 @@ export const useDataOperations = (
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
         saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
       } catch (error) {
         console.error('Failed to save to Neon:', error);
       }
       return updatedRows;
     });
-  }, [setRows, isRemoteUpdateRef]);
+  }, [setRows, isRemoteUpdateRef, setLastSyncTime]);
 
   // Validate add form - only API ID is required
   const validateAddForm = useCallback((form) => {
@@ -163,6 +196,11 @@ export const useDataOperations = (
       await saveWorkspaceData(SHARED_WORKSPACE_ID, []);
       console.log('Successfully cleared data from Neon database');
       
+      // Update last sync time when successfully cleared from database
+      if (setLastSyncTime) {
+        setLastSyncTime(new Date());
+      }
+      
       if (addNotification) {
         addNotification('All data cleared successfully from Neon database!', 'success');
       }
@@ -173,7 +211,7 @@ export const useDataOperations = (
         addNotification('Failed to clear data from Neon database. Local data cleared only.', 'error');
       }
     }
-  }, [setRows, addNotification]);
+  }, [setRows, addNotification, setLastSyncTime]);
 
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {

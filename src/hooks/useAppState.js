@@ -33,6 +33,7 @@ export const useAppState = () => {
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isPageVisible, setIsPageVisible] = useState(true);
 
   // Price states
@@ -129,5 +130,9 @@ export const useAppState = () => {
     setAddForm,
     addErrors,
     setAddErrors,
+    
+    // Sync time states
+    lastSyncTime,
+    setLastSyncTime,
   };
 };

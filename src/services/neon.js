@@ -103,18 +103,22 @@ export async function loadWorkspaceDataOnce(workspaceId) {
     const targetWorkspaceId = SHARED_WORKSPACE_ID;
     
     const result = await sql`
-      SELECT data FROM workspaces WHERE id = ${targetWorkspaceId}
+      SELECT data, updated_at FROM workspaces WHERE id = ${targetWorkspaceId}
     `;
     
     if (result.length > 0) {
       const data = result[0].data;
-      return Array.isArray(data) ? data : [];
+      const updatedAt = result[0].updated_at;
+      return {
+        data: Array.isArray(data) ? data : [],
+        updatedAt: updatedAt
+      };
     }
     
-    return [];
+    return { data: [], updatedAt: null };
   } catch (error) {
     console.error('Error loading workspace data from Neon:', error);
-    return [];
+    return { data: [], updatedAt: null };
   }
 }
 
@@ -128,13 +132,13 @@ export function subscribeWorkspace(workspaceId, callback) {
     if (!isSubscribed) return;
     
     try {
-      const data = await loadWorkspaceDataOnce(targetWorkspaceId);
+      const result = await loadWorkspaceDataOnce(targetWorkspaceId);
       
       // CHỈ callback khi data thực sự thay đổi
-      const currentHash = JSON.stringify(data);
+      const currentHash = JSON.stringify(result.data);
       if (currentHash !== lastDataHash) {
         lastDataHash = currentHash;
-        callback(data);
+        callback(result.data, result.updatedAt);
         console.log('🔄 Data changed, triggering update from Neon');
       } else {
         console.log('✅ No data change detected, skipping update');

@@ -1,4 +1,4 @@
-import { Card } from './index';
+import { MainCard as Card } from './index';
 import { formatNumber } from '../utils';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { useState, useEffect } from 'react';
@@ -11,6 +11,7 @@ export default function StatsCards({
   bnbPrice,
   syncing,
   lastUpdated,
+  lastSyncTime,
   tokenLogos = {},
   isPageVisible = true,
 }) {
@@ -195,8 +196,8 @@ export default function StatsCards({
           )}
         </div>
         <div className='mt-1 text-[9px] sm:text-[10px] text-gray-400 transition-colors duration-300'>
-          {lastUpdated ? (
-            <span className="hidden sm:inline">Last sync: {new Date(lastUpdated).toLocaleTimeString()}</span>
+          {lastSyncTime ? (
+            <span className="hidden sm:inline">Last sync: {new Date(lastSyncTime).toLocaleTimeString()}</span>
           ) : (
             <span className="hidden sm:inline">Ready to sync</span>
           )}
