@@ -4,7 +4,7 @@ import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { formatPrice, formatDateTime, getCountdownText } from '../../utils';
+import { formatPrice, formatDateTime, getCountdownText, isRecentlyListed, parseDate } from '../../utils';
 
 const TokenCard = ({
   row,
@@ -39,27 +39,6 @@ const TokenCard = ({
     }
   }, [row.price, previousPrice]);
 
-  // Helper function to parse date in DD/MM/YYYY format
-  const parseDate = (dateString) => {
-    if (!dateString) return null;
-    
-    // Handle DD/MM/YYYY HH:mm:ss format (legacy)
-    const match1 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
-    if (match1) {
-      const [, day, month, year, hour = '0', minute = '0', second = '0'] = match1;
-      return new Date(year, month - 1, day, hour, minute, second);
-    }
-    
-    // Handle DD/MM/YYYY HH:mm format (new)
-    const match2 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
-    if (match2) {
-      const [, day, month, year, hour = '0', minute = '0'] = match2;
-      return new Date(year, month - 1, day, hour, minute, 0);
-    }
-    
-    // Fallback to standard Date constructor
-    return new Date(dateString);
-  };
 
   const getStatusColor = (row) => {
     if (!row.launchAt) {
@@ -147,8 +126,13 @@ const TokenCard = ({
                      <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate flex items-center">
                     {(row.symbol || '?').toUpperCase()}
+                    {isRecentlyListed(row) && (
+                      <span className="text-blue-500 font-bold text-xs relative -top-1 ml-0.5" title="Token đã listing trong vòng 30 ngày gần nhất">
+                        *
+                      </span>
+                    )}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {row.name && row.name !== row.symbol ? row.name : row.apiId || 'No API ID'}

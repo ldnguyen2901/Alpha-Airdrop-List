@@ -310,3 +310,42 @@ export const isMainToken = (apiId) => {
   if (!trimmedApiId) return false;
   return MAIN_TOKENS.includes(trimmedApiId.toLowerCase());
 };
+
+// Helper function to parse date in DD/MM/YYYY format
+export const parseDate = (dateString) => {
+  if (!dateString) return null;
+  
+  // Handle DD/MM/YYYY HH:mm:ss format (legacy)
+  const match1 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
+  if (match1) {
+    const [, day, month, year, hour = '0', minute = '0', second = '0'] = match1;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+  
+  // Handle DD/MM/YYYY HH:mm format (new)
+  const match2 = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
+  if (match2) {
+    const [, day, month, year, hour = '0', minute = '0'] = match2;
+    return new Date(year, month - 1, day, hour, minute, 0);
+  }
+  
+  // Fallback to standard Date constructor
+  return new Date(dateString);
+};
+
+// Check if token has been listed within the last 29 days (including today)
+export const isRecentlyListed = (row) => {
+  if (!row || !row.launchAt) return false;
+  
+  const launchDate = parseDate(row.launchAt);
+  if (!launchDate) return false;
+  
+  const now = new Date();
+  const timeDiff = now.getTime() - launchDate.getTime();
+  const daysDiff = timeDiff / (1000 * 3600 * 24);
+  
+  // Token is recently listed if it was listed within the last 29 days (including today)
+  // daysDiff >= 0 means it's already listed (including today)
+  // daysDiff < 30 means it's within 29 days from listing (0-29 days)
+  return daysDiff >= 0 && daysDiff < 30;
+};

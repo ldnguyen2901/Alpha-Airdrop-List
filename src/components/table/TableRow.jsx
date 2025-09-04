@@ -1,4 +1,4 @@
-import { formatAmount, formatPrice, formatDateTime } from '../../utils';
+import { formatAmount, formatPrice, formatDateTime, isRecentlyListed } from '../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -236,8 +236,13 @@ export default function TableRow({
                }}
              />
            )}
-                     <span className="text-sm dark:text-white font-medium">
+                     <span className="text-sm dark:text-white font-medium flex items-center">
             {(row.symbol || row.name || row.apiId).toUpperCase()}
+            {isRecentlyListed(row) && (
+              <span className="text-blue-500 font-bold text-xs relative -top-1 ml-0.5" title="Token đã listing trong vòng 30 ngày gần nhất">
+                *
+              </span>
+            )}
           </span>
          </div>
       </td>
