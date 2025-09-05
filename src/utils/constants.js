@@ -58,6 +58,7 @@ export function newTgeRow(partial = {}) {
     launchAt: '', // Thời gian listing (user nhập Date + Time)
     apiId: '', // API ID (user nhập - REQUIRED)
     point: '', // Point (user nhập - optional)
+    type: 'TGE', // Type: TGE hoặc Pre-TGE
     price: 0, // Giá hiện tại (từ API: current_price)
     ath: 0, // ATH (từ API: ath)
     logo: '', // Logo URL (từ API: image)
@@ -70,9 +71,10 @@ export function newTgeRow(partial = {}) {
 // TGE Table Headers
 export const TGE_TABLE_HEADERS = [
   'Token', // Hiển thị Symbol/Name
-  'Listing time', // Thời gian listing
+  'Subscription time', // Thời gian subscription
   'API ID', // API ID (ẩn trong table)
   'Point', // Điểm
+  'Type', // Loại: TGE hoặc Pre-TGE
   'Token Price', // Giá token
   'ATH', // All-time high
   '', // Actions column
@@ -81,9 +83,10 @@ export const TGE_TABLE_HEADERS = [
 // TGE CSV Headers
 export const TGE_CSV_HEADERS = [
   'Token',
-  'Listing time',
+  'Subscription time',
   'API ID',
   'Point',
+  'Type',
   'Token Price',
   'ATH',
   'Logo',

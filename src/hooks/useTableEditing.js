@@ -264,18 +264,18 @@ export function useTgeTableEditing() {
       }
     }
     
-    const toSave = { 
-      ...draft, 
-      launchAt: normalizedLaunch, 
-      _forceTop: false,
-      // Ensure TGE-specific fields are preserved
+    // Create clean TGE object with only TGE-specific fields
+    const toSave = {
+      name: draft.name || '',
+      launchAt: normalizedLaunch,
+      apiId: draft.apiId || '',
       point: draft.point || '',
-      // Remove Airdrop-specific fields
-      amount: undefined,
-      pointPriority: undefined,
-      pointFCFS: undefined,
-      reward: undefined,
-      highestPrice: undefined
+      type: draft.type || 'TGE',
+      price: draft.price || '',
+      ath: draft.ath || '',
+      logo: draft.logo || '',
+      symbol: draft.symbol || '',
+      _forceTop: false
     };
     onUpdateRow(actual, toSave);
     setRowDrafts((prev) => {

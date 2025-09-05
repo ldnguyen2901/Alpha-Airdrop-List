@@ -144,7 +144,7 @@ const TokenCard = ({
                       <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
                       <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                     </div>
-                  ) : 'N/A')}
+                  ) : (row.launchAt && isTokenListed(row) ? 'N/A' : 'N/A'))}
                 </div>
               </div>
             </div>
@@ -153,61 +153,47 @@ const TokenCard = ({
 
       {/* Content */}
       <div className="p-4 space-y-4">
-        {/* Amount and Launch Date */}
+        {/* Point and Subscription Time */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="text-gray-500 dark:text-gray-400 text-sm">Amount:</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Point:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || 'Unknown').toUpperCase()}` : 'N/A'}
+              {row.point ? (
+                row.point
+              ) : (
+                <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+              )}
             </div>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400 text-sm">Launch Date:</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Subscription Time:</span>
             <div className="font-medium text-gray-900 dark:text-white">
               {row.launchAt ? formatDateTime(row.launchAt) : 'N/A'}
             </div>
           </div>
         </div>
 
-                 {/* Point Priority and ATH */}
-         <div className="grid grid-cols-2 gap-4">
-                       <div>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {row.pointPriority ? (
-                  row.pointPriority
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-              </div>
+        {/* ATH and Type */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">Type:</span>
+            <div className="font-medium">
+              <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                row.type === 'Pre-TGE' 
+                  ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300' 
+                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+              }`}>
+                {row.type || 'TGE'}
+              </span>
             </div>
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
-             <div className="font-medium text-purple-600 dark:text-purple-400">
-               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
-             </div>
-           </div>
-         </div>
-
-                 {/* Points FCFS and Reward */}
-         <div className="grid grid-cols-2 gap-4">
-                       <div>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {row.pointFCFS ? (
-                  row.pointFCFS
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-              </div>
+          </div>
+          <div>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
+            <div className="font-medium text-purple-600 dark:text-purple-400">
+              {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : (isTokenListed(row) ? 'N/A' : 'N/A')}
             </div>
-           <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
-             <div className="font-medium text-green-600 dark:text-green-400">
-               {row.reward ? `$${formatPrice(row.reward)}` : 'N/A'}
-             </div>
-           </div>
-         </div>
+          </div>
+        </div>
 
 
 

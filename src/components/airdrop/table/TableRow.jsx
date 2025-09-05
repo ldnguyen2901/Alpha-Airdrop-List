@@ -1,4 +1,4 @@
-import { formatAmount, formatPrice, formatDateTime, isRecentlyListed } from '../../../utils';
+import { formatAmount, formatPrice, formatDateTime, isRecentlyListed, parseDate } from '../../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -101,6 +101,17 @@ export default function TableRow({
     setPreviousPrice(currentPrice);
   }, [row.price, previousPrice]);
 
+  // Check if token is already listed (launch date has passed)
+  const isTokenListed = () => {
+    if (!row.launchAt) return false;
+    
+    const launchDate = parseDate(row.launchAt);
+    if (!launchDate) return false;
+    
+    const now = new Date();
+    return launchDate.getTime() <= now.getTime();
+  };
+
 
     const renderPriceAndReward = () => {
     const cd = getCountdownText(row.launchAt, Date.now(), false); // Desktop = false
@@ -146,7 +157,7 @@ export default function TableRow({
     return (
       <>
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          ${formatPrice(0)}
+          {isTokenListed() ? 'N/A' : `$${formatPrice(0)}`}
         </td>
         <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
           Wait for listing
@@ -289,7 +300,7 @@ export default function TableRow({
       {/* ATH */}
       {showATH && (
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          <span>${formatPrice(row.ath || 0)}</span>
+          <span>{isTokenListed() && (row.ath || 0) === 0 ? 'N/A' : `$${formatPrice(row.ath || 0)}`}</span>
         </td>
       )}
 

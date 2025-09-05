@@ -144,7 +144,7 @@ const TokenCard = ({
                       <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
                       <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                     </div>
-                  ) : 'N/A')}
+                  ) : (row.launchAt && isTokenListed(row) ? 'N/A' : 'N/A'))}
                 </div>
               </div>
             </div>
@@ -184,7 +184,7 @@ const TokenCard = ({
            <div>
              <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
              <div className="font-medium text-purple-600 dark:text-purple-400">
-               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : 'N/A'}
+               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : (isTokenListed(row) ? 'N/A' : 'N/A')}
              </div>
            </div>
          </div>

@@ -6,7 +6,6 @@ import {
 } from './tge';
 import Header from './Header';
 import StatsCards from './StatsCards';
-import { useNotifications } from '../contexts';
 
 
 // Lazy load modals for better performance
@@ -40,16 +39,12 @@ export default function TgeContent() {
   // Main state management
   const state = useTgeAppState();
   
-  // Get notification function from context
-  const { addNotification } = useNotifications();
-  
   // Data operations
   const dataOps = useTgeDataOperations(
     state.rows,
     state.setRows,
     state.workspaceId,
     state.isRemoteUpdateRef,
-    addNotification,
     state.setLastSyncTime
   );
   
@@ -81,8 +76,7 @@ export default function TgeContent() {
   
   // Import/Export operations
   const importExportOps = useTgeImportExport(
-    dataOps.addMultipleRows,
-    addNotification
+    dataOps.addMultipleRows
   );
   
   // Duplicate check
@@ -123,6 +117,11 @@ export default function TgeContent() {
     null, // updateStatscardPrices function will be passed from useApiOperations
     state.setTokenLogos
   );
+
+  // Update document title
+  useEffect(() => {
+    document.title = "Binance Alpha TGE";
+  }, []);
 
   // Initial data loading - ensure proper order
   useEffect(() => {
@@ -210,6 +209,8 @@ export default function TgeContent() {
           syncing={state.syncing}
           isPageVisible={state.isPageVisible}
           loading={state.loading}
+          title="Binance Alpha TGE"
+          mobileTitle="TGE"
         />
         <StatsCards
           rowsCount={state.rows.length}

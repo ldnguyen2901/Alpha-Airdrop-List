@@ -1,8 +1,7 @@
 import React from 'react';
-import { ThemeProvider, NotificationProvider } from './contexts';
+import { ThemeProvider } from './contexts';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { PersistLayout } from './components';
-import 'react-toastify/dist/ReactToastify.css';
 
 /**
  * React Airdrop Alpha Tracker
@@ -16,16 +15,14 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function App() {
   return (
     <ThemeProvider>
-      <NotificationProvider>
-        <Routes>
-          <Route element={<PersistLayout />}>
-            <Route path="/" element={<Navigate to="/airdrop" replace />} />
-            <Route path="/airdrop" element={<span />} />
-            <Route path="/tge" element={<span />} />
-            <Route path="*" element={<Navigate to="/airdrop" replace />} />
-          </Route>
-        </Routes>
-      </NotificationProvider>
+      <Routes>
+        <Route element={<PersistLayout />}>
+          <Route path="/" element={<Navigate to="/airdrop" replace />} />
+          <Route path="/airdrop" element={<span />} />
+          <Route path="/tge" element={<span />} />
+          <Route path="*" element={<Navigate to="/airdrop" replace />} />
+        </Route>
+      </Routes>
     </ThemeProvider>
   );
 }

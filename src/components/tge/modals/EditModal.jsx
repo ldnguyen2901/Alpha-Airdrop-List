@@ -60,14 +60,14 @@ export default function EditModal({
     const hasNewLaunchDate = form.launchDate && String(form.launchDate).trim();
     
     if (!hasLegacyLaunchAt && !hasNewLaunchDate) {
-      errs.launchAt = 'Listing date is required';
+      errs.launchAt = 'Subscription date is required';
     } else if (hasLegacyLaunchAt && !hasNewLaunchDate) {
       // Only validate legacy format if using legacy input (not new date picker)
       const regexDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
       const regexDateTime = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/;
       const val = String(form.launchAt).trim();
       if (!(regexDate.test(val) || regexDateTime.test(val))) {
-        errs.launchAt = 'Listing time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
+        errs.launchAt = 'Subscription time must be DD/MM/YYYY or DD/MM/YYYY HH:mm';
       }
     }
     // If using new date picker (hasNewLaunchDate), no additional validation needed
@@ -237,25 +237,8 @@ export default function EditModal({
             />
           </div>
 
-          <div>
-            <input
-              value={rowDrafts[editingModal.idx].point}
-              onChange={(e) =>
-                setRowDrafts((p) => ({
-                  ...p,
-                  [editingModal.idx]: {
-                    ...p[editingModal.idx],
-                    point: e.target.value,
-                  },
-                }))
-              }
-              className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Point (optional)'
-            />
-          </div>
-
                       <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-              Listing date (required) & time (optional)
+              Subscription date (required) & time (optional)
             </label>
             <div className='flex gap-2'>
               <input
@@ -322,6 +305,28 @@ export default function EditModal({
               className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               placeholder='Point (optional)'
             />
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Type
+            </label>
+            <select
+              value={rowDrafts[editingModal.idx].type || 'TGE'}
+              onChange={(e) =>
+                setRowDrafts((p) => ({
+                  ...p,
+                  [editingModal.idx]: {
+                    ...p[editingModal.idx],
+                    type: e.target.value,
+                  },
+                }))
+              }
+              className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+            >
+              <option value='TGE'>TGE</option>
+              <option value='Pre-TGE'>Pre-TGE</option>
+            </select>
           </div>
 
                      <div className='flex justify-end gap-2 mt-2'>

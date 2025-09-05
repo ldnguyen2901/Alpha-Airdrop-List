@@ -10,9 +10,10 @@ export default function TableHeader({
   const getColumnKey = (header) => {
     const mapping = {
       Token: 'name',
-      'Listing time': 'launchAt',
+      'Subscription time': 'launchAt',
       'API ID': 'apiId',
       'Point': 'point',
+      'Type': 'type',
       'Token Price': 'price',
       'ATH': 'ath',
     };
@@ -53,8 +54,9 @@ export default function TableHeader({
                 className={`flex items-center gap-1 ${
                   h === 'Token Price' ||
                   h === 'ATH' ||
-                  h === 'Listing time' ||
-                  h === 'Point'
+                  h === 'Subscription time' ||
+                  h === 'Point' ||
+                  h === 'Type'
                     ? 'justify-center'
                     : ''
                 }`}
@@ -66,6 +68,8 @@ export default function TableHeader({
                     ? 'Price'
                     : h === 'Point'
                     ? 'Point'
+                    : h === 'Type'
+                    ? 'Type'
                     : h}
                 </span>
                 {isSortable && (

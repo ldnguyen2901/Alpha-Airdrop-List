@@ -3,7 +3,7 @@ import { splitCSV, CSV_HEADERS, TGE_CSV_HEADERS, parsePastedData, filterMainToke
 import { readExcelFile, parseExcelData, parseTgeExcelData } from '../utils';
 import * as XLSX from 'xlsx';
 
-export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
+export const useImportExport = (addMultipleRows, replaceRows) => {
   // Handle paste CSV/TSV data
   const handlePaste = useCallback((text) => {
     try {
@@ -13,9 +13,6 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         // Filter out main tokens from pasted data
         const filteredData = filterMainTokensFromRows(result.data);
         addMultipleRows(filteredData);
-        if (addNotification) {
-          addNotification(`Added ${filteredData.length} tokens from pasted data!`, 'success');
-        }
         return { success: true, count: filteredData.length };
       } else {
         // Nếu có lỗi validation nhưng có partial data, vẫn thêm data hợp lệ
@@ -23,17 +20,11 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
           // Filter out main tokens from partial data
           const filteredPartialData = filterMainTokensFromRows(result.partialData);
           addMultipleRows(filteredPartialData);
-          if (addNotification) {
-            addNotification(`Added ${filteredPartialData.length} tokens with warnings: ${result.error}`, 'warning');
-          }
           return { 
             success: true, 
             count: filteredPartialData.length,
             warning: result.error 
           };
-        }
-        if (addNotification) {
-          addNotification(result.error || 'Failed to parse pasted data', 'error');
         }
         return { success: false, error: result.error };
       }
@@ -49,9 +40,6 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
       // Ensure rows is an array
       if (!Array.isArray(rows)) {
         console.warn('rows is not an array in exportExcel:', rows);
-        if (addNotification) {
-          addNotification('No data to export', 'error');
-        }
         return;
       }
       
@@ -112,14 +100,8 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      if (addNotification) {
-        addNotification('Excel file exported successfully!', 'success');
-      }
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      if (addNotification) {
-        addNotification('Failed to export Excel file', 'error');
-      }
     }
   }, []);
 
@@ -136,23 +118,14 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
         // Filter out main tokens from imported data
         const filteredRows = filterMainTokensFromRows(rows);
         addMultipleRows(filteredRows);
-        if (addNotification) {
-          addNotification(`Successfully imported ${filteredRows.length} tokens from Excel!`, 'success');
-        }
         return { success: true, count: filteredRows.length };
-      }
-      if (addNotification) {
-        addNotification('No valid data found in Excel file', 'error');
       }
       return { success: false, error: 'No valid data found in Excel file' };
     } catch (error) {
       console.error('Error importing Excel:', error);
-      if (addNotification) {
-        addNotification('Failed to import Excel file', 'error');
-      }
       return { success: false, error: 'Failed to import Excel file' };
     }
-  }, [addMultipleRows, addNotification]);
+  }, [addMultipleRows]);
 
   // Create Excel template
   const createExcelTemplate = useCallback(() => {
@@ -214,7 +187,7 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
 };
 
 // TGE-specific import/export functions
-export const useTgeImportExport = (addMultipleRows, addNotification) => {
+export const useTgeImportExport = (addMultipleRows) => {
   // Handle paste CSV/TSV data for TGE
   const handlePaste = useCallback((text) => {
     try {
@@ -222,25 +195,16 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       
       if (result.success) {
         addMultipleRows(result.data);
-        if (addNotification) {
-          addNotification(`Added ${result.data.length} TGE tokens from pasted data!`, 'success');
-        }
         return { success: true, count: result.data.length };
       } else {
         // Nếu có lỗi validation nhưng có partial data, vẫn thêm data hợp lệ
         if (result.partialData && result.partialData.length > 0) {
           addMultipleRows(result.partialData);
-          if (addNotification) {
-            addNotification(`Added ${result.partialData.length} TGE tokens with warnings: ${result.error}`, 'warning');
-          }
           return { 
             success: true, 
             count: result.partialData.length,
             warning: result.error 
           };
-        }
-        if (addNotification) {
-          addNotification(result.error || 'Failed to parse pasted data', 'error');
         }
         return { success: false, error: result.error };
       }
@@ -248,22 +212,20 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       console.error('Error parsing TGE pasted data:', error);
       return { success: false, error: 'Invalid data format' };
     }
-  }, [addMultipleRows, addNotification]);
+  }, [addMultipleRows]);
 
   // Export TGE data to CSV
   const exportTgeToCSV = useCallback((rows) => {
     if (!rows || rows.length === 0) {
-      if (addNotification) {
-        addNotification('No TGE data to export', 'warning');
-      }
       return;
     }
 
     const csvData = rows.map(row => ({
       Token: row.symbol || row.name || row.apiId || '',
-      'Listing time': row.launchAt || '',
+      'Subscription time': row.launchAt || '',
       'API ID': row.apiId || '',
       'Point': row.point || '',
+      'Type': row.type || 'TGE',
       'Token Price': row.price || '',
       'ATH': row.ath || '',
       'Logo': row.logo || '',
@@ -290,10 +252,7 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
     link.click();
     document.body.removeChild(link);
 
-    if (addNotification) {
-      addNotification(`Exported ${rows.length} TGE rows to CSV`, 'success');
-    }
-  }, [addNotification]);
+  }, []);
 
   // Import TGE data from CSV
   const importTgeFromCSV = useCallback((csvText) => {
@@ -324,9 +283,10 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
 
         return {
           name: rowData['Token'] || '',
-          launchAt: rowData['Listing time'] || '',
+          launchAt: rowData['Subscription time'] || '',
           apiId: rowData['API ID'] || '',
           point: rowData['Point'] || '',
+          type: rowData['Type'] || 'TGE',
           price: parseFloat(rowData['Token Price']) || 0,
           ath: parseFloat(rowData['ATH']) || 0,
           logo: rowData['Logo'] || '',
@@ -340,19 +300,13 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
 
       addMultipleRows(importedRows);
 
-      if (addNotification) {
-        addNotification(`Imported ${importedRows.length} TGE rows from CSV`, 'success');
-      }
 
       return importedRows;
     } catch (error) {
       console.error('TGE CSV import error:', error);
-      if (addNotification) {
-        addNotification(error.message, 'error');
-      }
       return null;
     }
-  }, [addMultipleRows, addNotification]);
+  }, [addMultipleRows]);
 
   // Export TGE data to Excel
   const exportTgeToExcel = useCallback((rows) => {
@@ -360,9 +314,6 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       // Ensure rows is an array
       if (!Array.isArray(rows)) {
         console.warn('rows is not an array in exportTgeToExcel:', rows);
-        if (addNotification) {
-          addNotification('No data to export', 'error');
-        }
         return;
       }
       
@@ -371,9 +322,10 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
         TGE_CSV_HEADERS, // Headers row
         ...rows.filter(row => row && row !== null).map(row => [
           row.symbol || row.name || row.apiId || '', // Token
-          row.launchAt || '', // Listing time
+          row.launchAt || '', // Subscription time
           row.apiId || '', // API ID
           row.point || '', // Point
+          row.type || 'TGE', // Type
           row.price || '', // Token Price
           row.ath || '', // ATH
           row.logo || '', // Logo
@@ -388,9 +340,10 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       // Set column widths for better readability
       const columnWidths = [
         { wch: 20 }, // Token
-        { wch: 20 }, // Listing time
+        { wch: 20 }, // Subscription time
         { wch: 15 }, // API ID
         { wch: 12 }, // Point
+        { wch: 12 }, // Type
         { wch: 12 }, // Token Price
         { wch: 12 }, // ATH
         { wch: 30 }, // Logo
@@ -415,16 +368,10 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       link.click();
       document.body.removeChild(link);
       
-      if (addNotification) {
-        addNotification(`Exported ${rows.length} TGE rows to Excel`, 'success');
-      }
     } catch (error) {
       console.error('Error exporting TGE Excel:', error);
-      if (addNotification) {
-        addNotification('Failed to export Excel file', 'error');
-      }
     }
-  }, [addNotification]);
+  }, []);
 
   // Handle TGE Excel import
   const handleTgeImportExcel = useCallback(async (file) => {
@@ -443,32 +390,23 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
       const rows = parseTgeExcelData(excelData);
       if (rows && rows.length > 0) {
         addMultipleRows(rows);
-        if (addNotification) {
-          addNotification(`Successfully imported ${rows.length} TGE tokens from Excel!`, 'success');
-        }
         return { success: true, count: rows.length };
-      }
-      if (addNotification) {
-        addNotification('No valid data found in Excel file', 'error');
       }
       return { success: false, error: 'No valid data found in Excel file' };
     } catch (error) {
       console.error('Error importing TGE Excel:', error);
-      if (addNotification) {
-        addNotification('Failed to import Excel file', 'error');
-      }
       return { success: false, error: 'Failed to import Excel file' };
     }
-  }, [addMultipleRows, addNotification]);
+  }, [addMultipleRows]);
 
   // Create TGE Excel template
   const createTgeExcelTemplate = useCallback(() => {
     try {
       const templateData = [
-        ['Token Name (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (optional)', 'Token Price (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
-        ['Bitcoin', '31/12/2024 15:30', 'bitcoin', '100', '45000', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
-        ['', '', 'ethereum', '', '', '', '', ''], // Example with only API ID
-        ['Cardano', '01/01/2025 10:00', 'cardano', '80', '0.5', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
+        ['Token Name (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (optional)', 'Type (optional)', 'Token Price (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
+        ['Bitcoin', '31/12/2024 15:30', 'bitcoin', '100', 'TGE', '45000', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
+        ['', '', 'ethereum', '', 'Pre-TGE', '', '', '', ''], // Example with only API ID
+        ['Cardano', '01/01/2025 10:00', 'cardano', '80', 'TGE', '0.5', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
       ];
 
       // Create workbook and worksheet
@@ -481,6 +419,7 @@ export const useTgeImportExport = (addMultipleRows, addNotification) => {
         { wch: 20 }, // Listing Date
         { wch: 15 }, // API ID
         { wch: 12 }, // Point
+        { wch: 12 }, // Type
         { wch: 12 }, // Token Price
         { wch: 12 }, // ATH
         { wch: 30 }, // Logo

@@ -1,4 +1,4 @@
-import { formatAmount, formatPrice, formatDateTime, isRecentlyListed } from '../../../utils';
+import { formatAmount, formatPrice, formatDateTime, isRecentlyListed, parseDate } from '../../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -211,6 +211,17 @@ export default function TableRow({
         </span>
       </td>
 
+      {/* Type */}
+      <td className='px-3 py-3 text-center'>
+        <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+          row.type === 'Pre-TGE' 
+            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300' 
+            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+        }`}>
+          {row.type || 'TGE'}
+        </span>
+      </td>
+
       {/* Price */}
       <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
         {(() => {
@@ -240,14 +251,38 @@ export default function TableRow({
             );
           }
           
-          return <span>${formatPrice(0)}</span>;
+          // Check if token is already listed (launch date has passed)
+          const isTokenListed = () => {
+            if (!row.launchAt) return false;
+            
+            const launchDate = parseDate(row.launchAt);
+            if (!launchDate) return false;
+            
+            const now = new Date();
+            return launchDate.getTime() <= now.getTime();
+          };
+          
+          return <span>{isTokenListed() ? 'N/A' : `$${formatPrice(0)}`}</span>;
         })()}
       </td>
 
       {/* ATH */}
       {showATH && (
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          <span>${formatPrice(row.ath || 0)}</span>
+          <span>{(() => {
+            // Check if token is already listed (launch date has passed)
+            const isTokenListed = () => {
+              if (!row.launchAt) return false;
+              
+              const launchDate = parseDate(row.launchAt);
+              if (!launchDate) return false;
+              
+              const now = new Date();
+              return launchDate.getTime() <= now.getTime();
+            };
+            
+            return isTokenListed() && (row.ath || 0) === 0 ? 'N/A' : `$${formatPrice(row.ath || 0)}`;
+          })()}</span>
         </td>
       )}
 

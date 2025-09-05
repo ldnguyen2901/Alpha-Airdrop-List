@@ -7,7 +7,6 @@ export const useDataOperations = (
   setRows,
   workspaceId,
   isRemoteUpdateRef,
-  addNotification,
   setLastSyncTime
 ) => {
   // Clean row data function
@@ -201,17 +200,11 @@ export const useDataOperations = (
         setLastSyncTime(new Date());
       }
       
-      if (addNotification) {
-        addNotification('All data cleared successfully from Neon database!', 'success');
-      }
     } catch (error) {
       console.error('Failed to save to Neon:', error);
       
-      if (addNotification) {
-        addNotification('Failed to clear data from Neon database. Local data cleared only.', 'error');
-      }
     }
-  }, [setRows, addNotification, setLastSyncTime]);
+  }, [setRows, setLastSyncTime]);
 
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {
@@ -261,11 +254,8 @@ export const useDataOperations = (
 
     addRow(cleanedRowData);
 
-    if (addNotification) {
-      addNotification('Token added successfully!', 'success');
-    }
     return { success: true };
-  }, [validateAddForm, addRow, addNotification, cleanRowData]);
+  }, [validateAddForm, addRow, cleanRowData]);
 
   return {
     addRow,

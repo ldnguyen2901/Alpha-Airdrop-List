@@ -63,15 +63,16 @@ export function parseTgeExcelData(excelData) {
   const validRows = [];
 
   try {
-    // Expected column structure for TGE (8 columns):
+    // Expected column structure for TGE (9 columns):
     // A: Token Name (optional)
     // B: Listing Date (optional)
     // C: API ID (required)
     // D: Point (optional)
-    // E: Token Price (optional)
-    // F: ATH (optional)
-    // G: Logo (optional)
-    // H: Symbol (optional)
+    // E: Type (optional)
+    // F: Token Price (optional)
+    // G: ATH (optional)
+    // H: Logo (optional)
+    // I: Symbol (optional)
 
     // Check if first row looks like header (contains text like "Token", "API", etc.)
     const firstRow = excelData[0] || [];
@@ -104,10 +105,10 @@ export function parseTgeExcelData(excelData) {
           return;
         }
         
-        if (row.length > 8) {
-          const extras = row.slice(8).some((v) => String(v || '').trim() !== '');
+        if (row.length > 9) {
+          const extras = row.slice(9).some((v) => String(v || '').trim() !== '');
           if (extras) {
-            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond H (found ${row.length} columns, max 8 allowed)`);
+            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond I (found ${row.length} columns, max 9 allowed)`);
             return;
           }
         }
@@ -117,10 +118,11 @@ export function parseTgeExcelData(excelData) {
           listingDate = '',    // Column B: Listing Date
           apiId = '',          // Column C: API ID
           point = '',          // Column D: Point
-          tokenPrice = '',     // Column E: Token Price
-          ath = '',            // Column F: ATH
-          logo = '',           // Column G: Logo
-          symbol = '',         // Column H: Symbol
+          type = '',           // Column E: Type
+          tokenPrice = '',     // Column F: Token Price
+          ath = '',            // Column G: ATH
+          logo = '',           // Column H: Logo
+          symbol = '',         // Column I: Symbol
         ] = row;
 
         // Parse data from correct columns
@@ -128,6 +130,7 @@ export function parseTgeExcelData(excelData) {
         let actualDate = String(listingDate || '').trim();
         let actualApiId = String(apiId || '').trim();
         let actualPoint = String(point || '').trim();
+        let actualType = String(type || '').trim();
         let actualSymbol = String(symbol || '').trim();
         let actualLogo = String(logo || '').trim();
 
@@ -188,6 +191,7 @@ export function parseTgeExcelData(excelData) {
           launchAt: listingTime,
           apiId: actualApiId,
           point: actualPoint,
+          type: actualType || 'TGE', // Default to TGE if not specified
           price: parsedPrice,
           ath: parsedATH,
           logo: actualLogo,

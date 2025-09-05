@@ -6,7 +6,6 @@ import {
 } from './airdrop';
 import Header from './Header';
 import StatsCards from './StatsCards';
-import { useNotifications } from '../contexts';
 
 
 // Lazy load modals for better performance
@@ -40,16 +39,12 @@ export default function AppContent() {
   // Main state management
   const state = useAppState();
   
-  // Get notification function from context
-  const { addNotification } = useNotifications();
-  
   // Data operations
   const dataOps = useDataOperations(
     state.rows,
     state.setRows,
     state.workspaceId,
     state.isRemoteUpdateRef,
-    addNotification,
     state.setLastSyncTime
   );
   
@@ -82,8 +77,7 @@ export default function AppContent() {
   // Import/Export operations
   const importExportOps = useImportExport(
     dataOps.addMultipleRows,
-    dataOps.replaceRows,
-    addNotification
+    dataOps.replaceRows
   );
   
   // Duplicate check
@@ -124,6 +118,11 @@ export default function AppContent() {
     null, // updateStatscardPrices function will be passed from useApiOperations
     state.setTokenLogos
   );
+
+  // Update document title
+  useEffect(() => {
+    document.title = "Binance Alpha Airdrop";
+  }, []);
 
   // Initial data loading - ensure proper order
   useEffect(() => {
@@ -208,6 +207,8 @@ export default function AppContent() {
           syncing={state.syncing}
           isPageVisible={state.isPageVisible}
           loading={state.loading}
+          title="Binance Alpha Airdrop"
+          mobileTitle="Airdrop"
         />
         <StatsCards
           rowsCount={state.rows.length}

@@ -192,7 +192,7 @@ export default function AddRowModal({
 
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
-                Listing date & time (optional)
+                Subscription date & time (optional)
               </label>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
                 <div>
@@ -250,6 +250,23 @@ export default function AddRowModal({
                   {addErrors.apiId}
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+                Type
+              </label>
+              <select
+                name='type'
+                value={addForm.type || 'TGE'}
+                onChange={(e) =>
+                  setAddForm((p) => ({ ...p, type: e.target.value }))
+                }
+                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+              >
+                <option value='TGE'>TGE</option>
+                <option value='Pre-TGE'>Pre-TGE</option>
+              </select>
             </div>
           </div>
 

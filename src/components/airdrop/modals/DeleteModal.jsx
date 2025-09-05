@@ -100,52 +100,94 @@ export default function DeleteModal({
           </button>
         </div>
 
-        <div className='space-y-3'>
+        <div className='grid grid-cols-1 gap-3'>
           <p className='text-sm text-gray-700 dark:text-gray-300'>
             You're about to delete this token. Review the details below and
             confirm to proceed.
           </p>
 
-          <div className='grid grid-cols-1 gap-2'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Token symbol/name (auto-filled from API)
+            </label>
             <input
-                              value={row.symbol || row.name || row.apiId || ''}
+              value={row.symbol || row.name || row.apiId || ''}
               readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Token'
-            />
-            <input
-              value={formatAmount(row.amount || '')}
-              readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Amount'
-            />
-            <input
-              value={formatDateTime(row.launchAt) || ''}
-              readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Listing time'
-            />
-            <input
-              value={row.apiId || ''}
-              readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='API ID'
-            />
-            <input
-              value={row.pointPriority || ''}
-              readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Point (Priority)'
-            />
-            <input
-              value={row.pointFCFS || ''}
-              readOnly
-              className='border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700 dark:text-white w-full'
-              placeholder='Point (FCFS)'
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              placeholder='Will be auto-filled from API ID'
             />
           </div>
 
-                     <div className='flex justify-end gap-2 mt-2'>
+          <div>
+            <input
+              value={formatAmount(row.amount || '')}
+              readOnly
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              placeholder='Amount (optional)'
+            />
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              Listing date & time (optional)
+            </label>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+              <div>
+                <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Date (optional)</label>
+                <input
+                  value={row.launchDate || ''}
+                  readOnly
+                  className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+                  placeholder='Date (optional)'
+                />
+              </div>
+              <div>
+                <label className='block text-xs text-gray-500 dark:text-gray-400 mb-1'>Time (optional)</label>
+                <input
+                  value={row.launchTime || ''}
+                  readOnly
+                  className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+                  placeholder='Time (optional)'
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
+              API ID <span className='text-red-500'>*</span>
+            </label>
+            <input
+              value={row.apiId || ''}
+              readOnly
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              placeholder='API ID (required) - e.g., bitcoin, ethereum'
+            />
+          </div>
+
+          <div>
+            <input
+              value={row.pointPriority || ''}
+              readOnly
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              placeholder='Point (Priority) (optional)'
+            />
+          </div>
+
+          <div>
+            <input
+              value={row.pointFCFS || ''}
+              readOnly
+              className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
+              placeholder='Point (FCFS) (optional)'
+            />
+          </div>
+
+          <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+            <span className='text-red-500'>*</span> Only API ID is required
+          </div>
+
+                     <div className='mt-4 flex justify-end gap-2'>
              <button
                onClick={() =>
                  setDeleteModal({

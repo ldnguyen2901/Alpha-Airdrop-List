@@ -6,7 +6,6 @@ export const useTgeDataOperations = (
   setRows,
   workspaceId,
   isRemoteUpdateRef,
-  addNotification,
   setLastSyncTime
 ) => {
   // Clean row data function
@@ -110,15 +109,7 @@ export const useTgeDataOperations = (
     // Clear price history
     clearAllPriceHistory();
     
-    // Show notification
-    if (addNotification) {
-      addNotification({
-        type: 'success',
-        title: 'Data Cleared',
-        message: 'All TGE data has been cleared successfully.'
-      });
-    }
-  }, [setRows, addNotification]);
+  }, [setRows]);
 
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {
@@ -163,6 +154,7 @@ export const useTgeDataOperations = (
       launchAt: launchAt,
       apiId: form.apiId.trim(),
       point: form.point || '',
+      type: form.type || 'TGE',
       price: '',
       ath: '',
       logo: '',
@@ -172,17 +164,9 @@ export const useTgeDataOperations = (
     // Add the row
     addRow(newRowData);
     
-    // Show success notification
-    if (addNotification) {
-      addNotification({
-        type: 'success',
-        title: 'Row Added',
-        message: `Added new TGE row: ${newRowData.apiId}`
-      });
-    }
     
     return { success: true };
-  }, [addRow, addNotification]);
+  }, [addRow]);
 
   return {
     addRow,
