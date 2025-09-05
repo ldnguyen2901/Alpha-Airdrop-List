@@ -1,9 +1,13 @@
 import { filterMainTokensFromRows } from './helpers';
 
 const STORAGE_KEY = 'airdrop-alpha-data';
+const TGE_STORAGE_KEY = 'tge-alpha-data';
 const SORT_STORAGE_KEY = 'airdrop-alpha-sort';
+const TGE_SORT_STORAGE_KEY = 'tge-alpha-sort';
 const BACKUP_KEY = 'airdrop-alpha-backup';
+const TGE_BACKUP_KEY = 'tge-alpha-backup';
 const WORKSPACE_ID_KEY = 'airdrop-alpha-workspace-id';
+const TGE_WORKSPACE_ID_KEY = 'tge-alpha-workspace-id';
 
 export function saveDataToStorage(data) {
   try {
@@ -26,6 +30,27 @@ export function saveDataToStorage(data) {
   }
 }
 
+export function saveTgeDataToStorage(data) {
+  try {
+    // Filter out main tokens before saving to localStorage
+    const filteredData = filterMainTokensFromRows(data);
+    localStorage.setItem(TGE_STORAGE_KEY, JSON.stringify(filteredData));
+
+    // Create backup with timestamp
+    const backup = {
+      data: filteredData,
+      timestamp: new Date().toISOString(),
+      version: '1.0',
+    };
+    localStorage.setItem(TGE_BACKUP_KEY, JSON.stringify(backup));
+
+    return true;
+  } catch (error) {
+    console.error('Error saving TGE data:', error);
+    return false;
+  }
+}
+
 export function loadDataFromStorage() {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -39,6 +64,23 @@ export function loadDataFromStorage() {
     return filteredData;
   } catch (error) {
     console.error('Error loading data:', error);
+    return null;
+  }
+}
+
+export function loadTgeDataFromStorage() {
+  try {
+    const data = localStorage.getItem(TGE_STORAGE_KEY);
+    if (!data) return null;
+    
+    const parsedData = JSON.parse(data);
+    if (!Array.isArray(parsedData)) return null;
+    
+    // Don't filter main tokens when loading from localStorage
+    // Let the user decide what to keep
+    return parsedData;
+  } catch (error) {
+    console.error('Error loading TGE data:', error);
     return null;
   }
 }
@@ -138,6 +180,26 @@ export function loadSortConfig() {
   }
 }
 
+export function saveTgeSortConfig(sortConfig) {
+  try {
+    localStorage.setItem(TGE_SORT_STORAGE_KEY, JSON.stringify(sortConfig));
+    return true;
+  } catch (error) {
+    console.error('Error saving TGE sort config:', error);
+    return false;
+  }
+}
+
+export function loadTgeSortConfig() {
+  try {
+    const data = localStorage.getItem(TGE_SORT_STORAGE_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error loading TGE sort config:', error);
+    return null;
+  }
+}
+
 export function clearStorage() {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -164,6 +226,25 @@ export function loadWorkspaceId() {
     return localStorage.getItem(WORKSPACE_ID_KEY) || '';
   } catch (error) {
     console.error('Error loading workspace id:', error);
+    return '';
+  }
+}
+
+export function saveTgeWorkspaceId(workspaceId) {
+  try {
+    localStorage.setItem(TGE_WORKSPACE_ID_KEY, workspaceId || '');
+    return true;
+  } catch (error) {
+    console.error('Error saving TGE workspace id:', error);
+    return false;
+  }
+}
+
+export function loadTgeWorkspaceId() {
+  try {
+    return localStorage.getItem(TGE_WORKSPACE_ID_KEY) || '';
+  } catch (error) {
+    console.error('Error loading TGE workspace id:', error);
     return '';
   }
 }

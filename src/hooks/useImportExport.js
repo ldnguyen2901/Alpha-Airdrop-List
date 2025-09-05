@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { splitCSV, CSV_HEADERS, parsePastedData, filterMainTokensFromRows } from '../utils';
-import { readExcelFile, parseExcelData } from '../utils';
+import { splitCSV, CSV_HEADERS, TGE_CSV_HEADERS, parsePastedData, filterMainTokensFromRows } from '../utils';
+import { readExcelFile, parseExcelData, parseTgeExcelData } from '../utils';
 import * as XLSX from 'xlsx';
 
 export const useImportExport = (addMultipleRows, replaceRows, addNotification) => {
@@ -210,5 +210,311 @@ export const useImportExport = (addMultipleRows, replaceRows, addNotification) =
     exportExcel,
     handleImportExcel,
     createExcelTemplate,
+  };
+};
+
+// TGE-specific import/export functions
+export const useTgeImportExport = (addMultipleRows, addNotification) => {
+  // Handle paste CSV/TSV data for TGE
+  const handlePaste = useCallback((text) => {
+    try {
+      const result = parsePastedData(text);
+      
+      if (result.success) {
+        addMultipleRows(result.data);
+        if (addNotification) {
+          addNotification(`Added ${result.data.length} TGE tokens from pasted data!`, 'success');
+        }
+        return { success: true, count: result.data.length };
+      } else {
+        // Nếu có lỗi validation nhưng có partial data, vẫn thêm data hợp lệ
+        if (result.partialData && result.partialData.length > 0) {
+          addMultipleRows(result.partialData);
+          if (addNotification) {
+            addNotification(`Added ${result.partialData.length} TGE tokens with warnings: ${result.error}`, 'warning');
+          }
+          return { 
+            success: true, 
+            count: result.partialData.length,
+            warning: result.error 
+          };
+        }
+        if (addNotification) {
+          addNotification(result.error || 'Failed to parse pasted data', 'error');
+        }
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Error parsing TGE pasted data:', error);
+      return { success: false, error: 'Invalid data format' };
+    }
+  }, [addMultipleRows, addNotification]);
+
+  // Export TGE data to CSV
+  const exportTgeToCSV = useCallback((rows) => {
+    if (!rows || rows.length === 0) {
+      if (addNotification) {
+        addNotification('No TGE data to export', 'warning');
+      }
+      return;
+    }
+
+    const csvData = rows.map(row => ({
+      Token: row.symbol || row.name || row.apiId || '',
+      'Listing time': row.launchAt || '',
+      'API ID': row.apiId || '',
+      'Point': row.point || '',
+      'Token Price': row.price || '',
+      'ATH': row.ath || '',
+      'Logo': row.logo || '',
+      'Symbol': row.symbol || '',
+    }));
+
+    const csvContent = [
+      TGE_CSV_HEADERS.join(','),
+      ...csvData.map(row => 
+        TGE_CSV_HEADERS.map(header => {
+          const value = row[header] || '';
+          return `"${String(value).replace(/"/g, '""')}"`;
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `tge-data-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (addNotification) {
+      addNotification(`Exported ${rows.length} TGE rows to CSV`, 'success');
+    }
+  }, [addNotification]);
+
+  // Import TGE data from CSV
+  const importTgeFromCSV = useCallback((csvText) => {
+    try {
+      const lines = splitCSV(csvText);
+      if (lines.length < 2) {
+        throw new Error('Invalid CSV format');
+      }
+
+      const headers = lines[0];
+      const data = lines.slice(1);
+
+      // Validate headers
+      const expectedHeaders = TGE_CSV_HEADERS;
+      const isValidHeaders = expectedHeaders.every(header => 
+        headers.includes(header)
+      );
+
+      if (!isValidHeaders) {
+        throw new Error(`Invalid headers. Expected: ${expectedHeaders.join(', ')}`);
+      }
+
+      const importedRows = data.map((row, index) => {
+        const rowData = {};
+        headers.forEach((header, colIndex) => {
+          rowData[header] = row[colIndex] || '';
+        });
+
+        return {
+          name: rowData['Token'] || '',
+          launchAt: rowData['Listing time'] || '',
+          apiId: rowData['API ID'] || '',
+          point: rowData['Point'] || '',
+          price: parseFloat(rowData['Token Price']) || 0,
+          ath: parseFloat(rowData['ATH']) || 0,
+          logo: rowData['Logo'] || '',
+          symbol: rowData['Symbol'] || '',
+        };
+      }).filter(row => row.apiId); // Only include rows with API ID
+
+      if (importedRows.length === 0) {
+        throw new Error('No valid rows found in CSV');
+      }
+
+      addMultipleRows(importedRows);
+
+      if (addNotification) {
+        addNotification(`Imported ${importedRows.length} TGE rows from CSV`, 'success');
+      }
+
+      return importedRows;
+    } catch (error) {
+      console.error('TGE CSV import error:', error);
+      if (addNotification) {
+        addNotification(error.message, 'error');
+      }
+      return null;
+    }
+  }, [addMultipleRows, addNotification]);
+
+  // Export TGE data to Excel
+  const exportTgeToExcel = useCallback((rows) => {
+    try {
+      // Ensure rows is an array
+      if (!Array.isArray(rows)) {
+        console.warn('rows is not an array in exportTgeToExcel:', rows);
+        if (addNotification) {
+          addNotification('No data to export', 'error');
+        }
+        return;
+      }
+      
+      // Prepare data for Excel
+      const excelData = [
+        TGE_CSV_HEADERS, // Headers row
+        ...rows.filter(row => row && row !== null).map(row => [
+          row.symbol || row.name || row.apiId || '', // Token
+          row.launchAt || '', // Listing time
+          row.apiId || '', // API ID
+          row.point || '', // Point
+          row.price || '', // Token Price
+          row.ath || '', // ATH
+          row.logo || '', // Logo
+          row.symbol || '' // Symbol
+        ])
+      ];
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 20 }, // Token
+        { wch: 20 }, // Listing time
+        { wch: 15 }, // API ID
+        { wch: 12 }, // Point
+        { wch: 12 }, // Token Price
+        { wch: 12 }, // ATH
+        { wch: 30 }, // Logo
+        { wch: 10 }  // Symbol
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'TGE Data');
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Create and download file
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `tge-data-${new Date().toISOString().split('T')[0]}.xlsx`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      if (addNotification) {
+        addNotification(`Exported ${rows.length} TGE rows to Excel`, 'success');
+      }
+    } catch (error) {
+      console.error('Error exporting TGE Excel:', error);
+      if (addNotification) {
+        addNotification('Failed to export Excel file', 'error');
+      }
+    }
+  }, [addNotification]);
+
+  // Handle TGE Excel import
+  const handleTgeImportExcel = useCallback(async (file) => {
+    try {
+      console.log('handleTgeImportExcel - file type:', typeof file);
+      console.log('handleTgeImportExcel - file constructor:', file?.constructor?.name);
+      console.log('handleTgeImportExcel - file instanceof File:', file instanceof File);
+      console.log('handleTgeImportExcel - file instanceof Blob:', file instanceof Blob);
+      console.log('handleTgeImportExcel - file:', file);
+      
+      const excelData = await readExcelFile(file);
+      if (!excelData || excelData.length === 0) {
+        return { success: false, error: 'No data found in Excel file' };
+      }
+
+      const rows = parseTgeExcelData(excelData);
+      if (rows && rows.length > 0) {
+        addMultipleRows(rows);
+        if (addNotification) {
+          addNotification(`Successfully imported ${rows.length} TGE tokens from Excel!`, 'success');
+        }
+        return { success: true, count: rows.length };
+      }
+      if (addNotification) {
+        addNotification('No valid data found in Excel file', 'error');
+      }
+      return { success: false, error: 'No valid data found in Excel file' };
+    } catch (error) {
+      console.error('Error importing TGE Excel:', error);
+      if (addNotification) {
+        addNotification('Failed to import Excel file', 'error');
+      }
+      return { success: false, error: 'Failed to import Excel file' };
+    }
+  }, [addMultipleRows, addNotification]);
+
+  // Create TGE Excel template
+  const createTgeExcelTemplate = useCallback(() => {
+    try {
+      const templateData = [
+        ['Token Name (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (optional)', 'Token Price (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
+        ['Bitcoin', '31/12/2024 15:30', 'bitcoin', '100', '45000', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
+        ['', '', 'ethereum', '', '', '', '', ''], // Example with only API ID
+        ['Cardano', '01/01/2025 10:00', 'cardano', '80', '0.5', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
+      ];
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 20 }, // Token Name
+        { wch: 20 }, // Listing Date
+        { wch: 15 }, // API ID
+        { wch: 12 }, // Point
+        { wch: 12 }, // Token Price
+        { wch: 12 }, // ATH
+        { wch: 30 }, // Logo
+        { wch: 10 }, // Symbol
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'TGE Template');
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Create and download file
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'tge-template.xlsx');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error creating TGE Excel template:', error);
+    }
+  }, []);
+
+  return {
+    handlePaste,
+    exportTgeToCSV,
+    importTgeFromCSV,
+    exportTgeToExcel,
+    handleTgeImportExcel,
+    createTgeExcelTemplate,
   };
 };

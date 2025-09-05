@@ -1,4 +1,4 @@
-import { normalizeDateTime } from '../../utils';
+import { normalizeDateTime } from '../../../utils';
 import { useState, useEffect } from 'react';
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -91,7 +91,7 @@ export default function EditModal({
       ...p,
       [editingModal.idx]: {
         ...p[editingModal.idx],
-        name: e.target.value.toUpperCase(),
+                    name: (e.target.value || '').toUpperCase(),
       },
     }));
   };
@@ -139,7 +139,7 @@ export default function EditModal({
       }
       
       try {
-        const { fetchTokenInfo } = await import('../../services/api');
+        const { fetchTokenInfo } = await import('../../../services/api');
         const tokenInfo = await fetchTokenInfo(apiId.trim());
         if (tokenInfo) {
           setRowDrafts((p) => ({

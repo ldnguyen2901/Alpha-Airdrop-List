@@ -3,32 +3,32 @@ import {
   ActionButtons, 
   SortableTable, 
   ExcelUpload
-} from './airdrop';
+} from './tge';
 import Header from './Header';
 import StatsCards from './StatsCards';
 import { useNotifications } from '../contexts';
 
 
 // Lazy load modals for better performance
-const AddRowModal = lazy(() => import('./airdrop/modals/AddRowModal'));
-const DuplicatesModal = lazy(() => import('./airdrop/modals/DuplicatesModal'));
+const AddRowModal = lazy(() => import('./tge/modals/AddRowModal'));
+const DuplicatesModal = lazy(() => import('./tge/modals/DuplicatesModal'));
 
 // Custom hooks
 import {
-  useAppState,
-  useDataOperations,
+  useTgeAppState,
+  useTgeDataOperations,
   useApiOperations,
-  useNeonSync,
-  useImportExport,
+  useTgeNeonSync,
+  useTgeImportExport,
   useDuplicateCheck,
   useResponsive,
   useAutoRefresh,
-  useModalOperations,
+  useTgeModalOperations,
   useStatscardPrices
 } from '../hooks';
 
 /**
- * React Airdrop Alpha Tracker
+ * React TGE Alpha Tracker
  * - Dữ liệu các cột khớp Google Sheet: A..H
  * - Tự động fetch giá từ CoinGecko qua Api Id (cột D)
  * - G = Token Price (từ API) | H = B x G
@@ -36,15 +36,15 @@ import {
  * - Tùy chỉnh chu kỳ làm mới
  */
 
-export default function AppContent() {
+export default function TgeContent() {
   // Main state management
-  const state = useAppState();
+  const state = useTgeAppState();
   
   // Get notification function from context
   const { addNotification } = useNotifications();
   
   // Data operations
-  const dataOps = useDataOperations(
+  const dataOps = useTgeDataOperations(
     state.rows,
     state.setRows,
     state.workspaceId,
@@ -65,8 +65,8 @@ export default function AppContent() {
     state.setLastUpdated
   );
   
-  // Neon sync
-  const neonSyncOps = useNeonSync(
+  // TGE Neon sync
+  const neonSyncOps = useTgeNeonSync(
     state.rows,
     state.setRows,
     state.workspaceId,
@@ -80,9 +80,8 @@ export default function AppContent() {
   );
   
   // Import/Export operations
-  const importExportOps = useImportExport(
+  const importExportOps = useTgeImportExport(
     dataOps.addMultipleRows,
-    dataOps.replaceRows,
     addNotification
   );
   
@@ -106,12 +105,12 @@ export default function AppContent() {
   );
   
   // Modal operations
-  const modalOps = useModalOperations(
-    state.setShowAddModal,
-    state.setAddForm,
-    state.setAddErrors,
-    state.addModalPosition,
-    state.setAddModalPosition
+  const modalOps = useTgeModalOperations(
+    state,
+    dataOps,
+    apiOps,
+    importExportOps,
+    duplicateOps
   );
 
 
@@ -139,7 +138,7 @@ export default function AppContent() {
         apiOps.refreshData();
         apiOps.refreshStatscardPrices();
       } catch (error) {
-        console.error('Error in initial data loading:', error);
+        console.error('TGE: Error in initial data loading:', error);
         // Fallback: load data anyway
         apiOps.loadLogosFromDatabase();
         statscardOps.initializeStatscardPrices();
@@ -163,19 +162,16 @@ export default function AppContent() {
     return () => {
       clearInterval(syncInterval);
     };
-  }, [state.isPageVisible, state.syncing, neonSyncOps]);
+  }, [state.isPageVisible, state.syncing]); // Remove neonSyncOps dependency
 
   // Handle add row submit
   const handleAddRowSubmit = (form) => {
-  
     const result = dataOps.handleAddRowSubmit(form);
-  
     if (result.success) {
-      modalOps.closeAddRowModal();
+      state.setShowAddModal(false);
     } else if (result.errors) {
       // Set validation errors to display in the form
       state.setAddErrors(result.errors);
-
     }
     return result;
   };
@@ -188,7 +184,13 @@ export default function AppContent() {
 
   // Handle Excel import
   const handleImportExcel = async (file) => {
-    const result = await importExportOps.handleImportExcel(file);
+    console.log('TgeContent handleImportExcel - file type:', typeof file);
+    console.log('TgeContent handleImportExcel - file constructor:', file?.constructor?.name);
+    console.log('TgeContent handleImportExcel - file instanceof File:', file instanceof File);
+    console.log('TgeContent handleImportExcel - file instanceof Blob:', file instanceof Blob);
+    console.log('TgeContent handleImportExcel - file:', file);
+    
+    const result = await importExportOps.handleTgeImportExcel(file);
     if (result.success) {
       state.setShowExcelUpload(false);
     }
@@ -197,7 +199,7 @@ export default function AppContent() {
 
   // Export Excel
   const exportExcel = () => {
-    importExportOps.exportExcel(state.rows);
+    importExportOps.exportTgeToExcel(state.rows);
   };
 
   return (
@@ -223,17 +225,15 @@ export default function AppContent() {
         />
 
         <ActionButtons
-          onAddRow={modalOps.openAddRowModal}
-          onPasteText={handlePaste}
-          onExportExcel={exportExcel}
+          onAddRow={modalOps.handleAddRow}
+          onPasteText={modalOps.handlePasteText}
+          onExportExcel={modalOps.handleExportExcel}
           onImportExcel={() => {
             state.setShowExcelUpload(true);
           }}
-          onRefresh={() => {
-            apiOps.refreshData();
-          }}
-          onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
-          onClearAll={dataOps.clearAllData}
+          onRefresh={modalOps.handleRefresh}
+          onCheckDuplicates={modalOps.handleCheckDuplicates}
+          onClearAll={modalOps.handleClearAll}
           loading={state.loading}
           showATH={state.showATH}
           setShowATH={state.setShowATH}
@@ -264,12 +264,12 @@ export default function AppContent() {
                 Import from Excel file
               </h3>
               <div className='flex items-center gap-2'>
-              <button
-                  onClick={() => importExportOps.createExcelTemplate()}
-                  className='px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors'
-                >
-                  Download Template
-                </button>
+                            <button
+                onClick={() => importExportOps.createTgeExcelTemplate()}
+                className='px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors'
+              >
+                Download Template
+              </button>
                 <button
                   onClick={() => state.setShowExcelUpload(false)}
                 className='text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100'
@@ -281,14 +281,14 @@ export default function AppContent() {
             <ExcelUpload onImportData={handleImportExcel} />
             <div className='mt-4 text-xs text-gray-500 dark:text-gray-400'>
               <p>
-                <strong>Required Excel format:</strong> Columns A-K as follows:
+                <strong>Required Excel format:</strong> Columns A-H as follows:
               </p>
               <p>
-                A: Token Name (optional) | B: Amount (optional) | C: Listing Date (optional) | D: API ID (required) | E: Point (Priority) (optional) | F: Point (FCFS) (optional) | G: Token Price (optional) | H: Reward (optional) | I: ATH (optional) | J: Logo (optional) | K: Symbol (optional)
+                A: Token Name (optional) | B: Listing Date (optional) | C: API ID (required) | D: Point (optional) | E: Token Price (optional) | F: ATH (optional) | G: Logo (optional) | H: Symbol (optional)
               </p>
 
               <p className='mt-1'>
-                <strong>Required fields:</strong> Only API ID (D) is mandatory. All other fields are optional and will be preserved if provided.
+                <strong>Required fields:</strong> Only API ID (C) is mandatory. All other fields are optional and will be preserved if provided.
               </p>
               <p className='mt-1'>
                 <strong>Note:</strong> Import now supports full data preservation - exported files can be imported back with all data intact.

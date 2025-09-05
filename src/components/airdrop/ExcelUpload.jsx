@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { readExcelFile, parseExcelData } from '../utils';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import TableChartIcon from '@mui/icons-material/TableChart';
 
@@ -30,6 +29,10 @@ export default function ExcelUpload({ onImportData }) {
     const file = event.target.files[0];
     if (!file) return;
 
+    console.log('Airdrop ExcelUpload - file type:', file.constructor.name);
+    console.log('Airdrop ExcelUpload - file size:', file.size);
+    console.log('Airdrop ExcelUpload - file name:', file.name);
+
     // Kiểm tra định dạng file
     const validTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
@@ -46,15 +49,8 @@ export default function ExcelUpload({ onImportData }) {
     setError('');
 
     try {
-      const excelData = await readExcelFile(file);
-      const parsedData = parseExcelData(excelData);
-
-      if (parsedData.length === 0) {
-        setError('No valid data found in file');
-        return;
-      }
-
-      // Call onImportData with the file
+      console.log('Airdrop ExcelUpload - calling onImportData with file:', file);
+      // Call onImportData with the file - it will handle reading and parsing
       const result = await onImportData(file);
       
       if (result && result.success) {

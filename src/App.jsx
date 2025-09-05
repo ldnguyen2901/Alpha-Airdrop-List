@@ -1,6 +1,7 @@
 import React from 'react';
 import { ThemeProvider, NotificationProvider } from './contexts';
-import { AppContent } from './components';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { PersistLayout } from './components';
 import 'react-toastify/dist/ReactToastify.css';
 
 /**
@@ -16,7 +17,14 @@ export default function App() {
   return (
     <ThemeProvider>
       <NotificationProvider>
-        <AppContent />
+        <Routes>
+          <Route element={<PersistLayout />}>
+            <Route path="/" element={<Navigate to="/airdrop" replace />} />
+            <Route path="/airdrop" element={<span />} />
+            <Route path="/tge" element={<span />} />
+            <Route path="*" element={<Navigate to="/airdrop" replace />} />
+          </Route>
+        </Routes>
       </NotificationProvider>
     </ThemeProvider>
   );

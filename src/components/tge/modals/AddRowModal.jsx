@@ -1,4 +1,4 @@
-import { normalizeDateTime } from '../../utils';
+import { normalizeDateTime } from '../../../utils';
 import { useState, useEffect } from 'react';
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -38,7 +38,7 @@ export default function AddRowModal({
   }
 
   const handleNameChange = (e) => {
-    setAddForm((p) => ({ ...p, name: e.target.value.toUpperCase() }));
+    setAddForm((p) => ({ ...p, name: (e.target.value || '').toUpperCase() }));
   };
 
 
@@ -78,7 +78,7 @@ export default function AddRowModal({
       }
       
       try {
-        const { fetchTokenInfo } = await import('../../services/api');
+        const { fetchTokenInfo } = await import('../../../services/api');
         const tokenInfo = await fetchTokenInfo(apiId.trim());
         if (tokenInfo) {
           setAddForm((p) => ({
@@ -180,14 +180,12 @@ export default function AddRowModal({
 
             <div>
               <input
-                name='amount'
-                value={addForm.amount}
+                name='point'
+                value={addForm.point}
                 onChange={(e) =>
-                  setAddForm((p) => ({ ...p, amount: e.target.value }))
+                  setAddForm((p) => ({ ...p, point: e.target.value }))
                 }
-                placeholder='Amount (optional)'
-                type='number'
-                step='0.000001'
+                placeholder='Point (optional)'
                 className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
             </div>
@@ -253,38 +251,11 @@ export default function AddRowModal({
                 </div>
               )}
             </div>
-
-            <div>
-              <input
-                name='pointPriority'
-                value={addForm.pointPriority}
-                onChange={(e) =>
-                  setAddForm((p) => ({
-                    ...p,
-                    pointPriority: e.target.value,
-                  }))
-                }
-                placeholder='Point (Priority) (optional)'
-                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-              />
-            </div>
-
-            <div>
-              <input
-                name='pointFCFS'
-                value={addForm.pointFCFS}
-                onChange={(e) =>
-                  setAddForm((p) => ({ ...p, pointFCFS: e.target.value }))
-                }
-                placeholder='Point (FCFS) (optional)'
-                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
-              />
-            </div>
           </div>
 
-                        <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
-                <span className='text-red-500'>*</span> Only API ID is required
-              </div>
+          <div className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+            <span className='text-red-500'>*</span> Only API ID is required
+          </div>
 
                      <div className='mt-4 flex justify-end gap-2'>
              <button

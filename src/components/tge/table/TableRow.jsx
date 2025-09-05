@@ -1,4 +1,4 @@
-import { formatAmount, formatPrice, formatDateTime, isRecentlyListed } from '../../utils';
+import { formatAmount, formatPrice, formatDateTime, isRecentlyListed } from '../../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -7,7 +7,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { PriceTrackingInfo } from '../index';
+import PriceTrackingInfo from '../PriceTrackingInfo';
 
 export default function TableRow({
   row,
@@ -101,60 +101,6 @@ export default function TableRow({
     setPreviousPrice(currentPrice);
   }, [row.price, previousPrice]);
 
-
-    const renderPriceAndReward = () => {
-    const cd = getCountdownText(row.launchAt, Date.now(), false); // Desktop = false
-    const priceNum = Number(row.price) || 0;
-    
-    if (priceNum > 0) {
-      return (
-        <>
-          <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-            <span 
-              className={`transition-colors duration-500 ${priceChangeColor || 'text-gray-900 dark:text-white'}`}
-            >
-              ${formatPrice(priceNum)}
-            </span>
-          </td>
-          <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
-            ${formatPrice(row.reward)}
-          </td>
-        </>
-      );
-    }
-
-    if (cd) {
-      return (
-        <>
-          <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-                          <div className="flex items-center justify-center gap-1">
-                <span 
-                  className="px-2 py-1 bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 rounded-lg text-xs font-medium flex items-center gap-1"
-                >
-                  <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
-                  <span dangerouslySetInnerHTML={{ __html: cd }} />
-                </span>
-              </div>
-          </td>
-          <td className='px-3 py-3 text-center text-sm dark:text-white font-medium'>
-            Wait for listing
-          </td>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          ${formatPrice(0)}
-        </td>
-        <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
-          Wait for listing
-        </td>
-      </>
-    );
-  };
-
   // Render tooltip using portal
   const renderTooltip = () => {
     if (!showPriceInfo || !row.price) return null;
@@ -237,7 +183,7 @@ export default function TableRow({
              />
            )}
                      <span className="text-sm dark:text-white font-medium flex items-center">
-            {(row.symbol || row.name || row.apiId).toUpperCase()}
+            {(row.symbol || row.name || row.apiId || 'Unknown').toUpperCase()}
             {isRecentlyListed(row) && (
               <span className="text-blue-500 font-bold text-xs relative -top-1 ml-0.5" title="Token đã listing trong vòng 30 ngày gần nhất">
                 *
@@ -247,13 +193,6 @@ export default function TableRow({
          </div>
       </td>
 
-      {/* Amount */}
-      <td className='px-3 py-3 text-left'>
-        <span className="text-sm dark:text-white">
-          {formatAmount(row.amount)}
-        </span>
-      </td>
-
       {/* Listing Time */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
@@ -261,30 +200,49 @@ export default function TableRow({
         </span>
       </td>
 
-      {/* Point Priority */}
+      {/* Point */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
-                          {row.pointPriority ? (
-                  row.pointPriority
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
+          {row.point ? (
+            row.point
+          ) : (
+            <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+          )}
         </span>
       </td>
 
-      {/* Point FCFS */}
-      <td className='px-3 py-3 text-center'>
-        <span className="text-sm dark:text-white">
-                          {row.pointFCFS ? (
-                  row.pointFCFS
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-        </span>
+      {/* Price */}
+      <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
+        {(() => {
+          const cd = getCountdownText(row.launchAt, Date.now(), false);
+          const priceNum = Number(row.price) || 0;
+          
+          if (priceNum > 0) {
+            return (
+              <span 
+                className={`transition-colors duration-500 ${priceChangeColor || 'text-gray-900 dark:text-white'}`}
+              >
+                ${formatPrice(priceNum)}
+              </span>
+            );
+          }
+          
+          if (cd) {
+            return (
+              <div className="flex items-center justify-center gap-1">
+                <span 
+                  className="px-2 py-1 bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800 rounded-lg text-xs font-medium flex items-center gap-1"
+                >
+                  <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
+                  <span dangerouslySetInnerHTML={{ __html: cd }} />
+                </span>
+              </div>
+            );
+          }
+          
+          return <span>${formatPrice(0)}</span>;
+        })()}
       </td>
-
-      {/* Price and Reward */}
-      {renderPriceAndReward()}
 
       {/* ATH */}
       {showATH && (

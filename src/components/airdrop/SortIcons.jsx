@@ -2,7 +2,7 @@ import React from 'react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
-export function SortIcons({ sortKey, currentSortKey, sortDirection, onSort }) {
+const SortIcons = ({ sortKey, currentSortKey, sortDirection, onSort }) => {
   const isCurrentSort = sortKey === currentSortKey;
   
   const handleAscClick = (e) => {
@@ -47,4 +47,6 @@ export function SortIcons({ sortKey, currentSortKey, sortDirection, onSort }) {
       </div>
     </div>
   );
-}
+};
+
+export default SortIcons;

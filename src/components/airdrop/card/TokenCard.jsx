@@ -4,7 +4,7 @@ import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { formatPrice, formatDateTime, getCountdownText, isRecentlyListed, parseDate } from '../../utils';
+import { formatPrice, formatDateTime, getCountdownText, isRecentlyListed, parseDate } from '../../../utils';
 
 const TokenCard = ({
   row,
@@ -158,7 +158,7 @@ const TokenCard = ({
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Amount:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || '').toUpperCase()}` : 'N/A'}
+              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || 'Unknown').toUpperCase()}` : 'N/A'}
             </div>
           </div>
           <div>

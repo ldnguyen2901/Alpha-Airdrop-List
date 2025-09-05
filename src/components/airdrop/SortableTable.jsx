@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { TABLE_HEADERS, getCountdownText } from '../utils';
-import { useTableSort, useTableEditing } from '../hooks';
+import { TABLE_HEADERS, getCountdownText } from '../../utils';
+import { useTableSort, useTableEditing } from '../../hooks';
 import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
 import EditModal from './modals/EditModal';
@@ -198,7 +198,7 @@ const SortableTable = forwardRef(({
                 }
                 className='px-3 py-6 text-center text-gray-500 dark:text-gray-400 text-sm'
               >
-                No data. Click Add Row or Paste from Sheet.
+                No data. Click Add Row.
               </td>
             </tr>
           )}

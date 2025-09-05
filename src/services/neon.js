@@ -7,6 +7,7 @@ const sql = neon(import.meta.env.VITE_NEON_DATABASE_URL, {
 
 // Workspace IDs
 export const SHARED_WORKSPACE_ID = 'shared-workspace';
+export const TGE_WORKSPACE_ID = 'tge-workspace';
 export const STATSCARD_WORKSPACE_ID = 'statscard-prices';
 
 // Helper function to remove undefined values from objects
@@ -97,6 +98,44 @@ export async function saveWorkspaceData(workspaceId, rows) {
   }
 }
 
+// Save TGE workspace data
+export async function saveTgeWorkspaceData(workspaceId, rows) {
+  try {
+    const targetWorkspaceId = TGE_WORKSPACE_ID;
+    const cleanedRows = removeUndefinedValues(rows);
+    
+    // Skip save if no data
+    if (!cleanedRows || cleanedRows.length === 0) {
+      console.log('Skipping save to TGE Neon - no data to save');
+      return;
+    }
+    
+    // Log what we're saving for debugging
+    console.log('TGE: Saving data to Neon:', {
+      workspaceId: targetWorkspaceId,
+      rowsCount: cleanedRows.length,
+      firstRow: cleanedRows[0] ? cleanedRows[0].apiId : 'none'
+    });
+    
+    // Upsert TGE workspace data
+    const result = await sql`
+      INSERT INTO workspaces (id, data, updated_at, last_updated_by) 
+      VALUES (${targetWorkspaceId}, ${JSON.stringify(cleanedRows)}, CURRENT_TIMESTAMP, ${workspaceId || 'anonymous'})
+      ON CONFLICT (id) DO UPDATE SET 
+        data = EXCLUDED.data,
+        updated_at = EXCLUDED.updated_at,
+        last_updated_by = EXCLUDED.last_updated_by
+    `;
+    
+    console.log('Saved TGE data to Neon:', cleanedRows.length, 'rows');
+    return result;
+  } catch (error) {
+    console.error('Error saving TGE workspace data to Neon:', error);
+    // Don't throw error to prevent app crash
+    return null;
+  }
+}
+
 // Load workspace data once
 export async function loadWorkspaceDataOnce(workspaceId) {
   try {
@@ -118,6 +157,42 @@ export async function loadWorkspaceDataOnce(workspaceId) {
     return { data: [], updatedAt: null };
   } catch (error) {
     console.error('Error loading workspace data from Neon:', error);
+    return { data: [], updatedAt: null };
+  }
+}
+
+// Load TGE workspace data once
+export async function loadTgeWorkspaceDataOnce(workspaceId) {
+  try {
+    const targetWorkspaceId = TGE_WORKSPACE_ID;
+    
+    console.log('TGE: Loading data from Neon for workspace:', targetWorkspaceId);
+    
+    const result = await sql`
+      SELECT data, updated_at FROM workspaces WHERE id = ${targetWorkspaceId}
+    `;
+    
+    if (result.length > 0) {
+      const data = result[0].data;
+      const updatedAt = result[0].updated_at;
+      const parsedData = Array.isArray(data) ? data : [];
+      
+      console.log('TGE: Loaded data from Neon:', {
+        rowsCount: parsedData.length,
+        firstRow: parsedData[0] ? parsedData[0].apiId : 'none',
+        updatedAt: updatedAt
+      });
+      
+      return {
+        data: parsedData,
+        updatedAt: updatedAt
+      };
+    }
+    
+    console.log('TGE: No data found in Neon for workspace:', targetWorkspaceId);
+    return { data: [], updatedAt: null };
+  } catch (error) {
+    console.error('Error loading TGE workspace data from Neon:', error);
     return { data: [], updatedAt: null };
   }
 }
@@ -153,6 +228,49 @@ export function subscribeWorkspace(workspaceId, callback) {
   
   // Tăng polling interval lên 30 giây thay vì 5 giây để tiết kiệm tài nguyên
   const interval = setInterval(pollData, 30000);
+  
+  // Return unsubscribe function
+  return () => {
+    isSubscribed = false;
+    clearInterval(interval);
+  };
+}
+
+// Subscribe to TGE workspace changes (polling-based for now)
+export function subscribeTgeWorkspace(workspaceId, callback) {
+  const targetWorkspaceId = TGE_WORKSPACE_ID;
+  let isSubscribed = true;
+  let lastDataHash = null; // Thêm hash để detect thay đổi
+  let isPolling = false; // Prevent concurrent polling
+  
+  const pollData = async () => {
+    if (!isSubscribed || isPolling) return;
+    
+    isPolling = true;
+    try {
+      const result = await loadTgeWorkspaceDataOnce(targetWorkspaceId);
+      
+      // CHỈ callback khi data thực sự thay đổi
+      const currentHash = JSON.stringify(result.data);
+      if (currentHash !== lastDataHash) {
+        lastDataHash = currentHash;
+        callback(result.data, result.updatedAt);
+        console.log('🔄 TGE Data changed, triggering update from Neon');
+      } else {
+        console.log('✅ No TGE data change detected, skipping update');
+      }
+    } catch (error) {
+      console.error('Error polling TGE workspace data from Neon:', error);
+    } finally {
+      isPolling = false;
+    }
+  };
+  
+  // Initial load
+  pollData();
+  
+  // Tăng polling interval lên 60 giây để giảm tải
+  const interval = setInterval(pollData, 60000);
   
   // Return unsubscribe function
   return () => {
@@ -278,6 +396,21 @@ export async function clearWorkspaceData() {
     return result;
   } catch (error) {
     console.error('Error clearing workspace data from Neon:', error);
+    return null;
+  }
+}
+
+// Clear TGE workspace data
+export async function clearTgeWorkspaceData() {
+  try {
+    const result = await sql`
+      DELETE FROM workspaces WHERE id = ${TGE_WORKSPACE_ID}
+    `;
+    
+    console.log('Cleared TGE workspace data from Neon');
+    return result;
+  } catch (error) {
+    console.error('Error clearing TGE workspace data from Neon:', error);
     return null;
   }
 }

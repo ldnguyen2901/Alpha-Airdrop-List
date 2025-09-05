@@ -48,3 +48,44 @@ export const CSV_HEADERS = [
   'Logo',
   'Symbol',
 ];
+
+// ===== TGE-SPECIFIC CONSTANTS =====
+
+// Kiểu dữ liệu một dòng TGE
+export function newTgeRow(partial = {}) {
+  return {
+    name: '', // Token name (từ API: name)
+    launchAt: '', // Thời gian listing (user nhập Date + Time)
+    apiId: '', // API ID (user nhập - REQUIRED)
+    point: '', // Point (user nhập - optional)
+    price: 0, // Giá hiện tại (từ API: current_price)
+    ath: 0, // ATH (từ API: ath)
+    logo: '', // Logo URL (từ API: image)
+    symbol: '', // Ký hiệu token (từ API: symbol)
+    _forceTop: false, // temporary pin to top until saved
+    ...partial,
+  };
+}
+
+// TGE Table Headers
+export const TGE_TABLE_HEADERS = [
+  'Token', // Hiển thị Symbol/Name
+  'Listing time', // Thời gian listing
+  'API ID', // API ID (ẩn trong table)
+  'Point', // Điểm
+  'Token Price', // Giá token
+  'ATH', // All-time high
+  '', // Actions column
+];
+
+// TGE CSV Headers
+export const TGE_CSV_HEADERS = [
+  'Token',
+  'Listing time',
+  'API ID',
+  'Point',
+  'Token Price',
+  'ATH',
+  'Logo',
+  'Symbol',
+];

@@ -1,4 +1,3 @@
-import { PasteButton } from './index';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import AddIcon from '@mui/icons-material/Add';
@@ -122,7 +121,7 @@ export default function ActionButtons({
   };
 
   const handleNameChange = (e) => {
-    setAddForm(prev => ({ ...prev, name: e.target.value.toUpperCase() }));
+                    setAddForm(prev => ({ ...prev, name: (e.target.value || '').toUpperCase() }));
     if (addErrors.name) setAddErrors(prev => ({ ...prev, name: '' }));
   };
 
@@ -145,7 +144,6 @@ export default function ActionButtons({
             <AddIcon sx={{ fontSize: 16 }} />
             Add Row
           </button>
-          <PasteButton onPasteText={onPasteText} />
           <button
             onClick={onImportExcel}
             className='px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
@@ -176,8 +174,7 @@ export default function ActionButtons({
             />
             Check Duplicates
           </button>
-                     {/* Clear All button temporarily disabled
-                     <button
+                                <button
              onClick={handleClearAll}
              className='px-3 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
              title='Clear all data (cannot be undone)'
@@ -185,7 +182,6 @@ export default function ActionButtons({
              <DeleteSweepIcon sx={{ fontSize: 16 }} />
              Clear All
            </button>
-                     */}
 
           <div className='w-full sm:w-auto relative'>
             <input
@@ -246,46 +242,45 @@ export default function ActionButtons({
         </div>
       </div>
 
-      {/* Clear All Confirmation Modal - temporarily disabled
-      {showClearConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
-                <DeleteSweepIcon className="text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Clear All Data
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              Are you sure you want to delete all data? This will remove all tokens from the table and cannot be undone.
-            </p>
-            
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={cancelClearAll}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmClearAll}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Clear All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      */}
+             {/* Clear All Confirmation Modal */}
+       {showClearConfirm && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+             <div className="flex items-center gap-3 mb-4">
+               <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                 <DeleteSweepIcon className="text-red-600 dark:text-red-400" />
+               </div>
+               <div>
+                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                   Clear All Data
+                 </h3>
+                 <p className="text-sm text-gray-500 dark:text-gray-400">
+                   This action cannot be undone
+                 </p>
+               </div>
+             </div>
+             
+             <p className="text-gray-700 dark:text-gray-300 mb-6">
+               Are you sure you want to delete all data? This will remove all tokens from the table and cannot be undone.
+             </p>
+             
+             <div className="flex gap-3 justify-end">
+               <button
+                 onClick={cancelClearAll}
+                 className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={confirmClearAll}
+                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+               >
+                 Clear All
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* Mobile Modal Add Row Form */}
       {/* Inline form disabled - using modal for both mobile and desktop */}
