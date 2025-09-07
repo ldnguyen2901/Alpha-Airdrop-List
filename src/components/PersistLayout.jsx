@@ -1,18 +1,22 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import AppContent from './AppContent';
-import TgeContent from './TgeContent';
+import React, { useEffect } from 'react';
+import { useLocation, Outlet } from 'react-router-dom';
 
 export default function PersistLayout() {
   const location = useLocation();
   
-  // Render TGE content when on /tge route, otherwise render Airdrop content
-  if (location.pathname === '/tge') {
-    return <TgeContent />;
-  }
+  // Fetch data when route changes
+  useEffect(() => {
+    console.log('Route changed to:', location.pathname);
+    // Trigger a refresh when switching routes
+    if (location.pathname === '/tge') {
+      console.log('Switched to TGE route - data will be refreshed');
+    } else {
+      console.log('Switched to Airdrop route - data will be refreshed');
+    }
+  }, [location.pathname]);
   
-  // Giữ AppContent luôn được mount để không reset state khi đổi route
-  return <AppContent />;
+  // Sử dụng Outlet để render child routes thay vì render trực tiếp
+  return <Outlet />;
 }
 
 

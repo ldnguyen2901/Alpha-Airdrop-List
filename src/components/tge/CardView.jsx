@@ -11,10 +11,10 @@ export default function CardView({
   searchToken,
   tokenLogos,
   highlightRowRef,
-  onRefresh,
   loading,
   sortConfig,
   requestSort,
+  countdown,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [editButtonPosition, setEditButtonPosition] = useState({ top: 0, left: 0 });
@@ -66,13 +66,13 @@ export default function CardView({
     <div>
                            {/* Mobile Header with Sort Options */}
       <MobileHeader
-        onRefresh={onRefresh}
         loading={loading}
         showSortMenu={showSortMenu}
         setShowSortMenu={setShowSortMenu}
         sortConfig={sortConfig}
         handleSortChange={handleSortChange}
         sortButtonRef={sortButtonRef}
+        countdown={countdown}
       />
 
       {/* Cards Grid */}

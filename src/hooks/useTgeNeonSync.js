@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { initializeDatabase, subscribeTgeWorkspace, loadTgeWorkspaceDataOnce, saveTgeWorkspaceData } from '../services/neon';
-import { filterMainTokensFromRows } from '../utils/helpers';
+import { filterMainTokensFromRows, removePriceFromTgeRows } from '../utils/helpers';
 
 export function useTgeNeonSync(
   rows,
@@ -25,7 +25,6 @@ export function useTgeNeonSync(
     
     try {
       await initializeDatabase();
-      console.log('TGE Neon connection initialized');
       isInitializedRef.current = true;
     } catch (error) {
       console.error('Failed to initialize TGE Neon connection:', error);
@@ -36,20 +35,17 @@ export function useTgeNeonSync(
   const loadInitialData = useCallback(async () => {
     if (syncing || !isInitializedRef.current) return;
     
+    console.log('TGE: Starting to load initial data from Neon...');
     setSyncing(true);
     try {
       const result = await loadTgeWorkspaceDataOnce(workspaceId);
+      console.log('TGE: Neon load result:', result);
+      
       if (result.data && result.data.length > 0) {
-        // Only set data if current rows are empty (to avoid overwriting localStorage data)
-        setRows(currentRows => {
-          if (currentRows.length === 0) {
-            console.log(`TGE: Loaded ${result.data.length} rows from Neon`);
-            return result.data;
-          } else {
-            console.log(`TGE: Current data exists (${currentRows.length} rows), keeping local data`);
-            return currentRows;
-          }
-        });
+        // Always load from Neon if it has data, regardless of localStorage
+        console.log(`TGE: Loaded ${result.data.length} rows from Neon`);
+        console.log('TGE: First row from Neon:', result.data[0]);
+        setRows(result.data);
       } else {
         console.log('TGE: No data found in Neon, keeping current data');
       }
@@ -74,11 +70,12 @@ export function useTgeNeonSync(
     
     setSyncing(true);
     try {
-      // Filter out main tokens before saving
+      // Filter out main tokens and price field before saving
       const filteredRows = filterMainTokensFromRows(data);
-      await saveTgeWorkspaceData(workspaceId, filteredRows);
+      const rowsWithoutPrice = removePriceFromTgeRows(filteredRows);
+      await saveTgeWorkspaceData(workspaceId, rowsWithoutPrice);
       lastRowsHashRef.current = currentHash;
-      console.log(`TGE: Saved ${filteredRows.length} rows to Neon`);
+      console.log(`TGE: Saved ${rowsWithoutPrice.length} rows to Neon (price field excluded)`);
       setLastSyncTime(new Date().toISOString());
     } catch (error) {
       console.error('TGE: Failed to save data to Neon:', error);
@@ -132,8 +129,15 @@ export function useTgeNeonSync(
 
   // Initialize on mount (only once)
   useEffect(() => {
-    initializeNeon();
+    const initAndLoad = async () => {
+      await initializeNeon();
+      await loadInitialData();
+    };
+    
+    initAndLoad();
   }, []); // Empty dependency array
+
+  // Remove the separate loadInitialData useEffect since it's now handled above
 
   // Load data when workspace changes (only once after initialization)
   useEffect(() => {

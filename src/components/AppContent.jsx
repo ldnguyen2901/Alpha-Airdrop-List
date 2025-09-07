@@ -25,6 +25,7 @@ import {
   useModalOperations,
   useStatscardPrices
 } from '../hooks';
+import { useAutoRefreshContext } from '../contexts';
 
 /**
  * React Airdrop Alpha Tracker
@@ -36,6 +37,9 @@ import {
  */
 
 export default function AppContent() {
+  // Auto-refresh context
+  const autoRefreshContext = useAutoRefreshContext();
+  
   // Main state management
   const state = useAppState();
   
@@ -55,7 +59,7 @@ export default function AppContent() {
     state.setEthPrice,
     state.setBnbPrice,
     state.setTokenLogos,
-    dataOps.updateRow,
+    dataOps.updateRowForAPI,
     state.setLoading,
     state.setLastUpdated
   );
@@ -90,13 +94,12 @@ export default function AppContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Auto refresh - separate intervals for table data and statscard prices
-  useAutoRefresh(
+  // Auto refresh - only refresh active table (airdrop)
+  const autoRefreshOps = useAutoRefresh(
     apiOps.refreshData,
     apiOps.refreshStatscardPrices,
     state.isPageVisible,
-    state.setIsPageVisible,
-    state.timerRef
+    state.setIsPageVisible
   );
   
   // Modal operations
@@ -149,6 +152,22 @@ export default function AppContent() {
 
     loadDataFromDatabase();
   }, []); // Remove apiOps dependency to prevent infinite loop
+
+  // Check for missing prices on initial load and refresh if needed (only once)
+  useEffect(() => {
+    const checkMissingPrices = async () => {
+      console.log('🔍 Checking for tokens with missing prices on initial load...');
+      const hasRefreshed = await apiOps.checkAndRefreshMissingPrices();
+      if (hasRefreshed) {
+        console.log('✅ Refreshed data due to missing prices');
+      }
+    };
+
+    // Only check after initial data is loaded and only once
+    if (state.rows.length > 0) {
+      checkMissingPrices();
+    }
+  }, [state.rows.length]); // Remove apiOps dependency
 
   // Auto force sync when page becomes visible (if needed)
   useEffect(() => {
@@ -230,9 +249,6 @@ export default function AppContent() {
           onImportExcel={() => {
             state.setShowExcelUpload(true);
           }}
-          onRefresh={() => {
-            apiOps.refreshData();
-          }}
           onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
           onClearAll={dataOps.clearAllData}
           loading={state.loading}
@@ -240,6 +256,7 @@ export default function AppContent() {
           setShowATH={state.setShowATH}
           searchToken={state.searchToken}
           setSearchToken={state.setSearchToken}
+          countdown={autoRefreshContext.countdown}
         />
 
         <SortableTable
@@ -248,11 +265,11 @@ export default function AppContent() {
           onRemoveRow={dataOps.removeRow}
           searchToken={state.searchToken}
           tokenLogos={state.tokenLogos}
-          onRefresh={apiOps.refreshData}
           onRefreshToken={apiOps.refreshSingleToken}
           loading={state.loading}
           showATH={state.showATH}
           ref={state.highlightRowRef}
+          countdown={autoRefreshContext.countdown}
         />
       </div>
 

@@ -140,12 +140,7 @@ export function parseTgeExcelData(excelData) {
           return;
         }
 
-        // Parse token price
-        let parsedPrice = 0;
-        if (tokenPrice) {
-          const cleanPrice = String(tokenPrice).replace(/[^\d.,]/g, '').replace(',', '.');
-          parsedPrice = parseFloat(cleanPrice) || 0;
-        }
+        // Skip parsing token price - price will be fetched from API
 
         // Parse ATH
         let parsedATH = 0;
@@ -192,7 +187,6 @@ export function parseTgeExcelData(excelData) {
           apiId: actualApiId,
           point: actualPoint,
           type: actualType || 'TGE', // Default to TGE if not specified
-          price: parsedPrice,
           ath: parsedATH,
           logo: actualLogo,
           symbol: actualSymbol,
@@ -229,18 +223,16 @@ export function parseExcelData(excelData) {
   const errors = [];
   const validRows = [];
 
-  // Expected column structure (11 columns to match export format):
+  // Expected column structure (9 columns to match CSV_HEADERS):
   // A: Token Name (optional)
   // B: Amount (optional)
   // C: Launch Date (optional)
   // D: API ID (required)
   // E: Point Priority (optional)
   // F: Point FCFS (optional)
-  // G: Token Price (optional)
-  // H: Reward (optional)
-  // I: ATH (optional)
-  // J: Logo (optional)
-  // K: Symbol (optional)
+  // G: ATH (optional)
+  // H: Logo (optional)
+  // I: Symbol (optional)
 
   // Check if first row looks like header (contains text like "Token", "Amount", etc.)
   const firstRow = excelData[0] || [];
@@ -272,10 +264,10 @@ export function parseExcelData(excelData) {
         return;
       }
       
-      if (row.length > 11) {
-        const extras = row.slice(11).some((v) => String(v || '').trim() !== '');
+      if (row.length > 9) {
+        const extras = row.slice(9).some((v) => String(v || '').trim() !== '');
         if (extras) {
-          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond K (found ${row.length} columns, max 11 allowed)`);
+          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond I (found ${row.length} columns, max 9 allowed)`);
           return;
         }
       }
@@ -287,11 +279,9 @@ export function parseExcelData(excelData) {
         apiId = '',          // Column D: API ID
         pointPriority = '',  // Column E: Point Priority
         pointFCFS = '',      // Column F: Point FCFS
-        tokenPrice = '',     // Column G: Token Price
-        reward = '',         // Column H: Reward
-        ath = '',            // Column I: ATH
-        logo = '',           // Column J: Logo
-        symbol = '',         // Column K: Symbol
+        ath = '',            // Column G: ATH
+        logo = '',           // Column H: Logo
+        symbol = '',         // Column I: Symbol
       ] = row;
 
       // Parse data from correct columns
@@ -313,20 +303,6 @@ export function parseExcelData(excelData) {
       if (actualAmount) {
         const cleanAmount = actualAmount.replace(/[^\d.,]/g, '').replace(',', '.');
         parsedAmount = parseFloat(cleanAmount) || 0;
-      }
-
-      // Parse token price
-      let parsedPrice = 0;
-      if (tokenPrice) {
-        const cleanPrice = String(tokenPrice).replace(/[^\d.,]/g, '').replace(',', '.');
-        parsedPrice = parseFloat(cleanPrice) || 0;
-      }
-
-      // Parse reward
-      let parsedReward = 0;
-      if (reward) {
-        const cleanReward = String(reward).replace(/[^\d.,]/g, '').replace(',', '.');
-        parsedReward = parseFloat(cleanReward) || 0;
       }
 
       // Parse ATH
@@ -375,8 +351,6 @@ export function parseExcelData(excelData) {
         apiId: actualApiId,
         pointPriority: String(pointPriority || '').trim(),
         pointFCFS: String(pointFCFS || '').trim(),
-        price: parsedPrice,
-        reward: parsedReward,
         highestPrice: parsedATH, // Map ATH to highestPrice for backward compatibility
         ath: parsedATH,
         logo: actualLogo,

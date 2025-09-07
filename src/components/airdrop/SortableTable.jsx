@@ -13,10 +13,10 @@ const SortableTable = forwardRef(({
   onRemoveRow,
   searchToken,
   tokenLogos,
-  onRefresh,
   onRefreshToken,
   loading,
   showATH = true,
+  countdown,
 }, ref) => {
   const [now, setNow] = useState(Date.now());
   const [highlightedRows, setHighlightedRows] = useState(new Set());
@@ -132,10 +132,10 @@ const SortableTable = forwardRef(({
           tokenLogos={tokenLogos}
           highlightRowRef={null}
           showHighestPrice={false}
-          onRefresh={onRefresh}
           loading={loading}
           sortConfig={sortConfig}
           requestSort={requestSort}
+          countdown={countdown}
         />
         
         <EditModal

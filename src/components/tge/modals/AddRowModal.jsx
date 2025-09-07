@@ -79,8 +79,18 @@ export default function AddRowModal({
       
       try {
         const { fetchTokenInfo } = await import('../../../services/api');
+        const { saveTokenLogoToDatabase } = await import('../../../services/neon');
         const tokenInfo = await fetchTokenInfo(apiId.trim());
         if (tokenInfo) {
+          // Save logo to database
+          if (tokenInfo.logo) {
+            try {
+              await saveTokenLogoToDatabase(apiId.trim(), tokenInfo);
+            } catch (error) {
+              console.error(`Error saving logo to database for ${apiId.trim()}:`, error);
+            }
+          }
+          
           setAddForm((p) => ({
             ...p,
             name: tokenInfo.symbol || tokenInfo.name,
@@ -266,6 +276,7 @@ export default function AddRowModal({
               >
                 <option value='TGE'>TGE</option>
                 <option value='Pre-TGE'>Pre-TGE</option>
+                <option value='BC-TGE'>BC-TGE</option>
               </select>
             </div>
           </div>

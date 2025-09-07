@@ -3,7 +3,19 @@ import { loadTgeDataFromStorage } from '../utils';
 
 export function useTgeAppState() {
   // Main data state
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState(() => {
+    // Load initial data from localStorage immediately
+    const savedData = loadTgeDataFromStorage();
+    console.log('TGE: Initial localStorage data:', savedData);
+    
+    if (savedData && Array.isArray(savedData) && savedData.length > 0) {
+      console.log('TGE: Loaded initial data from localStorage:', savedData.length, 'rows');
+      return savedData;
+    } else {
+      console.log('TGE: No initial localStorage data found');
+      return [];
+    }
+  });
   
   // Workspace ID - TGE specific
   const [workspaceId, setWorkspaceId] = useState('tge-workspace');
@@ -70,17 +82,7 @@ export function useTgeAppState() {
     };
   }, []);
   
-  // Load initial data from localStorage (only if no data exists)
-  useEffect(() => {
-    const savedData = loadTgeDataFromStorage();
-    if (savedData && Array.isArray(savedData) && savedData.length > 0) {
-      setRows(savedData);
-      console.log('TGE: Loaded data from localStorage:', savedData.length, 'rows');
-      console.log('TGE: First row from localStorage:', savedData[0]);
-    } else {
-      console.log('TGE: No localStorage data found, will load from Neon');
-    }
-  }, []);
+  // Data is now loaded in useState initialization above
   
   return {
     // Data

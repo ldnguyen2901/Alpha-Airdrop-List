@@ -1,7 +1,8 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, saveStatscardPrices } from '../services';
+import { loadTokenLogoFromDatabase, saveTokenLogoToDatabase } from '../services/neon';
 import { usePriceTracking } from './usePriceTracking';
-import { MAIN_TOKENS, isMainToken } from '../utils/helpers';
+import { isMainToken, MAIN_TOKENS } from '../utils';
 
 export const useApiOperations = (
   rows, 
@@ -15,6 +16,9 @@ export const useApiOperations = (
 ) => {
   // Initialize price tracking hook
   const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
+  
+  // Cache for loaded logos to avoid reloading
+  const loadedLogosCache = useRef(new Set());
 
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
@@ -41,16 +45,46 @@ export const useApiOperations = (
         return;
       }
       
-      // Load logos from database (rows) - exclude main tokens from table data
-      rows.filter(r => r && r !== null && !isMainToken(r.apiId)).forEach(row => {
-        if (row.apiId && row.logo) {
-          logosFromDB[row.apiId] = {
-            logo: row.logo,
-            symbol: row.symbol || '',
-            name: row.name || ''
-          };
-        }
+      // Get current tokenLogos to avoid reloading existing logos
+      const currentTokenLogos = await new Promise(resolve => {
+        setTokenLogos(current => {
+          resolve(current);
+          return current;
+        });
       });
+      
+      // Load logos from actual database for each token (only if not already loaded)
+      const tokenIds = rows
+        .filter(r => r && r !== null && !isMainToken(r.apiId) && r.apiId)
+        .map(r => r.apiId);
+      
+      // Only load logos for tokens that don't already have logos and haven't been loaded before
+      const tokensNeedingLogos = tokenIds.filter(tokenId => 
+        (!currentTokenLogos[tokenId] || !currentTokenLogos[tokenId].logo) && 
+        !loadedLogosCache.current.has(tokenId)
+      );
+      
+      if (tokensNeedingLogos.length > 0) {
+        for (const tokenId of tokensNeedingLogos) {
+          try {
+            const logoData = await loadTokenLogoFromDatabase(tokenId);
+            if (logoData && logoData.logo) {
+              logosFromDB[tokenId] = {
+                logo: logoData.logo,
+                symbol: logoData.symbol || '',
+                name: logoData.name || ''
+              };
+              // Mark as loaded in cache
+              loadedLogosCache.current.add(tokenId);
+            }
+          } catch (error) {
+            console.error(`Error loading logo for ${tokenId}:`, error);
+          }
+        }
+      }
+      
+      // Merge with existing logos
+      Object.assign(logosFromDB, currentTokenLogos);
       
       // Fetch missing logos for main tokens (BTC, ETH, BNB) - only for statscard display
       const missingMainTokens = MAIN_TOKENS.filter(id => !logosFromDB[id] || !logosFromDB[id].logo);
@@ -105,6 +139,15 @@ export const useApiOperations = (
     try {
       const tokenInfo = await fetchTokenInfo(apiId.trim());
       if (tokenInfo) {
+        // Save logo to database
+        if (tokenInfo.logo) {
+          try {
+            await saveTokenLogoToDatabase(apiId.trim(), tokenInfo);
+          } catch (error) {
+            console.error(`Error saving logo to database for ${apiId.trim()}:`, error);
+          }
+        }
+        
         updateRow(rowIndex, {
           name: tokenInfo.name || '',
           symbol: tokenInfo.symbol || '',
@@ -184,10 +227,14 @@ export const useApiOperations = (
         }
 
         // Classify tokens by completion status - exclude main tokens
-        const incompleteTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && (!r.symbol || !r.logo));
-        const completeTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && r.symbol && r.logo);
+        // Incomplete tokens: missing basic info (name, symbol, logo)
+        const incompleteTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && (!r.name || !r.symbol || !r.logo));
+        // Complete tokens: have basic info but may need price update
+        const completeTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && r.name && r.symbol && r.logo);
+        // Price-only tokens: have basic info but need price fetch
+        const priceOnlyTokens = rows.filter(r => r && r !== null && !isMainToken(r.apiId) && r.name && r.symbol && (!r.price || r.price === 0));
         
-        console.log(`📊 Refresh Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete tokens (excluding main tokens)`);
+        console.log(`📊 Refresh Status: ${incompleteTokens.length} incomplete, ${completeTokens.length} complete, ${priceOnlyTokens.length} price-only tokens (excluding main tokens)`);
 
         // Step 1a: Fetch full data for incomplete tokens (priority)
         if (incompleteTokens.length > 0) {
@@ -198,7 +245,6 @@ export const useApiOperations = (
               const tokenInfo = await fetchTokenInfo(token.apiId);
               if (tokenInfo) {
                 const currentPrice = tokenInfo.current_price;
-                const reward = currentPrice * token.amount;
                 
                 // Use optimized price tracking algorithm
                 const trackingResult = trackPriceChange(
@@ -212,6 +258,15 @@ export const useApiOperations = (
                 const priceStats = getPriceStats(token.apiId);
                 const trend = analyzeTrend(token.apiId);
                 
+                // Save logo to database
+                if (tokenInfo.logo) {
+                  try {
+                    await saveTokenLogoToDatabase(token.apiId, tokenInfo);
+                  } catch (error) {
+                    console.error(`Error saving logo to database for ${token.apiId}:`, error);
+                  }
+                }
+                
                 // Update row with complete data
                 const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
                 if (rowIndex !== -1) {
@@ -220,12 +275,11 @@ export const useApiOperations = (
                     symbol: tokenInfo.symbol || '',
                     logo: tokenInfo.logo || '',
                     price: currentPrice,
-                    reward,
                     ath: tokenInfo.ath || 0,
                     ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                   });
                   
-                  console.log(`✅ Updated ${token.apiId}: ${tokenInfo.name} (${tokenInfo.symbol}) - Price: $${currentPrice}`);
+                  // Price updated successfully (no log needed)
                 }
               } else {
                 console.warn(`⚠️ No data received for token: ${token.apiId}`);
@@ -238,20 +292,60 @@ export const useApiOperations = (
           console.log(`✅ Step 1 completed: ${incompleteTokens.length} incomplete tokens processed`);
         }
 
-        // Step 1b: Update prices for complete tokens (efficient)
-        if (completeTokens.length > 0) {
-          console.log(`💰 Step 2: Updating prices for ${completeTokens.length} complete tokens...`);
-          const completeApiIds = completeTokens.map(t => t.apiId);
+        // Step 1b: Fetch prices for price-only tokens
+        if (priceOnlyTokens.length > 0) {
+          console.log(`💰 Step 1b: Fetching prices for ${priceOnlyTokens.length} price-only tokens...`);
+          const priceOnlyApiIds = priceOnlyTokens.map(t => t.apiId);
+          
+          const tokenPrices = await fetchCryptoPrices(priceOnlyApiIds);
+          console.log(`📊 Received prices for ${Object.keys(tokenPrices).length} price-only tokens`);
+          
+          let updatedCount = 0;
+          priceOnlyTokens.forEach((token) => {
+            if (token.apiId && tokenPrices[token.apiId]) {
+              const currentPrice = tokenPrices[token.apiId].usd;
+              
+              // Use optimized price tracking algorithm
+              const trackingResult = trackPriceChange(
+                token.apiId, 
+                currentPrice, 
+                token.price || 0, 
+                token.highestPrice || 0
+              );
+              
+              // Update row with new price data
+              const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
+              if (rowIndex !== -1) {
+                updateRow(rowIndex, {
+                  price: currentPrice,
+                  ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
+                });
+                
+                updatedCount++;
+                // Price updated successfully (no log needed)
+              }
+            } else {
+              console.warn(`⚠️ No price data for price-only token: ${token.apiId}`);
+            }
+          });
+          
+          console.log(`✅ Step 1b completed: ${updatedCount}/${priceOnlyTokens.length} price-only tokens updated`);
+        }
+
+        // Step 2: Update prices for complete tokens (efficient) - exclude price-only tokens to avoid duplicates
+        const completeTokensWithPrice = completeTokens.filter(token => token.price && token.price > 0);
+        if (completeTokensWithPrice.length > 0) {
+          console.log(`💰 Step 2: Updating prices for ${completeTokensWithPrice.length} complete tokens with existing prices...`);
+          const completeApiIds = completeTokensWithPrice.map(t => t.apiId);
           console.log(`📦 Fetching prices for ${completeApiIds.length} complete tokens...`);
           
           const tokenPrices = await fetchCryptoPrices(completeApiIds);
           console.log(`📊 Received prices for ${Object.keys(tokenPrices).length} tokens`);
           
           let updatedCount = 0;
-          completeTokens.forEach((token) => {
+          completeTokensWithPrice.forEach((token) => {
             if (token.apiId && tokenPrices[token.apiId]) {
               const currentPrice = tokenPrices[token.apiId].usd;
-              const reward = currentPrice * token.amount;
               
               // Use optimized price tracking algorithm
               const trackingResult = trackPriceChange(
@@ -270,19 +364,18 @@ export const useApiOperations = (
               if (rowIndex !== -1) {
                 updateRow(rowIndex, {
                   price: currentPrice,
-                  reward,
                   ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                 });
                 
                 updatedCount++;
-                console.log(`💰 Updated price for ${token.apiId}: $${currentPrice} (${token.symbol})`);
+                // Price updated successfully (no log needed)
               }
             } else {
               console.warn(`⚠️ No price data for token: ${token.apiId}`);
             }
           });
           
-          console.log(`✅ Step 2 completed: ${updatedCount}/${completeTokens.length} complete tokens updated`);
+          console.log(`✅ Step 2 completed: ${updatedCount}/${completeTokensWithPrice.length} prices updated`);
         }
       } else {
         console.log('ℹ️ No tokens to refresh (all are main tokens or empty)');
@@ -313,6 +406,15 @@ export const useApiOperations = (
       const tokenInfo = await fetchTokenInfo(apiId);
       if (tokenInfo) {
         const currentPrice = tokenInfo.current_price;
+        
+        // Save logo to database
+        if (tokenInfo.logo) {
+          try {
+            await saveTokenLogoToDatabase(apiId, tokenInfo);
+          } catch (error) {
+            console.error(`Error saving logo to database for ${apiId}:`, error);
+          }
+        }
         
         // Find the row with this API ID
         const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
@@ -346,6 +448,37 @@ export const useApiOperations = (
     }
   }, [rows, updateRow, trackPriceChange]);
 
+  // Check if any tokens are missing prices and refresh if needed
+  const checkAndRefreshMissingPrices = useCallback(async () => {
+    try {
+      // Ensure rows is an array before processing
+      if (!Array.isArray(rows)) {
+        console.warn('rows is not an array in checkAndRefreshMissingPrices:', rows);
+        return false;
+      }
+
+      // Check for tokens that have API ID but no price
+      const tokensWithoutPrice = rows.filter(r => 
+        r && r !== null && 
+        r.apiId && r.apiId.trim() && 
+        (!r.price || r.price === 0) &&
+        !isMainToken(r.apiId)
+      );
+
+      if (tokensWithoutPrice.length > 0) {
+        console.log(`🔍 Found ${tokensWithoutPrice.length} tokens without prices, refreshing...`);
+        await refreshData();
+        return true;
+      }
+
+      console.log('✅ All tokens have prices, no refresh needed');
+      return false;
+    } catch (error) {
+      console.error('Error checking missing prices:', error);
+      return false;
+    }
+  }, [rows, refreshData]);
+
   return {
     ids,
     loadLogosFromDatabase,
@@ -353,5 +486,6 @@ export const useApiOperations = (
     refreshData,
     refreshStatscardPrices,
     refreshSingleToken,
+    checkAndRefreshMissingPrices,
   };
 };

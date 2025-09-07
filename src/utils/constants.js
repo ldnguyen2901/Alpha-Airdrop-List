@@ -19,8 +19,7 @@ export function newRow(partial = {}) {
 }
 
 // Auto refresh configuration
-export const AUTO_REFRESH_INTERVAL = 120; // 2 minutes for table data
-export const STATSCARD_REFRESH_INTERVAL = 120; // 2 minutes for statscard prices (same as table interval)
+export const AUTO_REFRESH_INTERVAL = 40; // 40 seconds for table data
 
 export const TABLE_HEADERS = [
   'Token', // Will be displayed as "Symbol" in TableHeader
@@ -42,8 +41,6 @@ export const CSV_HEADERS = [
   'API ID',
   'Point (Priority)',
   'Point (FCFS)',
-  'Token Price',
-  'Reward',
   'ATH', // ⭐ (thay thế Highest Price)
   'Logo',
   'Symbol',
@@ -87,7 +84,6 @@ export const TGE_CSV_HEADERS = [
   'API ID',
   'Point',
   'Type',
-  'Token Price',
   'ATH',
   'Logo',
   'Symbol',

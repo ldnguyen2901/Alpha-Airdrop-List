@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory, filterMainTokensFromRows, isMainToken } from '../utils';
+import { newRow, saveDataToStorage, normalizeDateTime, clearAllPriceHistory, filterMainTokensFromRows, isMainToken, removePriceAndRewardFromRows, updateRewardInRow } from '../utils';
 import { saveWorkspaceData, SHARED_WORKSPACE_ID } from '../services/neon';
 
 export const useDataOperations = (
@@ -33,10 +33,11 @@ export const useDataOperations = (
         saveDataToStorage(updatedRows);
       }
       
-      // Always save to shared workspace - exclude main tokens
+      // Always save to shared workspace - exclude main tokens and price/reward fields
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
-        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
         
         // Update last sync time when successfully saved to database
         if (setLastSyncTime) {
@@ -49,7 +50,25 @@ export const useDataOperations = (
     });
   }, [setRows, cleanRowData, isRemoteUpdateRef, setLastSyncTime]);
 
-  // Update specific row
+  // Update specific row (for API operations - doesn't trigger database save)
+  const updateRowForAPI = useCallback((index, updates) => {
+    setRows(prevRows => {
+      const updatedRows = [...prevRows];
+      const cleanedUpdates = cleanRowData(updates);
+      updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
+      
+      // Auto-calculate reward if amount or price changed
+      updatedRows[index] = updateRewardInRow(updatedRows[index]);
+      
+      // Don't save to database for API updates (price will be excluded anyway)
+      // Only save to localStorage for persistence
+      saveDataToStorage(updatedRows);
+      
+      return updatedRows;
+    });
+  }, [setRows, cleanRowData]);
+
+  // Update specific row (for user operations - triggers database save)
   const updateRow = useCallback((index, updates) => {
     // Ensure we're not in a remote update state when user manually edits
     if (isRemoteUpdateRef.current) {
@@ -62,16 +81,20 @@ export const useDataOperations = (
       const cleanedUpdates = cleanRowData(updates);
       updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
       
+      // Auto-calculate reward if amount or price changed
+      updatedRows[index] = updateRewardInRow(updatedRows[index]);
+      
       // CHỈ save localStorage khi KHÔNG phải remote update
       if (!isRemoteUpdateRef.current) {
         saveDataToStorage(updatedRows);
       }
       
-      // Always save to shared workspace if not a remote update - exclude main tokens
+      // Always save to shared workspace if not a remote update - exclude main tokens and price/reward fields
       if (!isRemoteUpdateRef.current) {
         try {
           const filteredRows = filterMainTokensFromRows(updatedRows);
-          saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+          const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
+          saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
           console.log('✅ Successfully saved row update to Neon');
           
           // Update last sync time when successfully saved to database
@@ -96,10 +119,11 @@ export const useDataOperations = (
         saveDataToStorage(updatedRows);
       }
       
-      // Always save to shared workspace - exclude main tokens
+      // Always save to shared workspace - exclude main tokens and price/reward fields
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
-        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
         
         // Update last sync time when successfully saved to database
         if (setLastSyncTime) {
@@ -121,10 +145,11 @@ export const useDataOperations = (
       saveDataToStorage(newRows);
     }
     
-    // Always save to shared workspace - exclude main tokens
+    // Always save to shared workspace - exclude main tokens and price/reward fields
     try {
       const filteredRows = filterMainTokensFromRows(newRows);
-      saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+      const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
+      saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
       
       // Update last sync time when successfully saved to database
       if (setLastSyncTime) {
@@ -145,10 +170,11 @@ export const useDataOperations = (
         saveDataToStorage(updatedRows);
       }
       
-      // Always save to shared workspace - exclude main tokens
+      // Always save to shared workspace - exclude main tokens and price/reward fields
       try {
         const filteredRows = filterMainTokensFromRows(updatedRows);
-        saveWorkspaceData(SHARED_WORKSPACE_ID, filteredRows);
+        const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
+        saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
         
         // Update last sync time when successfully saved to database
         if (setLastSyncTime) {
@@ -260,6 +286,7 @@ export const useDataOperations = (
   return {
     addRow,
     updateRow,
+    updateRowForAPI,
     removeRow,
     replaceRows,
     addMultipleRows,

@@ -1,17 +1,30 @@
-import { useEffect, useRef } from 'react';
-import { AUTO_REFRESH_INTERVAL, STATSCARD_REFRESH_INTERVAL } from '../utils/constants';
+import { useEffect, useRef, useCallback } from 'react';
+import { AUTO_REFRESH_INTERVAL } from '../utils/constants';
+import { useAutoRefreshContext } from '../contexts';
 
 // Convert seconds to milliseconds
-const TABLE_REFRESH_INTERVAL_MS = AUTO_REFRESH_INTERVAL * 1000;
-const STATSCARD_REFRESH_INTERVAL_MS = STATSCARD_REFRESH_INTERVAL * 1000;
+const REFRESH_INTERVAL_MS = AUTO_REFRESH_INTERVAL * 1000;
 
 export const useAutoRefresh = (
-  refreshData,
+  refreshActiveTableData,
   refreshStatscardPrices,
   isPageVisible,
-  setIsPageVisible,
-  timerRef
+  setIsPageVisible
 ) => {
+  const { isAutoRefreshEnabled, countdown, updateCountdown } = useAutoRefreshContext();
+  const timerRef = useRef(null);
+  const countdownRef = useRef(null);
+  
+  // Use refs to store the latest functions to avoid dependency issues
+  const refreshActiveTableDataRef = useRef(refreshActiveTableData);
+  const refreshStatscardPricesRef = useRef(refreshStatscardPrices);
+  
+  // Update refs when functions change
+  useEffect(() => {
+    refreshActiveTableDataRef.current = refreshActiveTableData;
+    refreshStatscardPricesRef.current = refreshStatscardPrices;
+  }, [refreshActiveTableData, refreshStatscardPrices]);
+
   // Handle page visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -31,18 +44,40 @@ export const useAutoRefresh = (
     };
   }, [setIsPageVisible]);
 
-  // Auto refresh for table data (30 seconds)
+  // Countdown effect
   useEffect(() => {
-    if (!isPageVisible) {
+    if (!isAutoRefreshEnabled || !isPageVisible) {
       return;
     }
 
-    const interval = setInterval(() => {
-      console.log('Auto refreshing table data...');
-      refreshData();
-    }, TABLE_REFRESH_INTERVAL_MS);
+    countdownRef.current = setInterval(() => {
+      updateCountdown(prev => {
+        if (prev <= 1) {
+          return AUTO_REFRESH_INTERVAL;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    timerRef.current = interval;
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+    };
+  }, [isAutoRefreshEnabled, isPageVisible, updateCountdown]);
+
+  // Auto refresh effect - only refresh active table
+  useEffect(() => {
+    if (!isAutoRefreshEnabled || !isPageVisible) {
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      console.log('Auto refreshing active table and statscard prices...');
+      refreshActiveTableDataRef.current();
+      refreshStatscardPricesRef.current();
+    }, REFRESH_INTERVAL_MS);
 
     return () => {
       if (timerRef.current) {
@@ -50,21 +85,30 @@ export const useAutoRefresh = (
         timerRef.current = null;
       }
     };
-  }, [refreshData, isPageVisible, timerRef]);
+  }, [isAutoRefreshEnabled, isPageVisible]); // Remove function dependencies
 
-  // Auto refresh for statscard prices (5 minutes)
+  // Cleanup on unmount
   useEffect(() => {
-    if (!isPageVisible) {
-      return;
-    }
-
-    const statscardInterval = setInterval(() => {
-      console.log('Auto refreshing statscard prices...');
-      refreshStatscardPrices();
-    }, STATSCARD_REFRESH_INTERVAL_MS);
-
     return () => {
-      clearInterval(statscardInterval);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
     };
-  }, [refreshStatscardPrices, isPageVisible]);
+  }, []);
+
+  const manualRefresh = useCallback(() => {
+    console.log('Manual refresh triggered...');
+    refreshActiveTableDataRef.current();
+    refreshStatscardPricesRef.current();
+    if (isAutoRefreshEnabled) {
+      updateCountdown(AUTO_REFRESH_INTERVAL);
+    }
+  }, [isAutoRefreshEnabled, updateCountdown]);
+
+  return {
+    manualRefresh
+  };
 };

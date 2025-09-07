@@ -264,14 +264,13 @@ export function useTgeTableEditing() {
       }
     }
     
-    // Create clean TGE object with only TGE-specific fields
+    // Create clean TGE object with only TGE-specific fields (excluding price)
     const toSave = {
       name: draft.name || '',
       launchAt: normalizedLaunch,
       apiId: draft.apiId || '',
       point: draft.point || '',
       type: draft.type || 'TGE',
-      price: draft.price || '',
       ath: draft.ath || '',
       logo: draft.logo || '',
       symbol: draft.symbol || '',

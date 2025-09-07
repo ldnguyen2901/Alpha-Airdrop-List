@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { newTgeRow, saveTgeDataToStorage, normalizeDateTime, clearAllPriceHistory, isMainToken } from '../utils';
+import { newTgeRow, saveTgeDataToStorage, normalizeDateTime, clearAllPriceHistory, isMainToken, removePriceFromTgeRows, removePriceAndRewardFromRows } from '../utils';
+import { saveTgeWorkspaceData, TGE_WORKSPACE_ID } from '../services/neon';
 
 export const useTgeDataOperations = (
   rows,
@@ -35,11 +36,40 @@ export const useTgeDataOperations = (
         console.log('TGE: Saved to localStorage, total rows:', updatedRows.length);
       }
       
+      // Always save to TGE workspace - exclude price field
+      try {
+        const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
+        saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
+        console.log('TGE: Saved to Neon database, total rows:', rowsWithoutPrice.length);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
+      } catch (error) {
+        console.error('TGE: Failed to save to Neon:', error);
+      }
+      
       return updatedRows;
     });
-  }, [setRows, cleanRowData, isRemoteUpdateRef]);
+  }, [setRows, cleanRowData, isRemoteUpdateRef, setLastSyncTime]);
 
-  // Update specific row
+  // Update specific row (for API operations - doesn't trigger database save)
+  const updateRowForAPI = useCallback((index, updates) => {
+    setRows(prevRows => {
+      const updatedRows = [...prevRows];
+      const cleanedUpdates = cleanRowData(updates);
+      updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
+      
+      // Don't save to database for API updates (price will be excluded anyway)
+      // Only save to localStorage for persistence
+      saveTgeDataToStorage(updatedRows);
+      
+      return updatedRows;
+    });
+  }, [setRows, cleanRowData]);
+
+  // Update specific row (for user operations - triggers database save)
   const updateRow = useCallback((index, updates) => {
     // Ensure we're not in a remote update state when user manually edits
     if (isRemoteUpdateRef.current) {
@@ -57,9 +87,25 @@ export const useTgeDataOperations = (
         saveTgeDataToStorage(updatedRows);
       }
       
+      // Always save to TGE workspace if not a remote update - exclude price field
+      if (!isRemoteUpdateRef.current) {
+        try {
+          const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
+          saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
+          console.log('TGE: Successfully saved row update to Neon');
+          
+          // Update last sync time when successfully saved to database
+          if (setLastSyncTime) {
+            setLastSyncTime(new Date());
+          }
+        } catch (error) {
+          console.error('TGE: Failed to save to Neon:', error);
+        }
+      }
+      
       return updatedRows;
     });
-  }, [setRows, isRemoteUpdateRef, cleanRowData]);
+  }, [setRows, isRemoteUpdateRef, cleanRowData, setLastSyncTime]);
 
   // Remove row
   const removeRow = useCallback((index) => {
@@ -71,9 +117,22 @@ export const useTgeDataOperations = (
         saveTgeDataToStorage(updatedRows);
       }
       
+      // Always save to TGE workspace - exclude price field
+      try {
+        const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
+        saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
+      } catch (error) {
+        console.error('TGE: Failed to save to Neon:', error);
+      }
+      
       return updatedRows;
     });
-  }, [setRows, isRemoteUpdateRef]);
+  }, [setRows, isRemoteUpdateRef, setLastSyncTime]);
 
   // Add multiple rows
   const addMultipleRows = useCallback((newRows) => {
@@ -86,9 +145,23 @@ export const useTgeDataOperations = (
         saveTgeDataToStorage(updatedRows);
       }
       
+      // Always save to TGE workspace - exclude price field
+      try {
+        const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
+        saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
+        console.log('TGE: Saved multiple rows to Neon database, total rows:', rowsWithoutPrice.length);
+        
+        // Update last sync time when successfully saved to database
+        if (setLastSyncTime) {
+          setLastSyncTime(new Date());
+        }
+      } catch (error) {
+        console.error('TGE: Failed to save to Neon:', error);
+      }
+      
       return updatedRows;
     });
-  }, [setRows, cleanRowData, isRemoteUpdateRef]);
+  }, [setRows, cleanRowData, isRemoteUpdateRef, setLastSyncTime]);
 
   // Replace all rows
   const replaceRows = useCallback((newRows) => {
@@ -99,7 +172,20 @@ export const useTgeDataOperations = (
     if (!isRemoteUpdateRef.current) {
       saveTgeDataToStorage(cleanedRows);
     }
-  }, [setRows, cleanRowData, isRemoteUpdateRef]);
+    
+    // Always save to TGE workspace - exclude price field
+    try {
+      const rowsWithoutPrice = removePriceAndRewardFromRows(cleanedRows);
+      saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
+      
+      // Update last sync time when successfully saved to database
+      if (setLastSyncTime) {
+        setLastSyncTime(new Date());
+      }
+    } catch (error) {
+      console.error('TGE: Failed to save to Neon:', error);
+    }
+  }, [setRows, cleanRowData, isRemoteUpdateRef, setLastSyncTime]);
 
   // Clear all data
   const clearAllData = useCallback(async () => {
@@ -109,7 +195,21 @@ export const useTgeDataOperations = (
     // Clear price history
     clearAllPriceHistory();
     
-  }, [setRows]);
+    // Save empty array to TGE Neon to ensure all devices sync
+    try {
+      await saveTgeWorkspaceData(TGE_WORKSPACE_ID, []);
+      console.log('TGE: Successfully cleared data from Neon database');
+      
+      // Update last sync time when successfully cleared from database
+      if (setLastSyncTime) {
+        setLastSyncTime(new Date());
+      }
+      
+    } catch (error) {
+      console.error('TGE: Failed to save to Neon:', error);
+      
+    }
+  }, [setRows, setLastSyncTime]);
 
   // Handle add row submit
   const handleAddRowSubmit = useCallback((form) => {
@@ -148,17 +248,16 @@ export const useTgeDataOperations = (
       launchAt = normalizeDateTime(form.launchAt);
     }
     
-    // Create new row data
+    // Create new row data (excluding price - will be fetched from API)
     const newRowData = {
       name: form.name || '',
       launchAt: launchAt,
       apiId: form.apiId.trim(),
       point: form.point || '',
       type: form.type || 'TGE',
-      price: '',
-      ath: '',
-      logo: '',
-      symbol: ''
+      ath: form.ath || 0,
+      logo: form.logo || '',
+      symbol: form.symbol || ''
     };
     
     // Add the row
@@ -171,6 +270,7 @@ export const useTgeDataOperations = (
   return {
     addRow,
     updateRow,
+    updateRowForAPI,
     removeRow,
     addMultipleRows,
     replaceRows,

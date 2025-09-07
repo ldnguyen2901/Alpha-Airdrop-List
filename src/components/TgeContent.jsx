@@ -25,6 +25,7 @@ import {
   useTgeModalOperations,
   useStatscardPrices
 } from '../hooks';
+import { useAutoRefreshContext } from '../contexts';
 
 /**
  * React TGE Alpha Tracker
@@ -36,6 +37,9 @@ import {
  */
 
 export default function TgeContent() {
+  // Auto-refresh context
+  const autoRefreshContext = useAutoRefreshContext();
+  
   // Main state management
   const state = useTgeAppState();
   
@@ -55,7 +59,7 @@ export default function TgeContent() {
     state.setEthPrice,
     state.setBnbPrice,
     state.setTokenLogos,
-    dataOps.updateRow,
+    dataOps.updateRowForAPI,
     state.setLoading,
     state.setLastUpdated
   );
@@ -89,13 +93,12 @@ export default function TgeContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Auto refresh - separate intervals for table data and statscard prices
-  useAutoRefresh(
+  // Auto refresh - only refresh active table (TGE)
+  const autoRefreshOps = useAutoRefresh(
     apiOps.refreshData,
     apiOps.refreshStatscardPrices,
     state.isPageVisible,
-    state.setIsPageVisible,
-    state.timerRef
+    state.setIsPageVisible
   );
   
   // Modal operations
@@ -123,12 +126,12 @@ export default function TgeContent() {
     document.title = "Binance Alpha TGE";
   }, []);
 
-  // Initial data loading - ensure proper order
+  // Initial data loading - ensure proper order (same as Airdrop)
   useEffect(() => {
     // First, load data from Neon database
     const loadDataFromDatabase = async () => {
       try {
-        // Wait for Neon sync to complete
+        // Wait for Neon sync to complete - this will force load from database
         await neonSyncOps.loadInitialData();
         
         // Then load logos and refresh data
@@ -147,7 +150,23 @@ export default function TgeContent() {
     };
 
     loadDataFromDatabase();
-  }, []); // Remove apiOps dependency to prevent infinite loop
+  }, []); // Empty dependency array like Airdrop
+
+  // Check for missing prices on initial load and refresh if needed (only once)
+  useEffect(() => {
+    const checkMissingPrices = async () => {
+      console.log('🔍 Checking for TGE tokens with missing prices on initial load...');
+      const hasRefreshed = await apiOps.checkAndRefreshMissingPrices();
+      if (hasRefreshed) {
+        console.log('✅ Refreshed TGE data due to missing prices');
+      }
+    };
+
+    // Only check after initial data is loaded and only once
+    if (state.rows.length > 0) {
+      checkMissingPrices();
+    }
+  }, [state.rows.length]); // Remove apiOps dependency
 
   // Auto force sync when page becomes visible (if needed)
   useEffect(() => {
@@ -201,6 +220,22 @@ export default function TgeContent() {
     importExportOps.exportTgeToExcel(state.rows);
   };
 
+
+  // Fallback render nếu có lỗi
+  if (!state || !dataOps || !apiOps) {
+    console.error('TgeContent: Missing required dependencies');
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center text-red-500">
+            <h1 className="text-2xl font-bold mb-4">TGE Page Error</h1>
+            <p>Something went wrong loading the TGE page. Please refresh.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-6">
@@ -227,19 +262,19 @@ export default function TgeContent() {
 
         <ActionButtons
           onAddRow={modalOps.handleAddRow}
-          onPasteText={modalOps.handlePasteText}
+          onPasteText={handlePaste}
           onExportExcel={modalOps.handleExportExcel}
           onImportExcel={() => {
             state.setShowExcelUpload(true);
           }}
-          onRefresh={modalOps.handleRefresh}
-          onCheckDuplicates={modalOps.handleCheckDuplicates}
-          onClearAll={modalOps.handleClearAll}
+          onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
+          onClearAll={dataOps.clearAllData}
           loading={state.loading}
           showATH={state.showATH}
           setShowATH={state.setShowATH}
           searchToken={state.searchToken}
           setSearchToken={state.setSearchToken}
+          countdown={autoRefreshContext.countdown}
         />
 
         <SortableTable
@@ -248,11 +283,11 @@ export default function TgeContent() {
           onRemoveRow={dataOps.removeRow}
           searchToken={state.searchToken}
           tokenLogos={state.tokenLogos}
-          onRefresh={apiOps.refreshData}
           onRefreshToken={apiOps.refreshSingleToken}
           loading={state.loading}
           showATH={state.showATH}
           ref={state.highlightRowRef}
+          countdown={autoRefreshContext.countdown}
         />
       </div>
 

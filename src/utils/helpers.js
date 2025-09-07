@@ -311,6 +311,51 @@ export const isMainToken = (apiId) => {
   return MAIN_TOKENS.includes(trimmedApiId.toLowerCase());
 };
 
+// Calculate reward from amount and price
+export const calculateReward = (amount, price) => {
+  const amountNum = Number(amount) || 0;
+  const priceNum = Number(price) || 0;
+  return amountNum * priceNum;
+};
+
+// Update reward field in row data
+export const updateRewardInRow = (row) => {
+  if (!row || typeof row !== 'object') return row;
+  
+  const updatedRow = { ...row };
+  updatedRow.reward = calculateReward(row.amount, row.price);
+  return updatedRow;
+};
+
+// Remove price field from TGE row data before saving to database
+export const removePriceFromTgeRow = (row) => {
+  if (!row || typeof row !== 'object') return row;
+  
+  const { price, ...rowWithoutPrice } = row;
+  return rowWithoutPrice;
+};
+
+// Remove price field from all TGE rows before saving to database
+export const removePriceFromTgeRows = (rows) => {
+  if (!Array.isArray(rows)) return rows;
+  
+  return rows.map(row => removePriceFromTgeRow(row));
+};
+
+// Remove price and reward fields from all rows before saving to database
+export const removePriceAndRewardFromRows = (rows) => {
+  if (!Array.isArray(rows)) return rows;
+  
+  return rows.map(row => removePriceAndRewardFromRow(row));
+};
+
+// Update reward field in all rows
+export const updateRewardInRows = (rows) => {
+  if (!Array.isArray(rows)) return rows;
+  
+  return rows.map(row => updateRewardInRow(row));
+};
+
 // Helper function to parse date in DD/MM/YYYY format
 export const parseDate = (dateString) => {
   if (!dateString) return null;

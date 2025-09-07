@@ -56,9 +56,7 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
           row.apiId || '',
           row.pointPriority || '',
           row.pointFCFS || '',
-          row.price || '',
-          row.reward || '',
-          row.highestPrice || '',
+          row.ath || '', // ✅ Sửa từ highestPrice thành ath để khớp với CSV_HEADERS
           row.logo || '',
           row.symbol || ''
         ])
@@ -76,8 +74,6 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
         { wch: 15 }, // API ID
         { wch: 15 }, // Point (Priority)
         { wch: 15 }, // Point (FCFS)
-        { wch: 12 }, // Token Price
-        { wch: 12 }, // Reward
         { wch: 12 }, // Highest Price
         { wch: 30 }, // Logo
         { wch: 10 }  // Symbol
@@ -131,10 +127,10 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
   const createExcelTemplate = useCallback(() => {
     try {
       const templateData = [
-        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)', 'Token Price (optional)', 'Reward (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
-        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50', '45000', '45000000', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
-        ['', '', '', 'ethereum', '', '', '', '', '', '', ''], // Example with only API ID
-        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40', '0.5', '250', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
+        ['Token Name (optional)', 'Amount (optional)', 'Listing Date (optional)', 'API ID (required)', 'Point (Priority) (optional)', 'Point (FCFS) (optional)', 'ATH (optional)', 'Logo (optional)', 'Symbol (optional)'],
+        ['Bitcoin', '1000', '31/12/2024 15:30', 'bitcoin', '100', '50', '69000', 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', 'BTC'],
+        ['', '', '', 'ethereum', '', '', '', '', ''], // Example with only API ID
+        ['', '500', '01/01/2025 10:00', 'cardano', '80', '40', '3.1', 'https://assets.coingecko.com/coins/images/975/large/Cardano.png', 'ADA'], // Example without token name
       ];
 
       // Create workbook and worksheet
@@ -149,8 +145,6 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
         { wch: 15 }, // API ID
         { wch: 15 }, // Point (Priority)
         { wch: 15 }, // Point (FCFS)
-        { wch: 12 }, // Token Price
-        { wch: 12 }, // Reward
         { wch: 12 }, // ATH
         { wch: 30 }, // Logo
         { wch: 10 }, // Symbol
@@ -226,7 +220,6 @@ export const useTgeImportExport = (addMultipleRows) => {
       'API ID': row.apiId || '',
       'Point': row.point || '',
       'Type': row.type || 'TGE',
-      'Token Price': row.price || '',
       'ATH': row.ath || '',
       'Logo': row.logo || '',
       'Symbol': row.symbol || '',
@@ -287,7 +280,6 @@ export const useTgeImportExport = (addMultipleRows) => {
           apiId: rowData['API ID'] || '',
           point: rowData['Point'] || '',
           type: rowData['Type'] || 'TGE',
-          price: parseFloat(rowData['Token Price']) || 0,
           ath: parseFloat(rowData['ATH']) || 0,
           logo: rowData['Logo'] || '',
           symbol: rowData['Symbol'] || '',
@@ -326,7 +318,6 @@ export const useTgeImportExport = (addMultipleRows) => {
           row.apiId || '', // API ID
           row.point || '', // Point
           row.type || 'TGE', // Type
-          row.price || '', // Token Price
           row.ath || '', // ATH
           row.logo || '', // Logo
           row.symbol || '' // Symbol
@@ -344,7 +335,6 @@ export const useTgeImportExport = (addMultipleRows) => {
         { wch: 15 }, // API ID
         { wch: 12 }, // Point
         { wch: 12 }, // Type
-        { wch: 12 }, // Token Price
         { wch: 12 }, // ATH
         { wch: 30 }, // Logo
         { wch: 10 }  // Symbol

@@ -6,10 +6,14 @@ export default function RouteToggle() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isAirdrop = location.pathname.startsWith('/airdrop');
+  // Kiểm tra cả /airdrop và / (root) để đảm bảo toggle hiển thị đúng
+  const isAirdrop = location.pathname.startsWith('/airdrop') || location.pathname === '/';
+  
+  console.log('RouteToggle: Current path:', location.pathname, 'isAirdrop:', isAirdrop);
 
   const handleAirdropClick = (e) => {
     e.preventDefault();
+    console.log('RouteToggle: Airdrop clicked, current isAirdrop:', isAirdrop);
     if (!isAirdrop) {
       navigate('/airdrop');
     }
@@ -17,6 +21,7 @@ export default function RouteToggle() {
 
   const handleTgeClick = (e) => {
     e.preventDefault();
+    console.log('RouteToggle: TGE clicked, current isAirdrop:', isAirdrop);
     if (isAirdrop) {
       navigate('/tge');
     }

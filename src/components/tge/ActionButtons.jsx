@@ -14,7 +14,6 @@ export default function ActionButtons({
   onPasteText,
   onExportExcel,
   onImportExcel,
-  onRefresh,
   onCheckDuplicates,
   onClearAll,
   loading,
@@ -22,6 +21,7 @@ export default function ActionButtons({
   setShowATH,
   searchToken,
   setSearchToken,
+  countdown,
 }) {
   const [showInlineForm, setShowInlineForm] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -217,27 +217,17 @@ export default function ActionButtons({
             ATH
           </button>
 
-          <button
-            onClick={() => {
-              setIsRefreshing(true);
-              onRefresh();
-              // Ensure animation completes full rotation
-              setTimeout(() => {
-                setIsRefreshing(false);
-              }, 1000);
-            }}
-            className='hidden sm:flex px-3 py-2 rounded-2xl bg-black dark:bg-white dark:text-black text-white shadow hover:opacity-90 text-sm transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 flex items-center gap-2'
-            title='Refresh prices and token info'
-          >
+          {/* Auto-refresh countdown display */}
+          <div className='hidden sm:flex px-3 py-2 rounded-2xl bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-400 text-sm flex-shrink-0 flex items-center gap-2'>
             <AutorenewIcon 
               sx={{ 
                 fontSize: 16,
-                animation: (loading || isRefreshing) ? 'spin 1s linear infinite' : 'none'
+                animation: 'spin 1s linear infinite'
               }}
-              className={(loading || isRefreshing) ? 'refresh-spin' : ''}
+              className='refresh-spin'
             />
-            Refresh
-          </button>
+            {countdown}s
+          </div>
 
         </div>
       </div>

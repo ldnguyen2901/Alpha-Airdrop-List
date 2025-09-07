@@ -183,7 +183,7 @@ export default function TableRow({
              />
            )}
                      <span className="text-sm dark:text-white font-medium flex items-center">
-            {(row.symbol || row.name || row.apiId || 'Unknown').toUpperCase()}
+            {(row.symbol || row.name || 'Unknown').toUpperCase() || row.apiId || 'Unknown'}
             {isRecentlyListed(row) && (
               <span className="text-blue-500 font-bold text-xs relative -top-1 ml-0.5" title="Token đã listing trong vòng 30 ngày gần nhất">
                 *
