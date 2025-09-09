@@ -163,7 +163,7 @@ const SortableTable = forwardRef(({
   return (
     <div className='rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg'>
       <div className='table-container overflow-auto max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-180px)]'>
-        <table className='w-full text-sm lg:min-w-0'>
+        <table className='w-full text-sm'>
           <TableHeader
             sortConfig={sortConfig}
             requestSort={requestSort}

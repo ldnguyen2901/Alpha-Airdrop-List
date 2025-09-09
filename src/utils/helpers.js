@@ -335,6 +335,14 @@ export const removePriceFromTgeRow = (row) => {
   return rowWithoutPrice;
 };
 
+// Remove price and reward fields from row data before saving to database
+export const removePriceAndRewardFromRow = (row) => {
+  if (!row || typeof row !== 'object') return row;
+  
+  const { price, reward, ...rowWithoutPriceAndReward } = row;
+  return rowWithoutPriceAndReward;
+};
+
 // Remove price field from all TGE rows before saving to database
 export const removePriceFromTgeRows = (rows) => {
   if (!Array.isArray(rows)) return rows;

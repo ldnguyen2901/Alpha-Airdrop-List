@@ -58,7 +58,10 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
           row.pointFCFS || '',
           row.ath || '', // ✅ Sửa từ highestPrice thành ath để khớp với CSV_HEADERS
           row.logo || '',
-          row.symbol || ''
+          row.symbol || '',
+          (row.exchanges || []).join(', '), // ⭐ (thêm mới)
+          (row.chains || []).join(', '), // ⭐ (thêm mới)
+          (row.categories || []).join(', ') // ⭐ (thêm mới)
         ])
       ];
 
@@ -74,9 +77,12 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
         { wch: 15 }, // API ID
         { wch: 15 }, // Point (Priority)
         { wch: 15 }, // Point (FCFS)
-        { wch: 12 }, // Highest Price
+        { wch: 12 }, // ATH
         { wch: 30 }, // Logo
-        { wch: 10 }  // Symbol
+        { wch: 10 }, // Symbol
+        { wch: 25 }, // Exchanges ⭐ (thêm mới)
+        { wch: 20 }, // Chains ⭐ (thêm mới)
+        { wch: 20 }  // Categories ⭐ (thêm mới)
       ];
       worksheet['!cols'] = columnWidths;
 
@@ -223,6 +229,9 @@ export const useTgeImportExport = (addMultipleRows) => {
       'ATH': row.ath || '',
       'Logo': row.logo || '',
       'Symbol': row.symbol || '',
+      'Exchanges': (row.exchanges || []).join(', '), // ⭐ (thêm mới)
+      'Chains': (row.chains || []).join(', '), // ⭐ (thêm mới)
+      'Categories': (row.categories || []).join(', ') // ⭐ (thêm mới)
     }));
 
     const csvContent = [
@@ -283,6 +292,9 @@ export const useTgeImportExport = (addMultipleRows) => {
           ath: parseFloat(rowData['ATH']) || 0,
           logo: rowData['Logo'] || '',
           symbol: rowData['Symbol'] || '',
+          exchanges: rowData['Exchanges'] ? rowData['Exchanges'].split(',').map(s => s.trim()).filter(s => s) : [], // ⭐ (thêm mới)
+          chains: rowData['Chains'] ? rowData['Chains'].split(',').map(s => s.trim()).filter(s => s) : [], // ⭐ (thêm mới)
+          categories: rowData['Categories'] ? rowData['Categories'].split(',').map(s => s.trim()).filter(s => s) : [] // ⭐ (thêm mới)
         };
       }).filter(row => row.apiId); // Only include rows with API ID
 

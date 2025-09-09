@@ -274,6 +274,9 @@ export function useTgeTableEditing() {
       ath: draft.ath || '',
       logo: draft.logo || '',
       symbol: draft.symbol || '',
+      exchanges: draft.exchanges || [], // ⭐ (thêm mới)
+      chains: draft.chains || [], // ⭐ (thêm mới)
+      categories: draft.categories || [], // ⭐ (thêm mới)
       _forceTop: false
     };
     onUpdateRow(actual, toSave);

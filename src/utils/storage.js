@@ -349,3 +349,64 @@ export function validateAndFixStorageData() {
     return null;
   }
 }
+
+// Clear all localStorage data for both Airdrop and TGE
+export function clearAllLocalStorageData() {
+  try {
+    console.log('🧹 Clearing all localStorage data...');
+    
+    // Clear Airdrop data
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SORT_STORAGE_KEY);
+    localStorage.removeItem(BACKUP_KEY);
+    localStorage.removeItem(WORKSPACE_ID_KEY);
+    
+    // Clear TGE data
+    localStorage.removeItem(TGE_STORAGE_KEY);
+    localStorage.removeItem(TGE_SORT_STORAGE_KEY);
+    localStorage.removeItem(TGE_BACKUP_KEY);
+    localStorage.removeItem(TGE_WORKSPACE_ID_KEY);
+    
+    console.log('✅ All localStorage data cleared');
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing localStorage data:', error);
+    return false;
+  }
+}
+
+// Clear only Airdrop localStorage data
+export function clearAirdropLocalStorageData() {
+  try {
+    console.log('🧹 Clearing Airdrop localStorage data...');
+    
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SORT_STORAGE_KEY);
+    localStorage.removeItem(BACKUP_KEY);
+    localStorage.removeItem(WORKSPACE_ID_KEY);
+    
+    console.log('✅ Airdrop localStorage data cleared');
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing Airdrop localStorage data:', error);
+    return false;
+  }
+}
+
+// Clear only TGE localStorage data
+export function clearTgeLocalStorageData() {
+  try {
+    console.log('🧹 Clearing TGE localStorage data...');
+    
+    localStorage.removeItem(TGE_STORAGE_KEY);
+    localStorage.removeItem(TGE_SORT_STORAGE_KEY);
+    localStorage.removeItem(TGE_BACKUP_KEY);
+    localStorage.removeItem(TGE_WORKSPACE_ID_KEY);
+    
+    console.log('✅ TGE localStorage data cleared');
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing TGE localStorage data:', error);
+    return false;
+  }
+}

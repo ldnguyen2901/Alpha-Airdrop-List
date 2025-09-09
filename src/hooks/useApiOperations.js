@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef } from 'react';
-import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, saveStatscardPrices } from '../services';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchTokenFullInfo, saveStatscardPrices, clearTokenInfoCacheForToken } from '../services';
 import { loadTokenLogoFromDatabase, saveTokenLogoToDatabase } from '../services/neon';
 import { usePriceTracking } from './usePriceTracking';
 import { isMainToken, MAIN_TOKENS } from '../utils';
@@ -242,7 +242,7 @@ export const useApiOperations = (
           for (const token of incompleteTokens) {
             try {
               console.log(`📥 Fetching full info for: ${token.apiId}`);
-              const tokenInfo = await fetchTokenInfo(token.apiId);
+              const tokenInfo = await fetchTokenFullInfo(token.apiId);
               if (tokenInfo) {
                 const currentPrice = tokenInfo.current_price;
                 
@@ -276,6 +276,9 @@ export const useApiOperations = (
                     logo: tokenInfo.logo || '',
                     price: currentPrice,
                     ath: tokenInfo.ath || 0,
+                    exchanges: tokenInfo.exchanges || [],
+                    chains: tokenInfo.chains || [],
+                    categories: tokenInfo.categories || [],
                     ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
                   });
                   
@@ -391,6 +394,186 @@ export const useApiOperations = (
     }
   }, [ids, rows, updateRow, setLastUpdated, setLoading, trackPriceChange, getPriceStats, analyzeTrend]);
 
+  // Fetch full info for all tokens (exchanges, chains, categories)
+  const fetchAllTokensFullInfo = useCallback(async () => {
+    setLoading(true);
+    
+    try {
+      console.log('🔄 Starting full info fetch for all tokens...');
+      
+      // Get all tokens with API IDs (exclude main tokens)
+      const tokensWithApiId = rows.filter(r => r && r !== null && r.apiId && !isMainToken(r.apiId));
+      
+      if (tokensWithApiId.length === 0) {
+        console.log('ℹ️ No tokens to fetch full info for');
+        return;
+      }
+      
+      // Filter tokens that need full info (skip those that already have complete data)
+      const tokensNeedingFullInfo = tokensWithApiId.filter(token => {
+        // Check if exchanges field exists and has data
+        const hasExchanges = token.exchanges && 
+          Array.isArray(token.exchanges) && 
+          token.exchanges.length > 0 && 
+          token.exchanges.some(ex => ex && ex.trim());
+        
+        // Check if chains field exists and has data  
+        const hasChains = token.chains && 
+          Array.isArray(token.chains) && 
+          token.chains.length > 0 && 
+          token.chains.some(chain => chain && chain.trim());
+        
+        // Check if categories field exists and has data
+        const hasCategories = token.categories && 
+          Array.isArray(token.categories) && 
+          token.categories.length > 0 && 
+          token.categories.some(cat => cat && cat.trim());
+        
+        // Debug logging for each token
+        console.log(`Token ${token.apiId}: exchanges=${hasExchanges}, chains=${hasChains}, categories=${hasCategories}`);
+        
+        // Skip if token already has all three fields with meaningful data
+        return !(hasExchanges && hasChains && hasCategories);
+      });
+      
+      const skippedCount = tokensWithApiId.length - tokensNeedingFullInfo.length;
+      
+      if (skippedCount > 0) {
+        console.log(`⏭️ Skipped ${skippedCount} tokens that already have complete data`);
+      }
+      
+      if (tokensNeedingFullInfo.length === 0) {
+        console.log('✅ All tokens already have complete full info data!');
+        return;
+      }
+      
+      console.log(`📊 Fetching full info for ${tokensNeedingFullInfo.length} tokens (${skippedCount} skipped)...`);
+      
+      // Limit to 10 tokens per fetch
+      const MAX_TOKENS_PER_FETCH = 10;
+      const tokensToFetch = tokensNeedingFullInfo.slice(0, MAX_TOKENS_PER_FETCH);
+      const remainingTokens = tokensNeedingFullInfo.length - MAX_TOKENS_PER_FETCH;
+      
+      if (remainingTokens > 0) {
+        console.log(`⚠️ Limiting to ${MAX_TOKENS_PER_FETCH} tokens. ${remainingTokens} tokens remaining for next fetch.`);
+      }
+      
+      console.log(`📊 Fetching full info for ${tokensToFetch.length} tokens (${skippedCount} skipped)...`);
+      
+      // Process tokens in batches of 10
+      const BATCH_SIZE = 10;
+      const batches = [];
+      for (let i = 0; i < tokensToFetch.length; i += BATCH_SIZE) {
+        batches.push(tokensToFetch.slice(i, i + BATCH_SIZE));
+      }
+      
+      console.log(`📦 Processing ${batches.length} batches of ${BATCH_SIZE} tokens each`);
+      
+      // Process each batch
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`🔄 Processing batch ${batchIndex + 1}/${batches.length} (${batch.length} tokens)...`);
+        
+        // Process tokens in parallel within each batch
+        const batchPromises = batch.map(async (token) => {
+          try {
+            console.log(`📥 Fetching full info for: ${token.apiId}`);
+            const tokenInfo = await fetchTokenFullInfo(token.apiId);
+            
+            if (tokenInfo) {
+              // Find the row index
+              const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === token.apiId);
+              if (rowIndex !== -1) {
+                // Update row with full info including exchanges, chains, categories
+                updateRow(rowIndex, {
+                  name: tokenInfo.name || token.name || '',
+                  symbol: tokenInfo.symbol || token.symbol || '',
+                  logo: tokenInfo.logo || token.logo || '',
+                  price: tokenInfo.current_price || token.price || 0,
+                  ath: tokenInfo.ath || token.ath || 0,
+                  exchanges: tokenInfo.exchanges || [],
+                  chains: tokenInfo.chains || [],
+                  categories: tokenInfo.categories || []
+                });
+                
+                // Clear cache for this token to ensure fresh data on next fetch
+                clearTokenInfoCacheForToken(token.apiId);
+                
+                console.log(`✅ Updated ${token.apiId} with full info and saved to database`);
+                return { success: true, tokenId: token.apiId };
+              }
+            } else {
+              console.warn(`⚠️ No full info received for token: ${token.apiId}`);
+              return { success: false, tokenId: token.apiId, error: 'No data received' };
+            }
+          } catch (error) {
+            console.error(`❌ Error fetching full info for ${token.apiId}:`, error);
+            return { success: false, tokenId: token.apiId, error: error.message };
+          }
+        });
+        
+        // Wait for all tokens in this batch to complete
+        const batchResults = await Promise.all(batchPromises);
+        const successCount = batchResults.filter(r => r.success).length;
+        const failureCount = batchResults.filter(r => !r.success).length;
+        
+        console.log(`✅ Batch ${batchIndex + 1} completed: ${successCount} success, ${failureCount} failed`);
+        
+        // Add a small delay between batches to respect API rate limits
+        if (batchIndex < batches.length - 1) {
+          console.log('⏳ Waiting 2 seconds before next batch...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      
+      setLastUpdated(new Date());
+      
+      // Log completion with remaining tokens info
+      if (remainingTokens > 0) {
+        console.log(`🎉 Full info fetch completed! Processed ${tokensToFetch.length} tokens. ${remainingTokens} tokens remaining for next fetch.`);
+      } else {
+        console.log('🎉 Full info fetch completed successfully!');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error in fetchAllTokensFullInfo:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [rows, updateRow, setLastUpdated, setLoading]);
+
+  // Auto-refresh full info every 1 minute
+  const startAutoRefreshFullInfo = useCallback(() => {
+    console.log('🔄 Airdrop startAutoRefreshFullInfo called');
+    
+    // Clear any existing interval
+    if (window.fullInfoRefreshInterval) {
+      console.log('🔄 Clearing existing interval');
+      clearInterval(window.fullInfoRefreshInterval);
+    }
+    
+    // Set up new interval (1 minute = 60,000 ms)
+    console.log('🔄 Setting up new interval (60 seconds)');
+    window.fullInfoRefreshInterval = setInterval(() => {
+      console.log('⏰ Auto-refresh: Fetching full info for all tokens...');
+      fetchAllTokensFullInfo();
+    }, 60 * 1000); // 1 minute
+    
+    console.log('🔄 Auto-refresh started: Will fetch full info every 1 minute');
+    console.log('🔄 Interval ID:', window.fullInfoRefreshInterval);
+  }, [fetchAllTokensFullInfo]);
+
+  // Stop auto-refresh
+  const stopAutoRefreshFullInfo = useCallback(() => {
+    console.log('🔄 Airdrop stopAutoRefreshFullInfo called');
+    if (window.fullInfoRefreshInterval) {
+      console.log('🔄 Airdrop Clearing interval:', window.fullInfoRefreshInterval);
+      clearInterval(window.fullInfoRefreshInterval);
+      window.fullInfoRefreshInterval = null;
+      console.log('⏹️ Airdrop Auto-refresh stopped');
+    }
+  }, []);
+
   // Refresh single token data
   const refreshSingleToken = useCallback(async (apiId) => {
     if (!apiId || !apiId.trim()) return;
@@ -402,8 +585,8 @@ export const useApiOperations = (
         return;
       }
       
-      // Fetch token info and update
-      const tokenInfo = await fetchTokenInfo(apiId);
+      // Fetch full token info including exchanges, chains, categories
+      const tokenInfo = await fetchTokenFullInfo(apiId);
       if (tokenInfo) {
         const currentPrice = tokenInfo.current_price;
         
@@ -430,7 +613,7 @@ export const useApiOperations = (
             token.highestPrice || 0
           );
           
-          // Update row with new data
+          // Update row with new data including exchanges, chains, categories
           updateRow(rowIndex, {
             name: tokenInfo.name || token.name || '',
             symbol: tokenInfo.symbol || token.symbol || '',
@@ -438,8 +621,13 @@ export const useApiOperations = (
             price: currentPrice,
             reward,
             ath: tokenInfo.ath || token.ath || 0,
+            exchanges: tokenInfo.exchanges || token.exchanges || [],
+            chains: tokenInfo.chains || token.chains || [],
+            categories: tokenInfo.categories || token.categories || [],
             ...(trackingResult.priceChanged && trackingResult.highestPrice && { highestPrice: trackingResult.highestPrice })
           });
+          
+          console.log(`✅ Refreshed ${apiId} with full info and saved to database`);
         }
       }
     } catch (error) {
@@ -479,6 +667,18 @@ export const useApiOperations = (
     }
   }, [rows, refreshData]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('🔄 Airdrop component unmounting, cleaning up intervals...');
+      if (window.fullInfoRefreshInterval) {
+        console.log('🔄 Airdrop Clearing interval on unmount:', window.fullInfoRefreshInterval);
+        clearInterval(window.fullInfoRefreshInterval);
+        window.fullInfoRefreshInterval = null;
+      }
+    };
+  }, []);
+
   return {
     ids,
     loadLogosFromDatabase,
@@ -486,6 +686,9 @@ export const useApiOperations = (
     refreshData,
     refreshStatscardPrices,
     refreshSingleToken,
+    fetchAllTokensFullInfo,
+    startAutoRefreshFullInfo,
+    stopAutoRefreshFullInfo,
     checkAndRefreshMissingPrices,
   };
 };

@@ -59,7 +59,7 @@ export default function AppContent() {
     state.setEthPrice,
     state.setBnbPrice,
     state.setTokenLogos,
-    dataOps.updateRowForAPI,
+    dataOps.updateRow,
     state.setLoading,
     state.setLastUpdated
   );
@@ -251,6 +251,7 @@ export default function AppContent() {
           }}
           onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
           onClearAll={dataOps.clearAllData}
+          onFetchFullInfo={apiOps.fetchAllTokensFullInfo}
           loading={state.loading}
           showATH={state.showATH}
           setShowATH={state.setShowATH}

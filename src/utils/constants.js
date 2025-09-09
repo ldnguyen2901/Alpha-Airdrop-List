@@ -13,6 +13,9 @@ export function newRow(partial = {}) {
     ath: 0, // ATH (từ API: ath) ⭐ (thêm mới)
     logo: '', // Token logo URL (từ API: image) ⭐ (thêm mới)
     symbol: '', // Token symbol (từ API: symbol)
+    exchanges: [], // Danh sách sàn giao dịch (từ API: tickers) ⭐ (thêm mới)
+    chains: [], // Danh sách chuỗi blockchain (từ API: platforms) ⭐ (thêm mới)
+    categories: [], // Danh sách danh mục (từ API: categories) ⭐ (thêm mới)
     _forceTop: false, // temporary pin to top until saved
     ...partial,
   };
@@ -31,7 +34,10 @@ export const TABLE_HEADERS = [
   'Token Price',
   'Reward',
   'ATH', // ⭐ (thay thế Highest Price)
-  '',
+  'Exchanges', // ⭐ (thêm mới)
+  'Chains', // ⭐ (thêm mới)
+  'Categories', // ⭐ (thêm mới)
+  'Actions', // ⭐ (thêm mới)
 ];
 
 export const CSV_HEADERS = [
@@ -44,6 +50,9 @@ export const CSV_HEADERS = [
   'ATH', // ⭐ (thay thế Highest Price)
   'Logo',
   'Symbol',
+  'Exchanges', // ⭐ (thêm mới)
+  'Chains', // ⭐ (thêm mới)
+  'Categories', // ⭐ (thêm mới)
 ];
 
 // ===== TGE-SPECIFIC CONSTANTS =====
@@ -60,6 +69,9 @@ export function newTgeRow(partial = {}) {
     ath: 0, // ATH (từ API: ath)
     logo: '', // Logo URL (từ API: image)
     symbol: '', // Ký hiệu token (từ API: symbol)
+    exchanges: [], // Danh sách sàn giao dịch (từ API: tickers) ⭐ (thêm mới)
+    chains: [], // Danh sách chuỗi blockchain (từ API: platforms) ⭐ (thêm mới)
+    categories: [], // Danh sách danh mục (từ API: categories) ⭐ (thêm mới)
     _forceTop: false, // temporary pin to top until saved
     ...partial,
   };
@@ -74,7 +86,10 @@ export const TGE_TABLE_HEADERS = [
   'Type', // Loại: TGE hoặc Pre-TGE
   'Token Price', // Giá token
   'ATH', // All-time high
-  '', // Actions column
+  'Exchanges', // ⭐ (thêm mới)
+  'Chains', // ⭐ (thêm mới)
+  'Categories', // ⭐ (thêm mới)
+  'Actions', // ⭐ (thêm mới)
 ];
 
 // TGE CSV Headers
@@ -87,4 +102,7 @@ export const TGE_CSV_HEADERS = [
   'ATH',
   'Logo',
   'Symbol',
+  'Exchanges', // ⭐ (thêm mới)
+  'Chains', // ⭐ (thêm mới)
+  'Categories', // ⭐ (thêm mới)
 ];

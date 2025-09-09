@@ -31,6 +31,7 @@ const removeUndefinedValues = (obj) => {
 export async function initializeDatabase() {
   try {
     // Create workspaces table
+    // Data is stored as JSONB, which automatically supports new fields like exchanges, chains, categories
     await sql`
       CREATE TABLE IF NOT EXISTS workspaces (
         id VARCHAR(255) PRIMARY KEY,
@@ -70,7 +71,7 @@ export async function initializeDatabase() {
 // Save workspace data
 export async function saveWorkspaceData(workspaceId, rows) {
   try {
-    const targetWorkspaceId = SHARED_WORKSPACE_ID;
+    const targetWorkspaceId = workspaceId || SHARED_WORKSPACE_ID;
     const cleanedRows = removeUndefinedValues(rows);
     
     // Skip save if no data
@@ -139,7 +140,7 @@ export async function saveTgeWorkspaceData(workspaceId, rows) {
 // Load workspace data once
 export async function loadWorkspaceDataOnce(workspaceId) {
   try {
-    const targetWorkspaceId = SHARED_WORKSPACE_ID;
+    const targetWorkspaceId = workspaceId || SHARED_WORKSPACE_ID;
     
     const result = await sql`
       SELECT data, updated_at FROM workspaces WHERE id = ${targetWorkspaceId}
@@ -199,7 +200,7 @@ export async function loadTgeWorkspaceDataOnce(workspaceId) {
 
 // Subscribe to workspace changes (polling-based for now)
 export function subscribeWorkspace(workspaceId, callback) {
-  const targetWorkspaceId = SHARED_WORKSPACE_ID;
+  const targetWorkspaceId = workspaceId || SHARED_WORKSPACE_ID;
   let isSubscribed = true;
   let lastDataHash = null; // Thêm hash để detect thay đổi
   

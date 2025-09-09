@@ -4,6 +4,7 @@ export { useTgeAppState } from './useTgeAppState';
 export { useDataOperations } from './useDataOperations';
 export { useTgeDataOperations } from './useTgeDataOperations';
 export { useApiOperations } from './useApiOperations';
+export { useTgeApiOperations } from './useTgeApiOperations';
 export { useNeonSync } from './useNeonSync';
 export { useTgeNeonSync } from './useTgeNeonSync';
 export { useImportExport } from './useImportExport';

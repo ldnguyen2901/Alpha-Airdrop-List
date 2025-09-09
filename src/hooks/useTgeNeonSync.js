@@ -47,11 +47,12 @@ export function useTgeNeonSync(
         console.log('TGE: First row from Neon:', result.data[0]);
         setRows(result.data);
       } else {
-        console.log('TGE: No data found in Neon, keeping current data');
+        console.log('TGE: No data found in Neon, keeping empty array');
       }
       setLastSyncTime(new Date().toISOString());
     } catch (error) {
       console.error('TGE: Failed to load data from Neon:', error);
+      console.log('TGE: Keeping empty array due to error');
     } finally {
       setSyncing(false);
     }

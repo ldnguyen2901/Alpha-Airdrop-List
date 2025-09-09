@@ -1,20 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { loadTgeDataFromStorage } from '../utils';
+import { loadTgeDataFromStorage, clearTgeLocalStorageData } from '../utils';
 
 export function useTgeAppState() {
-  // Main data state
+  // Main data state - start with empty array, load from database first
   const [rows, setRows] = useState(() => {
-    // Load initial data from localStorage immediately
-    const savedData = loadTgeDataFromStorage();
-    console.log('TGE: Initial localStorage data:', savedData);
-    
-    if (savedData && Array.isArray(savedData) && savedData.length > 0) {
-      console.log('TGE: Loaded initial data from localStorage:', savedData.length, 'rows');
-      return savedData;
-    } else {
-      console.log('TGE: No initial localStorage data found');
-      return [];
-    }
+    console.log('TGE: Initializing with empty array, will load from database first');
+    // Clear localStorage to force database load
+    clearTgeLocalStorageData();
+    return [];
   });
   
   // Workspace ID - TGE specific

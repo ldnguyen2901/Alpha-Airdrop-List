@@ -1,23 +1,12 @@
 import { useState, useRef } from 'react';
-import { newRow, loadDataFromStorage, validateAndFixStorageData } from '../utils';
+import { newRow, loadDataFromStorage, validateAndFixStorageData, clearAirdropLocalStorageData } from '../utils';
 
 export const useAppState = () => {
-  // Main data state
+  // Main data state - start with empty array, load from database first
   const [rows, setRows] = useState(() => {
-    // First try to validate and fix any corrupted data
-    const validatedData = validateAndFixStorageData();
-    if (validatedData && Array.isArray(validatedData) && validatedData.length > 0) {
-      return validatedData;
-    }
-    
-    // If no valid data, try normal load
-    const savedData = loadDataFromStorage();
-    if (savedData && Array.isArray(savedData)) {
-      return savedData;
-    }
-    
-    // If savedData is not an array, return empty array (statscard tokens are managed separately)
-    console.warn('Invalid saved data format, using empty array:', savedData);
+    console.log('Airdrop: Initializing with empty array, will load from database first');
+    // Clear localStorage to force database load
+    clearAirdropLocalStorageData();
     return [];
   });
 

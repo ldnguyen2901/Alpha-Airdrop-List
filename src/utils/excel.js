@@ -63,7 +63,7 @@ export function parseTgeExcelData(excelData) {
   const validRows = [];
 
   try {
-    // Expected column structure for TGE (9 columns):
+    // Expected column structure for TGE (12 columns):
     // A: Token Name (optional)
     // B: Listing Date (optional)
     // C: API ID (required)
@@ -73,6 +73,9 @@ export function parseTgeExcelData(excelData) {
     // G: ATH (optional)
     // H: Logo (optional)
     // I: Symbol (optional)
+    // J: Exchanges (optional) ⭐ (thêm mới)
+    // K: Chains (optional) ⭐ (thêm mới)
+    // L: Categories (optional) ⭐ (thêm mới)
 
     // Check if first row looks like header (contains text like "Token", "API", etc.)
     const firstRow = excelData[0] || [];
@@ -105,10 +108,10 @@ export function parseTgeExcelData(excelData) {
           return;
         }
         
-        if (row.length > 9) {
-          const extras = row.slice(9).some((v) => String(v || '').trim() !== '');
+        if (row.length > 12) {
+          const extras = row.slice(12).some((v) => String(v || '').trim() !== '');
           if (extras) {
-            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond I (found ${row.length} columns, max 9 allowed)`);
+            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond L (found ${row.length} columns, max 12 allowed)`);
             return;
           }
         }
@@ -123,6 +126,9 @@ export function parseTgeExcelData(excelData) {
           ath = '',            // Column G: ATH
           logo = '',           // Column H: Logo
           symbol = '',         // Column I: Symbol
+          exchanges = '',      // Column J: Exchanges ⭐ (thêm mới)
+          chains = '',        // Column K: Chains ⭐ (thêm mới)
+          categories = '',     // Column L: Categories ⭐ (thêm mới)
         ] = row;
 
         // Parse data from correct columns
@@ -133,6 +139,23 @@ export function parseTgeExcelData(excelData) {
         let actualType = String(type || '').trim();
         let actualSymbol = String(symbol || '').trim();
         let actualLogo = String(logo || '').trim();
+        
+        // Parse new fields ⭐ (thêm mới)
+        let actualExchanges = [];
+        let actualChains = [];
+        let actualCategories = [];
+        
+        if (exchanges) {
+          actualExchanges = String(exchanges).split(',').map(s => s.trim()).filter(s => s);
+        }
+        
+        if (chains) {
+          actualChains = String(chains).split(',').map(s => s.trim()).filter(s => s);
+        }
+        
+        if (categories) {
+          actualCategories = String(categories).split(',').map(s => s.trim()).filter(s => s);
+        }
 
         // Only API ID is required, others are optional
         if (!actualApiId) {
@@ -190,6 +213,9 @@ export function parseTgeExcelData(excelData) {
           ath: parsedATH,
           logo: actualLogo,
           symbol: actualSymbol,
+          exchanges: actualExchanges, // ⭐ (thêm mới)
+          chains: actualChains, // ⭐ (thêm mới)
+          categories: actualCategories, // ⭐ (thêm mới)
         };
 
         validRows.push(finalRow);
@@ -223,7 +249,7 @@ export function parseExcelData(excelData) {
   const errors = [];
   const validRows = [];
 
-  // Expected column structure (9 columns to match CSV_HEADERS):
+  // Expected column structure (12 columns to match CSV_HEADERS):
   // A: Token Name (optional)
   // B: Amount (optional)
   // C: Launch Date (optional)
@@ -233,6 +259,9 @@ export function parseExcelData(excelData) {
   // G: ATH (optional)
   // H: Logo (optional)
   // I: Symbol (optional)
+  // J: Exchanges (optional) ⭐ (thêm mới)
+  // K: Chains (optional) ⭐ (thêm mới)
+  // L: Categories (optional) ⭐ (thêm mới)
 
   // Check if first row looks like header (contains text like "Token", "Amount", etc.)
   const firstRow = excelData[0] || [];
@@ -264,10 +293,10 @@ export function parseExcelData(excelData) {
         return;
       }
       
-      if (row.length > 9) {
-        const extras = row.slice(9).some((v) => String(v || '').trim() !== '');
+      if (row.length > 12) {
+        const extras = row.slice(12).some((v) => String(v || '').trim() !== '');
         if (extras) {
-          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond I (found ${row.length} columns, max 9 allowed)`);
+          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond L (found ${row.length} columns, max 12 allowed)`);
           return;
         }
       }
@@ -282,6 +311,9 @@ export function parseExcelData(excelData) {
         ath = '',            // Column G: ATH
         logo = '',           // Column H: Logo
         symbol = '',         // Column I: Symbol
+        exchanges = '',      // Column J: Exchanges ⭐ (thêm mới)
+        chains = '',        // Column K: Chains ⭐ (thêm mới)
+        categories = '',     // Column L: Categories ⭐ (thêm mới)
       ] = row;
 
       // Parse data from correct columns
@@ -291,6 +323,23 @@ export function parseExcelData(excelData) {
       let actualApiId = String(apiId || '').trim();
       let actualSymbol = String(symbol || '').trim();
       let actualLogo = String(logo || '').trim();
+      
+      // Parse new fields ⭐ (thêm mới)
+      let actualExchanges = [];
+      let actualChains = [];
+      let actualCategories = [];
+      
+      if (exchanges) {
+        actualExchanges = String(exchanges).split(',').map(s => s.trim()).filter(s => s);
+      }
+      
+      if (chains) {
+        actualChains = String(chains).split(',').map(s => s.trim()).filter(s => s);
+      }
+      
+      if (categories) {
+        actualCategories = String(categories).split(',').map(s => s.trim()).filter(s => s);
+      }
 
       // Only API ID is required, others are optional
       if (!actualApiId) {
@@ -355,6 +404,9 @@ export function parseExcelData(excelData) {
         ath: parsedATH,
         logo: actualLogo,
         symbol: actualSymbol,
+        exchanges: actualExchanges, // ⭐ (thêm mới)
+        chains: actualChains, // ⭐ (thêm mới)
+        categories: actualCategories, // ⭐ (thêm mới)
       };
 
       validRows.push(finalRow);

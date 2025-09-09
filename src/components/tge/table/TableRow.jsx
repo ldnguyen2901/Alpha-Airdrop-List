@@ -22,6 +22,10 @@ export default function TableRow({
   tokenLogos
 }) {
   const deleteButtonRef = useRef(null);
+  const [showTokenInfo, setShowTokenInfo] = useState(false);
+  const tokenTooltipRef = useRef(null);
+  const tokenCellRef = useRef(null);
+  const [tokenTooltipPosition, setTokenTooltipPosition] = useState({ top: 0, left: 0 });
   const [showPriceInfo, setShowPriceInfo] = useState(false);
   const tooltipRef = useRef(null);
   const buttonRef = useRef(null);
@@ -30,7 +34,23 @@ export default function TableRow({
   const [previousPrice, setPreviousPrice] = useState(null);
   const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
-  // Calculate tooltip position when showing
+  // Calculate token tooltip position when showing
+  useEffect(() => {
+    if (showTokenInfo && tokenCellRef.current) {
+      const rect = tokenCellRef.current.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      
+      setTokenTooltipPosition({
+        top: index < 5 
+          ? rect.bottom + scrollTop + 8
+          : rect.top + scrollTop - 8,
+        left: rect.left + scrollLeft
+      });
+    }
+  }, [showTokenInfo, index]);
+
+  // Calculate price tooltip position when showing
   useEffect(() => {
     if (showPriceInfo && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -44,20 +64,24 @@ export default function TableRow({
   // Auto-hide tooltip when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (tokenTooltipRef.current && !tokenTooltipRef.current.contains(event.target) && 
+          tokenCellRef.current && !tokenCellRef.current.contains(event.target)) {
+        setShowTokenInfo(false);
+      }
       if (tooltipRef.current && !tooltipRef.current.contains(event.target) && 
           buttonRef.current && !buttonRef.current.contains(event.target)) {
         setShowPriceInfo(false);
       }
     };
 
-    if (showPriceInfo) {
+    if (showTokenInfo || showPriceInfo) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showPriceInfo]);
+  }, [showTokenInfo, showPriceInfo]);
 
   // Handle mouse leave from PriceTrackingInfo
   const handlePriceInfoMouseLeave = () => {
@@ -101,8 +125,99 @@ export default function TableRow({
     setPreviousPrice(currentPrice);
   }, [row.price, previousPrice]);
 
-  // Render tooltip using portal
-  const renderTooltip = () => {
+  // Render token tooltip using portal
+  const renderTokenTooltip = () => {
+    if (!showTokenInfo) return null;
+
+    return createPortal(
+      <div 
+        ref={tokenTooltipRef}
+        className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-xl p-3 min-w-[500px] max-w-[700px] pointer-events-auto"
+        style={{ 
+          zIndex: 999999,
+          top: tokenTooltipPosition.top,
+          left: tokenTooltipPosition.left,
+          transform: index < 5 ? 'none' : 'translateY(-100%)'
+        }}
+      >
+        <div className={`absolute left-8 w-0 h-0 border-l-4 border-r-4 ${
+          index < 5 
+            ? 'top-0 -translate-y-1 border-b-4 border-transparent border-b-gray-900 dark:border-b-gray-800'
+            : 'bottom-0 translate-y-1 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-800'
+        }`}></div>
+        
+        {/* Token Header */}
+        <div className="font-semibold text-blue-300 mb-3 text-center text-[12px]">
+          {(row.symbol || row.name || 'Unknown').toUpperCase()}
+        </div>
+        
+        {/* 3 Column Table Structure - No scroll */}
+        <div className="overflow-hidden rounded border border-gray-600">
+          <table className="w-full text-[10px]">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="px-3 py-2 text-center text-blue-300 font-semibold border-r border-gray-600">🏢 Exchanges</th>
+                <th className="px-3 py-2 text-center text-green-300 font-semibold border-r border-gray-600">⛓️ Chains</th>
+                <th className="px-3 py-2 text-center text-purple-300 font-semibold">📂 Categories</th>
+              </tr>
+            </thead>
+            <tbody className="bg-gray-800">
+              <tr>
+                {/* Exchanges Column */}
+                <td className="px-3 py-2 text-gray-100 border-r border-gray-600 align-top">
+                  <div className="max-h-none">
+                    {row.exchanges && row.exchanges.length > 0 ? (
+                      row.exchanges.map((exchange, idx) => (
+                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                          • {exchange}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-[9px]">-</div>
+                    )}
+                  </div>
+                </td>
+                
+                {/* Chains Column */}
+                <td className="px-3 py-2 text-gray-100 border-r border-gray-600 align-top">
+                  <div className="max-h-none">
+                    {row.chains && row.chains.length > 0 ? (
+                      row.chains.map((chain, idx) => (
+                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                          • {chain}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-[9px]">-</div>
+                    )}
+                  </div>
+                </td>
+                
+                {/* Categories Column */}
+                <td className="px-3 py-2 text-gray-100 align-top">
+                  <div className="max-h-none">
+                    {row.categories && row.categories.length > 0 ? (
+                      row.categories.map((category, idx) => (
+                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                          • {category}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-[9px]">-</div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  // Render price tooltip using portal
+  const renderPriceTooltip = () => {
     if (!showPriceInfo || !row.price) return null;
 
     return createPortal(
@@ -133,15 +248,15 @@ export default function TableRow({
   return (
     <>
       <tr
-             className={`group border-b border-gray-100 dark:border-gray-700 transition-all duration-200 ${
-         String(row.apiId || '').trim() === ''
-           ? 'bg-yellow-50 dark:bg-yellow-900'
-           : index % 2 === 0
-           ? 'bg-white dark:bg-gray-800'
-           : 'bg-gray-50 dark:bg-gray-700'
-       } hover:bg-gray-100 dark:hover:bg-gray-600 ${
-         isHighlighted ? 'row-highlight' : ''
-       }`}
+        className={`group border-b border-gray-100 dark:border-gray-700 transition-all duration-200 ${
+          String(row.apiId || '').trim() === ''
+            ? 'bg-yellow-50 dark:bg-yellow-900'
+            : index % 2 === 0
+            ? 'bg-white dark:bg-gray-800'
+            : 'bg-gray-50 dark:bg-gray-700'
+        } hover:bg-gray-100 dark:hover:bg-gray-600 ${
+          isHighlighted ? 'row-highlight' : ''
+        }`}
       style={
         typeof document !== 'undefined' &&
         document.documentElement.classList.contains('dark') &&
@@ -149,40 +264,38 @@ export default function TableRow({
           ? { backgroundColor: '#A29D85' }
           : undefined
       }
+      style={{ position: 'relative' }}
     >
-      {/* Token Name */}
-      <td
-        className={`px-3 py-3 sticky left-0`}
-        style={{
-          position: 'sticky',
-          left: 0,
-          zIndex: 20,
-          backgroundColor: 'inherit',
-          boxShadow: '2px 0 8px rgb(0,0,0)',
-        }}
+      {/* Token Name - Fixed alignment */}
+      <td 
+        ref={tokenCellRef}
+        className='px-3 py-3 text-left cursor-pointer' 
+        style={{ position: 'relative' }}
+        onMouseEnter={() => setShowTokenInfo(true)}
+        onMouseLeave={() => setShowTokenInfo(false)}
       >
-                 <div className="flex items-center gap-2">
-           {/* Token Logo */}
-           {row.logo ? (
-             <img
-               src={row.logo}
-               alt={`${row.symbol || row.name || row.apiId} logo`}
-               className="w-6 h-6 rounded-full flex-shrink-0"
-               onError={(e) => {
-                 e.target.style.display = 'none';
-               }}
-             />
-           ) : row.apiId && tokenLogos[row.apiId] && (
-             <img
-               src={tokenLogos[row.apiId].logo}
-               alt={`${row.symbol || row.name || row.apiId} logo`}
-               className="w-6 h-6 rounded-full flex-shrink-0"
-               onError={(e) => {
-                 e.target.style.display = 'none';
-               }}
-             />
-           )}
-                     <span className="text-sm dark:text-white font-medium flex items-center">
+        <div className="flex items-center gap-2">
+          {/* Token Logo */}
+          {row.logo ? (
+            <img
+              src={row.logo}
+              alt={`${row.symbol || row.name || row.apiId} logo`}
+              className="w-6 h-6 rounded-full flex-shrink-0"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : row.apiId && tokenLogos[row.apiId] && (
+            <img
+              src={tokenLogos[row.apiId].logo}
+              alt={`${row.symbol || row.name || row.apiId} logo`}
+              className="w-6 h-6 rounded-full flex-shrink-0"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          )}
+          <span className="text-sm dark:text-white font-medium flex items-center">
             {(row.symbol || row.name || 'Unknown').toUpperCase() || row.apiId || 'Unknown'}
             {isRecentlyListed(row) && (
               <span className="text-blue-500 font-bold text-xs relative -top-1 ml-0.5" title="Token đã listing trong vòng 30 ngày gần nhất">
@@ -190,7 +303,7 @@ export default function TableRow({
               </span>
             )}
           </span>
-         </div>
+        </div>
       </td>
 
       {/* Listing Time */}
@@ -286,6 +399,7 @@ export default function TableRow({
         </td>
       )}
 
+
       {/* Actions */}
        <td className='px-3 py-3 text-right sticky right-0 z-10 actions-column' style={{ backgroundColor: 'inherit' }}>
          <div className='flex items-center justify-end gap-2'>
@@ -338,7 +452,8 @@ export default function TableRow({
          </div>
        </td>
     </tr>
-    {renderTooltip()}
+    {renderTokenTooltip()}
+    {renderPriceTooltip()}
     </>
   );
 }

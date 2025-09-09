@@ -1,4 +1,3 @@
-import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SyncProblemIcon from '@mui/icons-material/SyncProblem';
 import AddIcon from '@mui/icons-material/Add';
 import TableChartIcon from '@mui/icons-material/TableChart';
@@ -6,8 +5,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import BlockIcon from '@mui/icons-material/Block';
-import { useState, useRef } from 'react';
+import InfoIcon from '@mui/icons-material/Info';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import { useState, useRef, useEffect } from 'react';
 
 export default function ActionButtons({
   onAddRow,
@@ -16,6 +16,7 @@ export default function ActionButtons({
   onImportExcel,
   onCheckDuplicates,
   onClearAll,
+  onFetchFullInfo,
   loading,
   showATH,
   setShowATH,
@@ -37,9 +38,9 @@ export default function ActionButtons({
   const [formPosition, setFormPosition] = useState({ top: 60, left: 16 });
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isFetchingFullInfo, setIsFetchingFullInfo] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const addRowButtonRef = useRef(null);
-
 
   const handleAddRowClick = () => {
     // Always use modal form for both mobile and desktop
@@ -55,6 +56,22 @@ export default function ActionButtons({
       setTimeout(() => {
         setIsCheckingDuplicates(false);
       }, 2000);
+    }
+  };
+
+  const handleFetchFullInfo = async () => {
+    if (!onFetchFullInfo) return;
+    
+    setIsFetchingFullInfo(true);
+    try {
+      await onFetchFullInfo();
+    } catch (error) {
+      console.error('Error fetching full info:', error);
+    } finally {
+      // Stop spinning after 3 seconds
+      setTimeout(() => {
+        setIsFetchingFullInfo(false);
+      }, 3000);
     }
   };
 
@@ -134,6 +151,15 @@ export default function ActionButtons({
 
   return (
     <>
+      <style jsx>{`
+        @keyframes fetch-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .fetch-spin {
+          animation: fetch-spin 1s linear infinite;
+        }
+      `}</style>
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 lg:gap-4 mb-3'>
         <div className='flex flex-wrap items-center gap-2'>
           <button
@@ -159,6 +185,21 @@ export default function ActionButtons({
                 >
                   <FileDownloadIcon sx={{ fontSize: 16 }} />
                   Export Excel
+          </button>
+          <button
+            onClick={handleFetchFullInfo}
+            disabled={true}
+            className='px-3 py-2 rounded-2xl bg-purple-400 text-white shadow-sm text-sm transition-all duration-300 ease-in-out flex items-center gap-2 cursor-not-allowed'
+            title='Fetch exchanges, chains, categories for up to 10 tokens (Disabled)'
+          >
+            <InfoIcon 
+              sx={{ 
+                fontSize: 16,
+                animation: isFetchingFullInfo ? 'spin 1s linear infinite' : 'none'
+              }}
+              className={isFetchingFullInfo ? 'fetch-spin' : ''}
+            />
+            Fetch Full Info
           </button>
           <button
             onClick={handleCheckDuplicates}

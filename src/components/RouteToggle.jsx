@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './RouteToggle.css';
 
 export default function RouteToggle() {
   const location = useLocation();
   const navigate = useNavigate();
+  const previousPathRef = useRef(location.pathname);
 
   // Kiểm tra cả /airdrop và / (root) để đảm bảo toggle hiển thị đúng
   const isAirdrop = location.pathname.startsWith('/airdrop') || location.pathname === '/';
   
-  console.log('RouteToggle: Current path:', location.pathname, 'isAirdrop:', isAirdrop);
+  // Chỉ log khi path thực sự thay đổi
+  useEffect(() => {
+    if (previousPathRef.current !== location.pathname) {
+      console.log('RouteToggle: Current path:', location.pathname, 'isAirdrop:', isAirdrop);
+      previousPathRef.current = location.pathname;
+    }
+  }, [location.pathname, isAirdrop]);
 
   const handleAirdropClick = (e) => {
     e.preventDefault();

@@ -16,7 +16,7 @@ const DuplicatesModal = lazy(() => import('./tge/modals/DuplicatesModal'));
 import {
   useTgeAppState,
   useTgeDataOperations,
-  useApiOperations,
+  useTgeApiOperations,
   useTgeNeonSync,
   useTgeImportExport,
   useDuplicateCheck,
@@ -53,13 +53,13 @@ export default function TgeContent() {
   );
   
   // API operations
-  const apiOps = useApiOperations(
+  const apiOps = useTgeApiOperations(
     state.rows,
     state.setBtcPrice,
     state.setEthPrice,
     state.setBnbPrice,
     state.setTokenLogos,
-    dataOps.updateRowForAPI,
+    dataOps.updateRow,
     state.setLoading,
     state.setLastUpdated
   );
@@ -269,6 +269,7 @@ export default function TgeContent() {
           }}
           onCheckDuplicates={duplicateOps.checkDuplicateLogosAndNames}
           onClearAll={dataOps.clearAllData}
+          onFetchFullInfo={apiOps.fetchAllTokensFullInfo}
           loading={state.loading}
           showATH={state.showATH}
           setShowATH={state.setShowATH}

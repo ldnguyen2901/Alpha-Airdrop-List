@@ -12,12 +12,12 @@ export const useAutoRefreshContext = () => {
 };
 
 export const AutoRefreshProvider = ({ children }) => {
-  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true); // Auto-enable
+  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true); // Re-enabled auto refresh
   const [countdown, setCountdown] = useState(AUTO_REFRESH_INTERVAL); // Use constant
 
   const toggleAutoRefresh = () => {
-    // Disabled - auto-refresh is always on
-    console.log('Auto-refresh toggle disabled - always enabled');
+    setIsAutoRefreshEnabled(prev => !prev);
+    console.log('Auto-refresh toggled:', !isAutoRefreshEnabled);
   };
 
   const updateCountdown = (newCountdown) => {

@@ -106,16 +106,12 @@ input:not([disabled]):focus {
 
 /* Table row hover effects - optimized for performance */
 tbody tr {
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  will-change: background-color, transform;
+  transition: background-color 0.2s ease;
+  will-change: background-color;
 }
 
 /* Desktop hover effects */
 @media (min-width: 1024px) {
-  tbody tr:hover {
-    transform: translateX(2px);
-  }
-  
   /* Light theme hover */
   tbody tr:hover {
     background-color: rgb(243, 244, 246) !important; /* gray-100 */
@@ -702,6 +698,44 @@ tbody tr td.sticky.left-0 {
   scrollbar-color: rgb(156, 163, 175) transparent;
 }
 
+/* Fix table layout and spacing */
+.table-container table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: auto;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure no extra spacing on table elements */
+.table-container thead,
+.table-container tbody,
+.table-container tr,
+.table-container th,
+.table-container td {
+  margin: 0;
+  padding: 0;
+  border-spacing: 0;
+}
+
+/* Reset table cell padding to ensure consistent alignment */
+.table-container td,
+.table-container th {
+  box-sizing: border-box;
+  padding: 0.75rem !important; /* 12px = px-3 py-3 */
+}
+
+/* Specific fixes for table alignment issues */
+.table-container tbody tr {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.table-container tbody tr td:first-child {
+  padding-left: 0.75rem !important;
+  margin-left: 0 !important;
+}
+
 .table-container::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -865,88 +899,6 @@ code {
 
 .dark .bg-gray-100 {
   border-color: #374151;
-}
-
-/* Table hover effects */
-tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-tbody tr:hover {
-  background-color: rgb(239, 246, 255);
-}
-
-tbody tr:nth-child(even) td.sticky {
-  background-color: #f9fafb;
-  transition: background-color 0.2s ease;
-}
-
-tbody tr:nth-child(odd) td.sticky {
-  background-color: #ffffff;
-  transition: background-color 0.2s ease;
-}
-
-tbody tr:hover td.sticky {
-  background-color: rgb(239, 246, 255);
-}
-
-.dark tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-.dark tbody tr:hover {
-  background-color: rgb(59, 130, 246);
-}
-
-/* Dark theme table improvements */
-.dark table {
-  border-color: #374151;
-}
-
-.dark thead {
-  background-color: #0f172a;
-}
-
-.dark thead th {
-  background-color: #0f172a;
-  color: #f1f5f9;
-  border-color: #374151;
-  font-weight: 600;
-}
-
-.dark thead th.sticky {
-  background-color: #0f172a;
-}
-
-.dark tbody tr:nth-child(even) {
-  background-color: #111827;
-}
-
-.dark tbody tr:nth-child(odd) {
-  background-color: #1f2937;
-}
-
-.dark tbody tr:nth-child(even) td.sticky {
-  background-color: #111827;
-  transition: background-color 0.2s ease;
-}
-
-.dark tbody tr:nth-child(odd) td.sticky {
-  background-color: #1f2937;
-  transition: background-color 0.2s ease;
-}
-
-.dark tbody tr:hover {
-  background-color: #374151;
-}
-
-.dark tbody tr:hover td.sticky {
-  background-color: #374151;
-}
-
-.dark tbody td {
-  border-color: #374151;
-  color: #e5e7eb;
 }
 
 /* Input fields in dark theme with better contrast */

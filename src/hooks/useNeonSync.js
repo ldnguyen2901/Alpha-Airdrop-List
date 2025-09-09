@@ -45,10 +45,12 @@ export const useNeonSync = (
           setLastSyncTime(new Date(result.updatedAt));
         }
         
-        console.log('Loaded data from Neon:', filteredData.length, 'rows (excluding main tokens)');
+        console.log('Airdrop: Loaded data from Neon:', filteredData.length, 'rows (excluding main tokens)');
+      } else {
+        console.log('Airdrop: No data found in Neon, keeping empty array');
       }
     } catch (error) {
-      console.error('Error loading initial data from Neon:', error);
+      console.error('Airdrop: Error loading initial data from Neon:', error);
     } finally {
       setSyncing(false);
     }

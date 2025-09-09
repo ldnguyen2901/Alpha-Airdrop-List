@@ -18,6 +18,9 @@ export default function TableHeader({
       'Token Price': 'price',
       Reward: 'reward',
       'ATH': 'ath', // ⭐ (thay thế Highest Price)
+      'Exchanges': 'exchanges', // ⭐ (thêm mới)
+      'Chains': 'chains', // ⭐ (thêm mới)
+      'Categories': 'categories', // ⭐ (thêm mới)
     };
     return mapping[header];
   };
@@ -30,6 +33,10 @@ export default function TableHeader({
           if (h === 'API ID') return null;
           // Skip ATH column if not showing
           if (h === 'ATH' && !showATH) return null;
+          // Skip Actions column in header (it's handled separately)
+          if (h === 'Actions') return null;
+          // Skip exchanges, chains, categories columns (hidden)
+          if (h === 'Exchanges' || h === 'Chains' || h === 'Categories') return null;
 
           const columnKey = getColumnKey(h);
           const isSortable = columnKey && h !== '';
@@ -37,7 +44,11 @@ export default function TableHeader({
           return (
             <th
               key={h}
-              className={`text-left px-3 py-0.5 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
+              className={`px-3 py-3 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap transition-colors duration-200 ${
+                h === 'Token' || h === 'Amount'
+                  ? 'text-left'
+                  : 'text-center'
+              } ${
                 isSortable
                   ? 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 select-none'
                   : ''
@@ -59,7 +70,10 @@ export default function TableHeader({
                   h === 'ATH' || // ⭐ (thay thế Highest Price)
                   h === 'Listing time' ||
                   h === 'Point (Priority)' ||
-                  h === 'Point (FCFS)'
+                  h === 'Point (FCFS)' ||
+                  h === 'Exchanges' || // ⭐ (thêm mới)
+                  h === 'Chains' || // ⭐ (thêm mới)
+                  h === 'Categories' // ⭐ (thêm mới)
                     ? 'justify-center'
                     : ''
                 }`}
@@ -89,6 +103,10 @@ export default function TableHeader({
             </th>
           );
         })}
+        {/* Actions Column Header */}
+        <th className="px-3 py-3 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap text-center">
+          Actions
+        </th>
       </tr>
     </thead>
   );
