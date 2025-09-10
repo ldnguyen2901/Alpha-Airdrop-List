@@ -4,6 +4,7 @@ import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ReportGmailerrorredIcon from '@mui/icons-material/ReportGmailerrorred';
 import { formatPrice, formatDateTime, getCountdownText, isRecentlyListed, parseDate } from '../../../utils';
 
 const TokenCard = ({
@@ -144,7 +145,7 @@ const TokenCard = ({
                       <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
                       <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                     </div>
-                  ) : (row.launchAt && isTokenListed(row) ? 'N/A' : 'N/A'))}
+                  ) : (row.launchAt && isTokenListed(row) ? <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" /> : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />))}
                 </div>
               </div>
             </div>
@@ -168,12 +169,12 @@ const TokenCard = ({
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Subscription Time:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.launchAt ? formatDateTime(row.launchAt) : 'N/A'}
+              {row.launchAt ? formatDateTime(row.launchAt) : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />}
             </div>
           </div>
         </div>
 
-        {/* ATH and Type */}
+        {/* AT(L-H) and Type */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Type:</span>
@@ -181,6 +182,8 @@ const TokenCard = ({
               <span className={`text-sm font-medium px-2 py-1 rounded-full ${
                 row.type === 'Pre-TGE' 
                   ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300' 
+                  : row.type === 'BC-TGE'
+                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300'
                   : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
               }`}>
                 {row.type || 'TGE'}
@@ -188,9 +191,29 @@ const TokenCard = ({
             </div>
           </div>
           <div>
-            <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
-            <div className="font-medium text-purple-600 dark:text-purple-400">
-              {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : (isTokenListed(row) ? 'N/A' : 'N/A')}
+            <span className="text-gray-500 dark:text-gray-400 text-sm">AT(L-H):</span>
+            <div className="font-medium text-gray-900 dark:text-white">
+              {row.atl && row.atl > 0 && row.ath && row.ath > 0 ? (
+                <>
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    ${formatPrice(row.atl)}
+                  </span>
+                  <span className="text-gray-400 mx-1">-</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">
+                    ${formatPrice(row.ath)}
+                  </span>
+                </>
+              ) : row.atl && row.atl > 0 ? (
+                <span className="text-red-600 dark:text-red-400 font-medium">
+                  ${formatPrice(row.atl)}
+                </span>
+              ) : row.ath && row.ath > 0 ? (
+                <span className="text-green-600 dark:text-green-400 font-medium">
+                  ${formatPrice(row.ath)}
+                </span>
+              ) : (
+                <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />
+              )}
             </div>
           </div>
         </div>

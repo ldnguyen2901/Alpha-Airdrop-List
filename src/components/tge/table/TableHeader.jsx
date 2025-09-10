@@ -15,7 +15,8 @@ export default function TableHeader({
       'Point': 'point',
       'Type': 'type',
       'Token Price': 'price',
-      'ATH': 'ath',
+      'AT(L-H)': 'ath', // Sử dụng ath làm key chính cho sorting giống Airdrop
+      'Contract': 'contract', // ⭐ (thêm mới)
       'Exchanges': 'exchanges', // ⭐ (thêm mới)
       'Chains': 'chains', // ⭐ (thêm mới)
       'Categories': 'categories', // ⭐ (thêm mới)
@@ -29,8 +30,8 @@ export default function TableHeader({
         {TGE_TABLE_HEADERS.map((h) => {
           // Always skip API ID column in table display
           if (h === 'API ID') return null;
-          // Skip ATH column if not showing
-          if (h === 'ATH' && !showATH) return null;
+          // Skip AT(L-H) column if not showing (same as showATH)
+          if (h === 'AT(L-H)' && !showATH) return null;
           // Skip Actions column in header (it's handled separately)
           if (h === 'Actions') return null;
           // Skip exchanges, chains, categories columns (hidden)
@@ -64,7 +65,8 @@ export default function TableHeader({
               <div
                 className={`flex items-center gap-1 ${
                   h === 'Token Price' ||
-                  h === 'ATH' ||
+                  h === 'AT(L-H)' || // Gộp ATH và ATL giống Airdrop
+                  h === 'Contract' || // ⭐ (thêm mới)
                   h === 'Subscription time' ||
                   h === 'Point' ||
                   h === 'Type' ||
@@ -84,6 +86,8 @@ export default function TableHeader({
                     ? 'Point'
                     : h === 'Type'
                     ? 'Type'
+                    : h === 'AT(L-H)'
+                    ? 'AT(L-H)'
                     : h}
                 </span>
                 {isSortable && (

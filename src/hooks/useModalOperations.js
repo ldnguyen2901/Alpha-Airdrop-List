@@ -11,13 +11,24 @@ export const useModalOperations = (
   const openAddRowModal = useCallback((position = null) => {
     setAddForm({
       name: '',
-      amount: '',
+      amount: 0,
       launchAt: '',
       launchDate: '',
       launchTime: '',
       apiId: '',
       pointPriority: '',
       pointFCFS: '',
+      price: 0,
+      reward: 0,
+      highestPrice: 0,
+      ath: 0,
+      atl: 0,
+      logo: '',
+      symbol: '',
+      contract: '',
+      exchanges: [],
+      chains: [],
+      categories: [],
     });
     setAddErrors({});
     setAddModalPosition(position);
@@ -39,8 +50,28 @@ export const useModalOperations = (
 // TGE-specific modal operations hook
 export const useTgeModalOperations = (state, dataOps, apiOps, importExportOps, duplicateOps) => {
   const handleAddRow = useCallback(() => {
+    // Reset form to clean state
+    state.setAddForm({
+      name: '',
+      launchAt: '',
+      launchDate: '',
+      launchTime: '',
+      apiId: '',
+      point: '',
+      type: 'TGE',
+      price: 0,
+      ath: 0,
+      atl: 0,
+      logo: '',
+      symbol: '',
+      contract: '',
+      exchanges: [],
+      chains: [],
+      categories: [],
+    });
+    state.setAddErrors({});
     state.setShowAddModal(true);
-  }, [state.setShowAddModal]);
+  }, [state.setShowAddModal, state.setAddForm, state.setAddErrors]);
 
   const handleAddRowWithData = useCallback(async (formData) => {
     return await dataOps.handleAddRowSubmit(formData);

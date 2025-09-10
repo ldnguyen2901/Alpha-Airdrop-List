@@ -11,7 +11,6 @@ export { useImportExport } from './useImportExport';
 export { useTgeImportExport } from './useTgeImportExport';
 export { useDuplicateCheck } from './useDuplicateCheck';
 export { useResponsive } from './useResponsive';
-export { useAutoRefresh } from './useAutoRefresh';
 export { useModalOperations } from './useModalOperations';
 export { useTgeModalOperations } from './useModalOperations';
 export { useStatscardPrices } from './useStatscardPrices';

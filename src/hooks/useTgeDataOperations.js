@@ -248,17 +248,24 @@ export const useTgeDataOperations = (
       launchAt = normalizeDateTime(form.launchAt);
     }
     
+    // Debug: Log original API ID before processing
+    console.log('🔍 DEBUG useTgeDataOperations - Original API ID from form:', form.apiId);
+    console.log('🔍 DEBUG useTgeDataOperations - API ID after trim:', form.apiId.trim());
+    
     // Create new row data (excluding price - will be fetched from API)
     const newRowData = {
       name: form.name || '',
       launchAt: launchAt,
-      apiId: form.apiId.trim(),
+      apiId: form.apiId.trim().toLowerCase(), // Convert to lowercase
       point: form.point || '',
       type: form.type || 'TGE',
       ath: form.ath || 0,
       logo: form.logo || '',
       symbol: form.symbol || ''
     };
+    
+    // Debug: Log final API ID in newRowData
+    console.log('🔍 DEBUG useTgeDataOperations - Final API ID in newRowData:', newRowData.apiId);
     
     // Add the row
     addRow(newRowData);

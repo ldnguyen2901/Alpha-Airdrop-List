@@ -21,7 +21,6 @@ import {
   useTgeImportExport,
   useDuplicateCheck,
   useResponsive,
-  useAutoRefresh,
   useTgeModalOperations,
   useStatscardPrices
 } from '../hooks';
@@ -93,13 +92,13 @@ export default function TgeContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Auto refresh - only refresh active table (TGE)
-  const autoRefreshOps = useAutoRefresh(
-    apiOps.refreshData,
-    apiOps.refreshStatscardPrices,
-    state.isPageVisible,
-    state.setIsPageVisible
-  );
+  // Register TGE refresh functions with centralized auto-refresh
+  useEffect(() => {
+    autoRefreshContext.registerTgeRefresh(
+      apiOps.refreshData,
+      apiOps.refreshStatscardPrices
+    );
+  }, [apiOps.refreshData, apiOps.refreshStatscardPrices, autoRefreshContext]);
   
   // Modal operations
   const modalOps = useTgeModalOperations(
@@ -166,7 +165,7 @@ export default function TgeContent() {
     if (state.rows.length > 0) {
       checkMissingPrices();
     }
-  }, [state.rows.length]); // Remove apiOps dependency
+  }, [state.rows.length]); // Only depend on rows.length to prevent loops
 
   // Auto force sync when page becomes visible (if needed)
   useEffect(() => {
@@ -180,7 +179,7 @@ export default function TgeContent() {
     return () => {
       clearInterval(syncInterval);
     };
-  }, [state.isPageVisible, state.syncing]); // Remove neonSyncOps dependency
+  }, [state.isPageVisible, state.syncing, neonSyncOps]); // Keep neonSyncOps dependency
 
   // Handle add row submit
   const handleAddRowSubmit = (form) => {
@@ -276,6 +275,7 @@ export default function TgeContent() {
           searchToken={state.searchToken}
           setSearchToken={state.setSearchToken}
           countdown={autoRefreshContext.countdown}
+          onManualRefresh={autoRefreshContext.manualRefresh}
         />
 
         <SortableTable
@@ -347,6 +347,7 @@ export default function TgeContent() {
           setAddForm={state.setAddForm}
           addErrors={state.addErrors}
           handleAddRowSubmit={handleAddRowSubmit}
+          onRefreshToken={apiOps.refreshSingleToken}
         />
         
         <DuplicatesModal

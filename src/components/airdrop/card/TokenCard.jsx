@@ -4,6 +4,7 @@ import Delete from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ReportGmailerrorredIcon from '@mui/icons-material/ReportGmailerrorred';
 import { formatPrice, formatDateTime, getCountdownText, isRecentlyListed, parseDate } from '../../../utils';
 
 const TokenCard = ({
@@ -97,6 +98,36 @@ const TokenCard = ({
     }
   };
 
+  // Handle contract copy
+  const handleContractCopy = async (contractAddress) => {
+    if (!contractAddress || contractAddress === 'N/A') return;
+    
+    try {
+      await navigator.clipboard.writeText(contractAddress);
+      console.log('Contract copied to clipboard:', contractAddress);
+      
+      // Show visual feedback
+      const contractElement = document.querySelector(`[data-contract="${contractAddress}"]`);
+      if (contractElement) {
+        contractElement.style.backgroundColor = '#10B981';
+        contractElement.style.color = 'white';
+        setTimeout(() => {
+          contractElement.style.backgroundColor = '';
+          contractElement.style.color = '';
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Failed to copy contract:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = contractAddress;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.02]">
       {/* Header with Logo and Name */}
@@ -144,7 +175,7 @@ const TokenCard = ({
                       <HourglassEmptyIcon sx={{ fontSize: 12 }} className="hourglass-blink" />
                       <span dangerouslySetInnerHTML={{ __html: getCountdownTextForRow(row) }} />
                     </div>
-                  ) : (row.launchAt && isTokenListed(row) ? 'N/A' : 'N/A'))}
+                  ) : (row.launchAt && isTokenListed(row) ? <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" /> : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />))}
                 </div>
               </div>
             </div>
@@ -158,58 +189,101 @@ const TokenCard = ({
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Amount:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || 'Unknown').toUpperCase()}` : 'N/A'}
+              {row.amount ? `${row.amount.toLocaleString()} ${(row.symbol || 'Unknown').toUpperCase()}` : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />}
             </div>
           </div>
           <div>
             <span className="text-gray-500 dark:text-gray-400 text-sm">Launch Date:</span>
             <div className="font-medium text-gray-900 dark:text-white">
-              {row.launchAt ? formatDateTime(row.launchAt) : 'N/A'}
+              {row.launchAt ? formatDateTime(row.launchAt) : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />}
             </div>
           </div>
         </div>
 
-                 {/* Point Priority and ATH */}
+                 {/* Point and AT(L-H) */}
          <div className="grid grid-cols-2 gap-4">
-                       <div>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Point Priority:</span>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {row.pointPriority ? (
-                  row.pointPriority
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-              </div>
-            </div>
            <div>
-             <span className="text-gray-500 dark:text-gray-400 text-sm">ATH:</span>
-             <div className="font-medium text-purple-600 dark:text-purple-400">
-               {row.ath && row.ath > 0 ? `$${formatPrice(row.ath)}` : (isTokenListed(row) ? 'N/A' : 'N/A')}
+             <span className="text-gray-500 dark:text-gray-400 text-sm">Point:</span>
+             <div className="font-medium text-gray-900 dark:text-white">
+               {row.pointPriority || row.pointFCFS ? (
+                 <span>
+                   {row.pointPriority && (
+                     <span className="font-medium">
+                       {row.pointPriority}
+                     </span>
+                   )}
+                   {row.pointPriority && row.pointFCFS && (
+                     <span className="text-gray-400 mx-1">-</span>
+                   )}
+                   {row.pointFCFS && (
+                     <span className="font-medium">
+                       {row.pointFCFS}
+                     </span>
+                   )}
+                 </span>
+               ) : (
+                 <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+               )}
+             </div>
+           </div>
+           <div>
+             <span className="text-gray-500 dark:text-gray-400 text-sm">AT(L-H):</span>
+             <div className="font-medium text-gray-900 dark:text-white">
+               {row.atl && row.atl > 0 && row.ath && row.ath > 0 ? (
+                 <>
+                   <span className="text-red-600 dark:text-red-400 font-medium">
+                     ${formatPrice(row.atl)}
+                   </span>
+                   <span className="text-gray-400 mx-1">-</span>
+                   <span className="text-green-600 dark:text-green-400 font-medium">
+                     ${formatPrice(row.ath)}
+                   </span>
+                 </>
+               ) : row.atl && row.atl > 0 ? (
+                 <span className="text-red-600 dark:text-red-400 font-medium">
+                   ${formatPrice(row.atl)}
+                 </span>
+               ) : row.ath && row.ath > 0 ? (
+                 <span className="text-green-600 dark:text-green-400 font-medium">
+                   ${formatPrice(row.ath)}
+                 </span>
+               ) : (
+                 <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />
+               )}
              </div>
            </div>
          </div>
 
-                 {/* Points FCFS and Reward */}
+         {/* Contract and Reward */}
          <div className="grid grid-cols-2 gap-4">
-                       <div>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">Points FCFS:</span>
-              <div className="font-medium text-gray-900 dark:text-white">
-                {row.pointFCFS ? (
-                  row.pointFCFS
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-              </div>
-            </div>
+           <div>
+             <span className="text-gray-500 dark:text-gray-400 text-sm">Contract:</span>
+             <div className="font-medium text-gray-900 dark:text-white text-xs">
+               {row.contract ? (
+                 <span 
+                   className="font-mono cursor-pointer hover:underline transition-colors duration-200 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900"
+                   title="Click to copy contract address"
+                   onClick={() => handleContractCopy(row.contract)}
+                   data-contract={row.contract}
+                   style={{ padding: '2px 4px', borderRadius: '4px' }}
+                 >
+                   {row.contract.length > 20 
+                     ? `${row.contract.substring(0, 6)}...${row.contract.substring(row.contract.length - 4)}`
+                     : row.contract
+                   }
+                 </span>
+               ) : (
+                 <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />
+               )}
+             </div>
+           </div>
            <div>
              <span className="text-gray-500 dark:text-gray-400 text-sm">Reward:</span>
-             <div className="font-medium text-green-600 dark:text-green-400">
-               {row.reward ? `$${formatPrice(row.reward)}` : 'N/A'}
+             <div className="font-medium text-yellow-600 dark:text-yellow-400">
+               {row.reward ? `$${formatPrice(row.reward)}` : <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />}
              </div>
            </div>
          </div>
-
-
 
         
 

@@ -84,6 +84,18 @@ export function clearTokenInfoCacheForToken(apiId) {
 export function clearAllCaches() {
   logoCache.clear();
   tokenInfoCache.clear();
+  console.log('🧹 All caches cleared');
+}
+
+// Function to force refresh token data (clear cache and refetch)
+export async function forceRefreshTokenData(apiId) {
+  if (!apiId) return null;
+  
+  // Clear cache for this specific token
+  clearTokenInfoCacheForToken(apiId);
+  
+  // Fetch fresh data
+  return await fetchTokenFullInfo(apiId);
 }
 
 export async function fetchTokenLogos(ids) {
@@ -177,45 +189,6 @@ export async function fetchTokenLogos(ids) {
   }
 }
 
-// Fetch single token info by API ID
-export async function fetchTokenInfo(apiId) {
-  if (!apiId || !apiId.trim()) return null;
-  
-  try {
-    // Sử dụng API /coins/markets cho single token
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${encodeURIComponent(apiId.trim())}&order=market_cap_desc&per_page=1&page=1&sparkline=false`;
-    const res = await fetch(url);
-    
-    if (!res.ok) {
-      throw new Error(`API lỗi ${res.status}`);
-    }
-    
-    const data = await res.json();
-    
-    if (data.length === 0) {
-      return null;
-    }
-    
-    const coin = data[0];
-    if (!coin || !coin.symbol) {
-      console.warn('Invalid coin data received:', coin);
-      return null;
-    }
-    
-    return {
-      id: coin.id || '',
-      name: coin.name || '',
-      symbol: String(coin.symbol || '').toUpperCase(),
-      logo: coin.image || '',
-      ath: coin.ath || 0,
-      current_price: coin.current_price || 0
-    };
-  } catch (error) {
-    console.error('Error fetching token info:', error);
-    return null;
-  }
-}
-
 // Fetch full token info by API ID (including exchanges, chains, categories)
 export async function fetchTokenFullInfo(apiId) {
   if (!apiId || !apiId.trim()) return null;
@@ -231,10 +204,31 @@ export async function fetchTokenFullInfo(apiId) {
   try {
     // Sử dụng API /coins/{id} để lấy thông tin đầy đủ
     const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(apiId.trim())}`;
-    const res = await fetch(url);
+    
+    // Add timeout and better error handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!res.ok) {
-      throw new Error(`API lỗi ${res.status}`);
+      if (res.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (res.status === 404) {
+        throw new Error(`Token "${apiId}" not found on CoinGecko.`);
+      } else if (res.status >= 500) {
+        throw new Error('CoinGecko server error. Please try again later.');
+      } else {
+        throw new Error(`API error ${res.status}: ${res.statusText}`);
+      }
     }
     
     const data = await res.json();
@@ -258,8 +252,17 @@ export async function fetchTokenFullInfo(apiId) {
     
     // Extract chains from platforms
     const chains = [];
+    const contractAddresses = {}; // Thêm field để lưu contract addresses
+    
     if (data.platforms && typeof data.platforms === 'object') {
       chains.push(...Object.keys(data.platforms));
+      
+      // Lưu contract addresses cho từng chain
+      Object.entries(data.platforms).forEach(([chain, contract]) => {
+        if (contract && contract.trim()) {
+          contractAddresses[chain] = contract;
+        }
+      });
     }
     
     // Extract categories
@@ -271,11 +274,30 @@ export async function fetchTokenFullInfo(apiId) {
       symbol: String(data.symbol || '').toUpperCase(),
       logo: data.image?.small || '',
       ath: data.market_data?.ath?.usd || 0,
+      atl: data.market_data?.atl?.usd || 0, // Thêm ATL
       current_price: data.market_data?.current_price?.usd || 0,
       exchanges: exchanges,
       chains: chains,
-      categories: categories
+      categories: categories,
+      contractAddresses: contractAddresses, // Thêm contract addresses
+      // Lấy contract chính (ưu tiên Binance Smart Chain, sau đó Ethereum, cuối cùng là chain đầu tiên)
+      contract: contractAddresses['binance-smart-chain'] || 
+                contractAddresses['bsc'] || 
+                contractAddresses['ethereum'] || 
+                Object.values(contractAddresses)[0] || ''
     };
+    
+    // Debug logging
+    console.log(`🔍 Fetched data for ${apiId}:`, {
+      ath: result.ath,
+      atl: result.atl,
+      contract: result.contract,
+      contractAddresses: result.contractAddresses,
+      chains: result.chains,
+      selectedChain: result.contractAddresses['binance-smart-chain'] ? 'binance-smart-chain' :
+                     result.contractAddresses['bsc'] ? 'bsc' :
+                     result.contractAddresses['ethereum'] ? 'ethereum' : 'first-available'
+    });
     
     // Cache the result
     tokenInfoCache.set(apiId, {
@@ -286,8 +308,19 @@ export async function fetchTokenFullInfo(apiId) {
     return result;
   } catch (error) {
     console.error('Error fetching token full info:', error);
+    
+    // Provide more specific error messages
+    if (error.name === 'AbortError') {
+      console.error('Request timeout for token:', apiId);
+    } else if (error.message.includes('Failed to fetch')) {
+      console.error('Network error - possible CORS issue or network connectivity problem');
+    } else if (error.message.includes('Rate limit')) {
+      console.error('Rate limit exceeded for CoinGecko API');
+    }
+    
     // Return cached data if available, even if expired
     if (cached) {
+      console.log('Returning cached data for token:', apiId);
       return cached.data;
     }
     return null;

@@ -12,7 +12,8 @@ export default function AddRowModal({
   addForm,
   setAddForm,
   addErrors,
-  handleAddRowSubmit
+  handleAddRowSubmit,
+  onRefreshToken // Add this prop for auto fetch full info
 }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +46,8 @@ export default function AddRowModal({
 
   // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
-    const apiId = e.target.value;
+    const apiId = e.target.value.toLowerCase(); // Convert to lowercase
+    console.log('🔍 DEBUG TGE AddRowModal - API ID input change:', apiId);
     setAddForm((p) => ({ 
       ...p, 
       apiId,
@@ -78,9 +80,9 @@ export default function AddRowModal({
       }
       
       try {
-        const { fetchTokenInfo } = await import('../../../services/api');
+        const { fetchTokenFullInfo } = await import('../../../services/api');
         const { saveTokenLogoToDatabase } = await import('../../../services/neon');
-        const tokenInfo = await fetchTokenInfo(apiId.trim());
+        const tokenInfo = await fetchTokenFullInfo(apiId.trim());
         if (tokenInfo) {
           // Save logo to database
           if (tokenInfo.logo) {
@@ -94,11 +96,16 @@ export default function AddRowModal({
           setAddForm((p) => ({
             ...p,
             name: tokenInfo.symbol || tokenInfo.name,
-            apiId: tokenInfo.id, // Use the correct ID from API
-            logo: tokenInfo.logo || '', // ⭐ (thêm mới)
-            symbol: tokenInfo.symbol || '', // ⭐ (thêm mới)
-            ath: tokenInfo.ath || 0, // ⭐ (thêm mới)
-            price: tokenInfo.current_price || 0 // ⭐ (thêm mới)
+            // Keep original API ID case, don't overwrite with API response
+            logo: tokenInfo.logo || '',
+            symbol: tokenInfo.symbol || '',
+            ath: tokenInfo.ath || 0,
+            atl: tokenInfo.atl || 0, // Thêm ATL
+            contract: tokenInfo.contract || '', // Thêm contract
+            exchanges: tokenInfo.exchanges || [], // Thêm exchanges
+            chains: tokenInfo.chains || [], // Thêm chains
+            categories: tokenInfo.categories || [], // Thêm categories
+            price: tokenInfo.current_price || 0
           }));
         }
       } catch (error) {
@@ -149,6 +156,7 @@ export default function AddRowModal({
           onSubmit={async (e) => {
         
             e.preventDefault();
+            console.log('🔍 DEBUG TGE AddRowModal - Form submit with API ID:', addForm.apiId);
             setIsSubmitting(true);
             try {
           
@@ -162,6 +170,20 @@ export default function AddRowModal({
                 setTimeout(() => {
                   form.classList.remove('modal-success');
                 }, 500);
+                
+                // Auto fetch full info for the newly added token
+                if (onRefreshToken && addForm.apiId) {
+                  console.log('🔄 TGE Auto fetching full info for newly added token:', addForm.apiId);
+                  try {
+                    await onRefreshToken(addForm.apiId);
+                    console.log('✅ TGE Successfully fetched full info for:', addForm.apiId);
+                  } catch (error) {
+                    console.error('❌ TGE Failed to fetch full info for:', addForm.apiId, error);
+                  }
+                }
+                
+                // Close modal after successful add
+                setShowAddModal(false);
               } else if (result && result.errors) {
             
               }
@@ -185,18 +207,6 @@ export default function AddRowModal({
                 placeholder='Will be auto-filled from API ID'
                 className='border rounded px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400 w-full cursor-not-allowed'
                 disabled
-              />
-            </div>
-
-            <div>
-              <input
-                name='point'
-                value={addForm.point}
-                onChange={(e) =>
-                  setAddForm((p) => ({ ...p, point: e.target.value }))
-                }
-                placeholder='Point (optional)'
-                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
               />
             </div>
 
@@ -260,6 +270,18 @@ export default function AddRowModal({
                   {addErrors.apiId}
                 </div>
               )}
+            </div>
+
+            <div>
+              <input
+                name='point'
+                value={addForm.point}
+                onChange={(e) =>
+                  setAddForm((p) => ({ ...p, point: e.target.value }))
+                }
+                placeholder='Point (optional)'
+                className='border rounded px-3 py-2 bg-white dark:bg-gray-700 dark:text-white w-full'
+              />
             </div>
 
             <div>

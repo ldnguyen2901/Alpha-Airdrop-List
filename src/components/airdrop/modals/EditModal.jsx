@@ -12,7 +12,9 @@ export default function EditModal({
   setRowDrafts,
   setEditingModal,
   saveRow,
-  modalPosition
+  modalPosition,
+  onRefreshToken, // Add this prop for auto fetch full info
+  rows // Add rows to compare API ID changes
 }) {
   const [isSaving, setIsSaving] = useState(false);
   const [editErrors, setEditErrors] = useState({});
@@ -100,7 +102,7 @@ export default function EditModal({
 
   // API ID change handler - auto fetch token info
   const handleApiIdChange = async (e) => {
-    const apiId = e.target.value;
+    const apiId = e.target.value.toLowerCase(); // Convert to lowercase
     setRowDrafts((p) => ({
       ...p,
       [editingModal.idx]: {
@@ -139,9 +141,9 @@ export default function EditModal({
       }
       
       try {
-        const { fetchTokenInfo } = await import('../../../services/api');
+        const { fetchTokenFullInfo } = await import('../../../services/api');
         const { saveTokenLogoToDatabase } = await import('../../../services/neon');
-        const tokenInfo = await fetchTokenInfo(apiId.trim());
+        const tokenInfo = await fetchTokenFullInfo(apiId.trim());
         if (tokenInfo) {
           // Save logo to database
           if (tokenInfo.logo) {
@@ -157,11 +159,16 @@ export default function EditModal({
             [editingModal.idx]: {
               ...p[editingModal.idx],
               name: tokenInfo.symbol || tokenInfo.name,
-              apiId: tokenInfo.id, // Use the correct ID from API
-              logo: tokenInfo.logo || '', // ⭐ (thêm mới)
-              symbol: tokenInfo.symbol || '', // ⭐ (thêm mới)
-              ath: tokenInfo.ath || 0, // ⭐ (thêm mới)
-              price: tokenInfo.current_price || 0 // ⭐ (thêm mới)
+              // Keep original API ID case, don't overwrite with API response
+              logo: tokenInfo.logo || '',
+              symbol: tokenInfo.symbol || '',
+              ath: tokenInfo.ath || 0,
+              atl: tokenInfo.atl || 0, // Thêm ATL
+              contract: tokenInfo.contract || '', // Thêm contract
+              exchanges: tokenInfo.exchanges || [], // Thêm exchanges
+              chains: tokenInfo.chains || [], // Thêm chains
+              categories: tokenInfo.categories || [], // Thêm categories
+              price: tokenInfo.current_price || 0
             },
           }));
         }
@@ -388,6 +395,23 @@ export default function EditModal({
                 setIsSaving(true);
                 try {
                   await saveRow(editingModal.idx);
+                  
+                  // Only auto fetch full info if API ID was changed (not for amount/point edits)
+                  const originalApiId = rows[editingModal.idx]?.apiId;
+                  const newApiId = rowDrafts[editingModal.idx]?.apiId;
+                  
+                  if (onRefreshToken && newApiId && originalApiId !== newApiId) {
+                    console.log('🔄 API ID changed, fetching full info for:', newApiId);
+                    try {
+                      await onRefreshToken(newApiId);
+                      console.log('✅ Successfully fetched full info for:', newApiId);
+                    } catch (error) {
+                      console.error('❌ Failed to fetch full info for:', newApiId, error);
+                    }
+                  } else {
+                    console.log('🔄 No API ID change, skipping full info fetch to preserve user edits');
+                  }
+                  
                   // Add success animation
                   const button = event.target;
                   button.classList.add('button-success');

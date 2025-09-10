@@ -57,6 +57,8 @@ export const useImportExport = (addMultipleRows, replaceRows) => {
           row.pointPriority || '',
           row.pointFCFS || '',
           row.ath || '', // ✅ Sửa từ highestPrice thành ath để khớp với CSV_HEADERS
+          row.atl || '', // ⭐ (thêm mới)
+          row.contract || '', // ⭐ (thêm mới)
           row.logo || '',
           row.symbol || '',
           (row.exchanges || []).join(', '), // ⭐ (thêm mới)
@@ -227,6 +229,8 @@ export const useTgeImportExport = (addMultipleRows) => {
       'Point': row.point || '',
       'Type': row.type || 'TGE',
       'ATH': row.ath || '',
+      'ATL': row.atl || '', // ⭐ (thêm mới)
+      'Contract': row.contract || '', // ⭐ (thêm mới)
       'Logo': row.logo || '',
       'Symbol': row.symbol || '',
       'Exchanges': (row.exchanges || []).join(', '), // ⭐ (thêm mới)
@@ -331,8 +335,13 @@ export const useTgeImportExport = (addMultipleRows) => {
           row.point || '', // Point
           row.type || 'TGE', // Type
           row.ath || '', // ATH
+          row.atl || '', // ATL ⭐ (thêm mới)
+          row.contract || '', // Contract ⭐ (thêm mới)
           row.logo || '', // Logo
-          row.symbol || '' // Symbol
+          row.symbol || '', // Symbol
+          (row.exchanges || []).join(', '), // Exchanges ⭐ (thêm mới)
+          (row.chains || []).join(', '), // Chains ⭐ (thêm mới)
+          (row.categories || []).join(', ') // Categories ⭐ (thêm mới)
         ])
       ];
 

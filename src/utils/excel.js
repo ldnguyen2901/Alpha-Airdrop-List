@@ -63,7 +63,7 @@ export function parseTgeExcelData(excelData) {
   const validRows = [];
 
   try {
-    // Expected column structure for TGE (12 columns):
+    // Expected column structure for TGE (14 columns):
     // A: Token Name (optional)
     // B: Listing Date (optional)
     // C: API ID (required)
@@ -71,11 +71,13 @@ export function parseTgeExcelData(excelData) {
     // E: Type (optional)
     // F: Token Price (optional)
     // G: ATH (optional)
-    // H: Logo (optional)
-    // I: Symbol (optional)
-    // J: Exchanges (optional) ⭐ (thêm mới)
-    // K: Chains (optional) ⭐ (thêm mới)
-    // L: Categories (optional) ⭐ (thêm mới)
+    // H: ATL (optional) ⭐ (thêm mới)
+    // I: Contract (optional) ⭐ (thêm mới)
+    // J: Logo (optional)
+    // K: Symbol (optional)
+    // L: Exchanges (optional) ⭐ (thêm mới)
+    // M: Chains (optional) ⭐ (thêm mới)
+    // N: Categories (optional) ⭐ (thêm mới)
 
     // Check if first row looks like header (contains text like "Token", "API", etc.)
     const firstRow = excelData[0] || [];
@@ -108,10 +110,10 @@ export function parseTgeExcelData(excelData) {
           return;
         }
         
-        if (row.length > 12) {
-          const extras = row.slice(12).some((v) => String(v || '').trim() !== '');
+        if (row.length > 14) {
+          const extras = row.slice(14).some((v) => String(v || '').trim() !== '');
           if (extras) {
-            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond L (found ${row.length} columns, max 12 allowed)`);
+            errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond N (found ${row.length} columns, max 14 allowed)`);
             return;
           }
         }
@@ -124,17 +126,19 @@ export function parseTgeExcelData(excelData) {
           type = '',           // Column E: Type
           tokenPrice = '',     // Column F: Token Price
           ath = '',            // Column G: ATH
-          logo = '',           // Column H: Logo
-          symbol = '',         // Column I: Symbol
-          exchanges = '',      // Column J: Exchanges ⭐ (thêm mới)
-          chains = '',        // Column K: Chains ⭐ (thêm mới)
-          categories = '',     // Column L: Categories ⭐ (thêm mới)
+          atl = '',            // Column H: ATL ⭐ (thêm mới)
+          contract = '',       // Column I: Contract ⭐ (thêm mới)
+          logo = '',           // Column J: Logo
+          symbol = '',         // Column K: Symbol
+          exchanges = '',      // Column L: Exchanges ⭐ (thêm mới)
+          chains = '',        // Column M: Chains ⭐ (thêm mới)
+          categories = '',     // Column N: Categories ⭐ (thêm mới)
         ] = row;
 
         // Parse data from correct columns
         let actualToken = String(tokenName || '').trim();
         let actualDate = String(listingDate || '').trim();
-        let actualApiId = String(apiId || '').trim();
+        let actualApiId = String(apiId || '').trim().toLowerCase(); // Convert to lowercase
         let actualPoint = String(point || '').trim();
         let actualType = String(type || '').trim();
         let actualSymbol = String(symbol || '').trim();
@@ -170,6 +174,13 @@ export function parseTgeExcelData(excelData) {
         if (ath) {
           const cleanATH = String(ath).replace(/[^\d.,]/g, '').replace(',', '.');
           parsedATH = parseFloat(cleanATH) || 0;
+        }
+
+        // Parse ATL ⭐ (thêm mới)
+        let parsedATL = 0;
+        if (atl) {
+          const cleanATL = String(atl).replace(/[^\d.,]/g, '').replace(',', '.');
+          parsedATL = parseFloat(cleanATL) || 0;
         }
 
         // Parse date
@@ -211,6 +222,8 @@ export function parseTgeExcelData(excelData) {
           point: actualPoint,
           type: actualType || 'TGE', // Default to TGE if not specified
           ath: parsedATH,
+          atl: parsedATL, // ⭐ (thêm mới)
+          contract: String(contract || '').trim(), // ⭐ (thêm mới)
           logo: actualLogo,
           symbol: actualSymbol,
           exchanges: actualExchanges, // ⭐ (thêm mới)
@@ -249,7 +262,7 @@ export function parseExcelData(excelData) {
   const errors = [];
   const validRows = [];
 
-  // Expected column structure (12 columns to match CSV_HEADERS):
+  // Expected column structure (14 columns to match CSV_HEADERS):
   // A: Token Name (optional)
   // B: Amount (optional)
   // C: Launch Date (optional)
@@ -257,11 +270,13 @@ export function parseExcelData(excelData) {
   // E: Point Priority (optional)
   // F: Point FCFS (optional)
   // G: ATH (optional)
-  // H: Logo (optional)
-  // I: Symbol (optional)
-  // J: Exchanges (optional) ⭐ (thêm mới)
-  // K: Chains (optional) ⭐ (thêm mới)
-  // L: Categories (optional) ⭐ (thêm mới)
+  // H: ATL (optional) ⭐ (thêm mới)
+  // I: Contract (optional) ⭐ (thêm mới)
+  // J: Logo (optional)
+  // K: Symbol (optional)
+  // L: Exchanges (optional) ⭐ (thêm mới)
+  // M: Chains (optional) ⭐ (thêm mới)
+  // N: Categories (optional) ⭐ (thêm mới)
 
   // Check if first row looks like header (contains text like "Token", "Amount", etc.)
   const firstRow = excelData[0] || [];
@@ -293,10 +308,10 @@ export function parseExcelData(excelData) {
         return;
       }
       
-      if (row.length > 12) {
-        const extras = row.slice(12).some((v) => String(v || '').trim() !== '');
+      if (row.length > 14) {
+        const extras = row.slice(14).some((v) => String(v || '').trim() !== '');
         if (extras) {
-          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond L (found ${row.length} columns, max 12 allowed)`);
+          errors.push(`Row ${idx + (isFirstRowHeader ? 2 : 1)}: Data found in columns beyond N (found ${row.length} columns, max 14 allowed)`);
           return;
         }
       }
@@ -309,18 +324,20 @@ export function parseExcelData(excelData) {
         pointPriority = '',  // Column E: Point Priority
         pointFCFS = '',      // Column F: Point FCFS
         ath = '',            // Column G: ATH
-        logo = '',           // Column H: Logo
-        symbol = '',         // Column I: Symbol
-        exchanges = '',      // Column J: Exchanges ⭐ (thêm mới)
-        chains = '',        // Column K: Chains ⭐ (thêm mới)
-        categories = '',     // Column L: Categories ⭐ (thêm mới)
+        atl = '',            // Column H: ATL ⭐ (thêm mới)
+        contract = '',       // Column I: Contract ⭐ (thêm mới)
+        logo = '',           // Column J: Logo
+        symbol = '',         // Column K: Symbol
+        exchanges = '',      // Column L: Exchanges ⭐ (thêm mới)
+        chains = '',        // Column M: Chains ⭐ (thêm mới)
+        categories = '',     // Column N: Categories ⭐ (thêm mới)
       ] = row;
 
       // Parse data from correct columns
       let actualToken = String(tokenName || '').trim();
       let actualAmount = String(amount || '').trim();
       let actualDate = String(launchDate || '').trim();
-      let actualApiId = String(apiId || '').trim();
+      let actualApiId = String(apiId || '').trim().toLowerCase(); // Convert to lowercase
       let actualSymbol = String(symbol || '').trim();
       let actualLogo = String(logo || '').trim();
       
@@ -359,6 +376,13 @@ export function parseExcelData(excelData) {
       if (ath) {
         const cleanATH = String(ath).replace(/[^\d.,]/g, '').replace(',', '.');
         parsedATH = parseFloat(cleanATH) || 0;
+      }
+
+      // Parse ATL ⭐ (thêm mới)
+      let parsedATL = 0;
+      if (atl) {
+        const cleanATL = String(atl).replace(/[^\d.,]/g, '').replace(',', '.');
+        parsedATL = parseFloat(cleanATL) || 0;
       }
 
       // Parse date
@@ -402,6 +426,8 @@ export function parseExcelData(excelData) {
         pointFCFS: String(pointFCFS || '').trim(),
         highestPrice: parsedATH, // Map ATH to highestPrice for backward compatibility
         ath: parsedATH,
+        atl: parsedATL, // ⭐ (thêm mới)
+        contract: String(contract || '').trim(), // ⭐ (thêm mới)
         logo: actualLogo,
         symbol: actualSymbol,
         exchanges: actualExchanges, // ⭐ (thêm mới)

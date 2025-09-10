@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
-import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchTokenFullInfo, saveStatscardPrices, clearTokenInfoCacheForToken } from '../services';
+import { fetchCryptoPrices, fetchTokenLogos, fetchTokenFullInfo, saveStatscardPrices, clearTokenInfoCacheForToken } from '../services';
 import { loadTokenLogoFromDatabase, saveTokenLogoToDatabase } from '../services/neon';
 import { usePriceTracking } from './usePriceTracking';
-import { isMainToken, MAIN_TOKENS } from '../utils';
+import { isMainToken, MAIN_TOKENS, expandAllRowsWithMultipleContracts } from '../utils';
 
 export const useApiOperations = (
   rows, 
@@ -14,11 +14,14 @@ export const useApiOperations = (
   setLoading,
   setLastUpdated
 ) => {
-  // Initialize price tracking hook
-  const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
-  
   // Cache for loaded logos to avoid reloading
   const loadedLogosCache = useRef(new Set());
+  
+  // Track loading state to prevent multiple simultaneous refreshes
+  const isLoadingRef = useRef(false);
+  
+  // Initialize price tracking hook
+  const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
 
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
@@ -116,7 +119,7 @@ export const useApiOperations = (
 
   // Auto fetch token info when API ID is entered
   const fetchAndUpdateTokenInfo = useCallback(async (apiId, rowIndex) => {
-    if (!apiId || !apiId.trim()) return;
+    if (!apiId || typeof apiId !== 'string' || !apiId.trim()) return;
     
     // Prevent updating main tokens (BTC, ETH, BNB)
     if (isMainToken(apiId.trim())) {
@@ -137,7 +140,7 @@ export const useApiOperations = (
     }
 
     try {
-      const tokenInfo = await fetchTokenInfo(apiId.trim());
+      const tokenInfo = await fetchTokenFullInfo(apiId.trim());
       if (tokenInfo) {
         // Save logo to database
         if (tokenInfo.logo) {
@@ -152,8 +155,13 @@ export const useApiOperations = (
           name: tokenInfo.name || '',
           symbol: tokenInfo.symbol || '',
           logo: tokenInfo.logo || '',
-          ath: tokenInfo.ath || 0, // ⭐ (thêm mới)
-          price: tokenInfo.current_price || 0 // ⭐ (thêm mới)
+          ath: tokenInfo.ath || 0,
+          atl: tokenInfo.atl || 0, // Thêm ATL
+          contract: tokenInfo.contract || '', // Thêm contract
+          exchanges: tokenInfo.exchanges || [], // Thêm exchanges
+          chains: tokenInfo.chains || [], // Thêm chains
+          categories: tokenInfo.categories || [], // Thêm categories
+          price: tokenInfo.current_price || 0
         });
       }
     } catch (error) {
@@ -211,6 +219,13 @@ export const useApiOperations = (
 
   // Refresh data function with optimized strategy (table data only, excluding statscard)
   const refreshData = useCallback(async () => {
+    // Prevent multiple simultaneous refreshes
+    if (isLoadingRef.current) {
+      console.log('⏸️ Refresh already in progress, skipping...');
+      return;
+    }
+    
+    isLoadingRef.current = true;
     setLoading(true);
     
     try {
@@ -390,12 +405,20 @@ export const useApiOperations = (
     } catch (error) {
       console.error('❌ Error in refreshData:', error);
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, [ids, rows, updateRow, setLastUpdated, setLoading, trackPriceChange, getPriceStats, analyzeTrend]);
 
   // Fetch full info for all tokens (exchanges, chains, categories)
   const fetchAllTokensFullInfo = useCallback(async () => {
+    // Prevent multiple simultaneous refreshes
+    if (isLoadingRef.current) {
+      console.log('⏸️ Fetch full info already in progress, skipping...');
+      return;
+    }
+    
+    isLoadingRef.current = true;
     setLoading(true);
     
     try {
@@ -429,11 +452,17 @@ export const useApiOperations = (
           token.categories.length > 0 && 
           token.categories.some(cat => cat && cat.trim());
         
-        // Debug logging for each token
-        console.log(`Token ${token.apiId}: exchanges=${hasExchanges}, chains=${hasChains}, categories=${hasCategories}`);
+        // Check if contract field exists and has data
+        const hasContract = token.contract && token.contract.trim();
         
-        // Skip if token already has all three fields with meaningful data
-        return !(hasExchanges && hasChains && hasCategories);
+        // Check if atl field exists and has data (not 0)
+        const hasATL = token.atl && token.atl !== 0;
+        
+        // Debug logging for each token
+        console.log(`Token ${token.apiId}: exchanges=${hasExchanges}, chains=${hasChains}, categories=${hasCategories}, contract=${hasContract}, atl=${hasATL}`);
+        
+        // Skip if token already has all five fields with meaningful data
+        return !(hasExchanges && hasChains && hasCategories && hasContract && hasATL);
       });
       
       const skippedCount = tokensWithApiId.length - tokensNeedingFullInfo.length;
@@ -491,6 +520,8 @@ export const useApiOperations = (
                   logo: tokenInfo.logo || token.logo || '',
                   price: tokenInfo.current_price || token.price || 0,
                   ath: tokenInfo.ath || token.ath || 0,
+                  atl: tokenInfo.atl || token.atl || 0, // Thêm ATL
+                  contract: tokenInfo.contract || token.contract || '', // Thêm contract
                   exchanges: tokenInfo.exchanges || [],
                   chains: tokenInfo.chains || [],
                   categories: tokenInfo.categories || []
@@ -538,45 +569,15 @@ export const useApiOperations = (
     } catch (error) {
       console.error('❌ Error in fetchAllTokensFullInfo:', error);
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, [rows, updateRow, setLastUpdated, setLoading]);
 
-  // Auto-refresh full info every 1 minute
-  const startAutoRefreshFullInfo = useCallback(() => {
-    console.log('🔄 Airdrop startAutoRefreshFullInfo called');
-    
-    // Clear any existing interval
-    if (window.fullInfoRefreshInterval) {
-      console.log('🔄 Clearing existing interval');
-      clearInterval(window.fullInfoRefreshInterval);
-    }
-    
-    // Set up new interval (1 minute = 60,000 ms)
-    console.log('🔄 Setting up new interval (60 seconds)');
-    window.fullInfoRefreshInterval = setInterval(() => {
-      console.log('⏰ Auto-refresh: Fetching full info for all tokens...');
-      fetchAllTokensFullInfo();
-    }, 60 * 1000); // 1 minute
-    
-    console.log('🔄 Auto-refresh started: Will fetch full info every 1 minute');
-    console.log('🔄 Interval ID:', window.fullInfoRefreshInterval);
-  }, [fetchAllTokensFullInfo]);
-
-  // Stop auto-refresh
-  const stopAutoRefreshFullInfo = useCallback(() => {
-    console.log('🔄 Airdrop stopAutoRefreshFullInfo called');
-    if (window.fullInfoRefreshInterval) {
-      console.log('🔄 Airdrop Clearing interval:', window.fullInfoRefreshInterval);
-      clearInterval(window.fullInfoRefreshInterval);
-      window.fullInfoRefreshInterval = null;
-      console.log('⏹️ Airdrop Auto-refresh stopped');
-    }
-  }, []);
 
   // Refresh single token data
   const refreshSingleToken = useCallback(async (apiId) => {
-    if (!apiId || !apiId.trim()) return;
+    if (!apiId || typeof apiId !== 'string' || !apiId.trim()) return;
     
     try {
       // Prevent updating main tokens (BTC, ETH, BNB)
@@ -588,6 +589,14 @@ export const useApiOperations = (
       // Fetch full token info including exchanges, chains, categories
       const tokenInfo = await fetchTokenFullInfo(apiId);
       if (tokenInfo) {
+        // Debug logging for single token refresh
+        console.log(`🔍 Single token refresh for ${apiId}:`, {
+          ath: tokenInfo.ath,
+          atl: tokenInfo.atl,
+          contract: tokenInfo.contract,
+          contractAddresses: tokenInfo.contractAddresses,
+          chains: tokenInfo.chains
+        });
         const currentPrice = tokenInfo.current_price;
         
         // Save logo to database
@@ -599,8 +608,15 @@ export const useApiOperations = (
           }
         }
         
-        // Find the row with this API ID
-        const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        // Find the row with this API ID (with retry mechanism for newly added tokens)
+        let rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        
+        // If not found, wait a bit and try again (for newly added tokens)
+        if (rowIndex === -1) {
+          console.log(`Airdrop: Token ${apiId} not found immediately, waiting for state update...`);
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+          rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        }
         if (rowIndex !== -1) {
           const token = rows[rowIndex];
           const reward = currentPrice * (token.amount || 0);
@@ -613,7 +629,7 @@ export const useApiOperations = (
             token.highestPrice || 0
           );
           
-          // Update row with new data including exchanges, chains, categories
+          // Update row with new data including exchanges, chains, categories, contract, atl
           updateRow(rowIndex, {
             name: tokenInfo.name || token.name || '',
             symbol: tokenInfo.symbol || token.symbol || '',
@@ -621,6 +637,8 @@ export const useApiOperations = (
             price: currentPrice,
             reward,
             ath: tokenInfo.ath || token.ath || 0,
+            atl: tokenInfo.atl || token.atl || 0, // Thêm ATL
+            contract: tokenInfo.contract || token.contract || '', // Thêm contract
             exchanges: tokenInfo.exchanges || token.exchanges || [],
             chains: tokenInfo.chains || token.chains || [],
             categories: tokenInfo.categories || token.categories || [],
@@ -628,11 +646,28 @@ export const useApiOperations = (
           });
           
           console.log(`✅ Refreshed ${apiId} with full info and saved to database`);
+        } else {
+          console.warn(`Token ${apiId} not found in current rows`);
         }
+      } else {
+        console.warn(`No data received for token: ${apiId}`);
       }
     } catch (error) {
       console.error(`Error refreshing single token ${apiId}:`, error);
-      throw error;
+      // Show user-friendly error message
+      let errorMessage = `Failed to refresh token "${apiId}". `;
+      if (error.message.includes('Rate limit')) {
+        errorMessage += 'API rate limit exceeded. Please wait a moment and try again.';
+      } else if (error.message.includes('not found')) {
+        errorMessage += 'Token not found on CoinGecko. Please check the API ID.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage += 'Request timed out. Please check your internet connection.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage += 'Network error. Please check your internet connection.';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      console.error(errorMessage);
     }
   }, [rows, updateRow, trackPriceChange]);
 
@@ -648,7 +683,7 @@ export const useApiOperations = (
       // Check for tokens that have API ID but no price
       const tokensWithoutPrice = rows.filter(r => 
         r && r !== null && 
-        r.apiId && r.apiId.trim() && 
+        r.apiId && typeof r.apiId === 'string' && r.apiId.trim() && 
         (!r.price || r.price === 0) &&
         !isMainToken(r.apiId)
       );
@@ -671,11 +706,6 @@ export const useApiOperations = (
   useEffect(() => {
     return () => {
       console.log('🔄 Airdrop component unmounting, cleaning up intervals...');
-      if (window.fullInfoRefreshInterval) {
-        console.log('🔄 Airdrop Clearing interval on unmount:', window.fullInfoRefreshInterval);
-        clearInterval(window.fullInfoRefreshInterval);
-        window.fullInfoRefreshInterval = null;
-      }
     };
   }, []);
 
@@ -687,8 +717,6 @@ export const useApiOperations = (
     refreshStatscardPrices,
     refreshSingleToken,
     fetchAllTokensFullInfo,
-    startAutoRefreshFullInfo,
-    stopAutoRefreshFullInfo,
     checkAndRefreshMissingPrices,
   };
 };

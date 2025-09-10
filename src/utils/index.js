@@ -18,3 +18,6 @@ export * from './errorHandler';
 
 // Cache management utilities
 export * from './cacheManager';
+
+// Contract utilities
+export * from './contractUtils';

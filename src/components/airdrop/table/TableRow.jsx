@@ -1,10 +1,11 @@
-import { formatAmount, formatPrice, formatDateTime, isRecentlyListed, parseDate } from '../../../utils';
+import { formatAmount, formatPrice, formatDateTime, isRecentlyListed, parseDate, getContractDisplayInfo } from '../../../utils';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import InfoIcon from '@mui/icons-material/Info';
 import BlockIcon from '@mui/icons-material/Block';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ReportGmailerrorredIcon from '@mui/icons-material/ReportGmailerrorred';
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PriceTrackingInfo from '../PriceTrackingInfo';
@@ -88,20 +89,33 @@ export default function TableRow({
     setShowPriceInfo(false);
   };
 
-  // Handle refresh token
-  const handleRefreshToken = async () => {
-    if (!onRefreshToken) return;
+  // Handle contract copy
+  const handleContractCopy = async (contractAddress) => {
+    if (!contractAddress || contractAddress === 'N/A') return;
     
-    setIsRefreshingToken(true);
     try {
-      await onRefreshToken(row.apiId || row.id);
+      await navigator.clipboard.writeText(contractAddress);
+      console.log('Contract copied to clipboard:', contractAddress);
+      
+      // Show visual feedback
+      const contractElement = document.querySelector(`[data-contract="${contractAddress}"]`);
+      if (contractElement) {
+        contractElement.style.backgroundColor = '#10B981';
+        contractElement.style.color = 'white';
+        setTimeout(() => {
+          contractElement.style.backgroundColor = '';
+          contractElement.style.color = '';
+        }, 1000);
+      }
     } catch (error) {
-      console.error('Error refreshing token:', error);
-    } finally {
-      // Ensure animation completes
-      setTimeout(() => {
-        setIsRefreshingToken(false);
-      }, 1000);
+      console.error('Failed to copy contract:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = contractAddress;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
     }
   };
 
@@ -181,7 +195,7 @@ export default function TableRow({
     return (
       <>
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          {isTokenListed() ? 'N/A' : `$${formatPrice(0)}`}
+          {isTokenListed() ? <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" /> : `$${formatPrice(0)}`}
         </td>
         <td className='px-3 py-3 text-center tabular-nums font-medium text-sm dark:text-white'>
           Wait for listing
@@ -197,7 +211,7 @@ export default function TableRow({
     return createPortal(
       <div 
         ref={tokenTooltipRef}
-        className="fixed bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-xl p-3 min-w-[500px] max-w-[700px] pointer-events-auto"
+        className="fixed bg-gray-900 dark:bg-gray-800 text-white text-sm rounded-lg shadow-xl p-4 min-w-[600px] max-w-[900px] pointer-events-auto"
         style={{ 
           zIndex: 999999,
           top: tokenTooltipPosition.top,
@@ -212,33 +226,48 @@ export default function TableRow({
         }`}></div>
         
         {/* Token Header */}
-        <div className="font-semibold text-blue-300 mb-3 text-center text-[12px]">
+        <div className="font-semibold text-blue-300 mb-4 text-center text-base">
           {(row.symbol || row.name || 'Unknown').toUpperCase()}
         </div>
         
-        {/* 3 Column Table Structure - No scroll */}
+        {/* 4 Column Table Structure - No scroll */}
         <div className="overflow-hidden rounded border border-gray-600">
-          <table className="w-full text-[10px]">
+          <table className="w-full text-xs">
             <thead className="bg-gray-700">
               <tr>
-                <th className="px-3 py-2 text-center text-blue-300 font-semibold border-r border-gray-600">🏢 Exchanges</th>
+                <th className="px-3 py-2 text-center text-blue-300 font-semibold border-r border-gray-600" colSpan="2">🏢 Exchanges</th>
                 <th className="px-3 py-2 text-center text-green-300 font-semibold border-r border-gray-600">⛓️ Chains</th>
                 <th className="px-3 py-2 text-center text-purple-300 font-semibold">📂 Categories</th>
               </tr>
             </thead>
             <tbody className="bg-gray-800">
               <tr>
-                {/* Exchanges Column */}
-                <td className="px-3 py-2 text-gray-100 border-r border-gray-600 align-top">
+                {/* Exchanges Column 1 */}
+                <td className="px-3 py-2 text-gray-100 align-top">
                   <div className="max-h-none">
                     {row.exchanges && row.exchanges.length > 0 ? (
-                      row.exchanges.map((exchange, idx) => (
-                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                      [...row.exchanges].sort((a, b) => a.localeCompare(b)).slice(0, Math.ceil(row.exchanges.length / 2)).map((exchange, idx) => (
+                        <div key={idx} className="text-xs leading-relaxed mb-1">
                           • {exchange}
                         </div>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-[9px]">-</div>
+                      <div className="text-gray-500 text-xs">-</div>
+                    )}
+                  </div>
+                </td>
+                
+                {/* Exchanges Column 2 */}
+                <td className="px-3 py-2 text-gray-100 border-r border-gray-600 align-top">
+                  <div className="max-h-none">
+                    {row.exchanges && row.exchanges.length > 0 ? (
+                      [...row.exchanges].sort((a, b) => a.localeCompare(b)).slice(Math.ceil(row.exchanges.length / 2)).map((exchange, idx) => (
+                        <div key={idx} className="text-xs leading-relaxed mb-1">
+                          • {exchange}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-xs">-</div>
                     )}
                   </div>
                 </td>
@@ -247,13 +276,13 @@ export default function TableRow({
                 <td className="px-3 py-2 text-gray-100 border-r border-gray-600 align-top">
                   <div className="max-h-none">
                     {row.chains && row.chains.length > 0 ? (
-                      row.chains.map((chain, idx) => (
-                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                      [...row.chains].sort((a, b) => a.localeCompare(b)).map((chain, idx) => (
+                        <div key={idx} className="text-xs leading-relaxed mb-1">
                           • {chain}
                         </div>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-[9px]">-</div>
+                      <div className="text-gray-500 text-xs">-</div>
                     )}
                   </div>
                 </td>
@@ -262,13 +291,13 @@ export default function TableRow({
                 <td className="px-3 py-2 text-gray-100 align-top">
                   <div className="max-h-none">
                     {row.categories && row.categories.length > 0 ? (
-                      row.categories.map((category, idx) => (
-                        <div key={idx} className="text-[9px] leading-relaxed mb-1">
+                      [...row.categories].sort((a, b) => a.localeCompare(b)).map((category, idx) => (
+                        <div key={idx} className="text-xs leading-relaxed mb-1">
                           • {category}
                         </div>
                       ))
                     ) : (
-                      <div className="text-gray-500 text-[9px]">-</div>
+                      <div className="text-gray-500 text-xs">-</div>
                     )}
                   </div>
                 </td>
@@ -322,14 +351,14 @@ export default function TableRow({
         } hover:bg-gray-100 dark:hover:bg-gray-600 ${
           isHighlighted ? 'row-highlight' : ''
         }`}
-      style={
-        typeof document !== 'undefined' &&
+      style={{
+        position: 'relative',
+        ...(typeof document !== 'undefined' &&
         document.documentElement.classList.contains('dark') &&
         String(row.apiId || '').trim() === ''
           ? { backgroundColor: '#A29D85' }
-          : undefined
-      }
-      style={{ position: 'relative' }}
+          : {})
+      }}
     >
       {/* Token Name - Fixed alignment */}
       <td 
@@ -385,46 +414,114 @@ export default function TableRow({
         </span>
       </td>
 
-      {/* Point Priority */}
+      {/* Point (Priority - FCFS) */}
       <td className='px-3 py-3 text-center'>
         <span className="text-sm dark:text-white">
-                          {row.pointPriority ? (
-                  row.pointPriority
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
-        </span>
-      </td>
-
-      {/* Point FCFS */}
-      <td className='px-3 py-3 text-center'>
-        <span className="text-sm dark:text-white">
-                          {row.pointFCFS ? (
-                  row.pointFCFS
-                ) : (
-                  <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
-                )}
+          {row.pointPriority || row.pointFCFS ? (
+            <span>
+              {row.pointPriority && (
+                <span className="font-medium">
+                  {row.pointPriority}
+                </span>
+              )}
+              {row.pointPriority && row.pointFCFS && (
+                <span className="text-gray-400 mx-1">-</span>
+              )}
+              {row.pointFCFS && (
+                <span className="font-medium">
+                  {row.pointFCFS}
+                </span>
+              )}
+            </span>
+          ) : (
+            <BlockIcon sx={{ fontSize: 16 }} className="text-gray-300 dark:text-gray-600" />
+          )}
         </span>
       </td>
 
       {/* Price and Reward */}
       {renderPriceAndReward()}
 
-      {/* ATH */}
+      {/* AT(L-H) (ATL màu đỏ - ATH màu xanh) */}
       {showATH && (
         <td className='px-3 py-3 text-center tabular-nums text-sm dark:text-white'>
-          <span>{isTokenListed() && (row.ath || 0) === 0 ? 'N/A' : `$${formatPrice(row.ath || 0)}`}</span>
+          <span>
+            {row.atl && row.atl > 0 && row.ath && row.ath > 0 ? (
+              <>
+                <span className="text-red-600 dark:text-red-400 font-medium">
+                  ${formatPrice(row.atl)}
+                </span>
+                <span className="text-gray-400 mx-1">-</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">
+                  ${formatPrice(row.ath)}
+                </span>
+              </>
+            ) : row.atl && row.atl > 0 ? (
+              <span className="text-red-600 dark:text-red-400 font-medium">
+                ${formatPrice(row.atl)}
+              </span>
+            ) : row.ath && row.ath > 0 ? (
+              <span className="text-green-600 dark:text-green-400 font-medium">
+                ${formatPrice(row.ath)}
+              </span>
+            ) : (
+              <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />
+            )}
+          </span>
         </td>
       )}
+
+      {/* Contract */}
+      <td className='px-3 py-3 text-center text-xs dark:text-white'>
+        <span className="font-mono">
+          {(() => {
+            const contractInfo = getContractDisplayInfo(row);
+            if (contractInfo.display === 'N/A') {
+              return <ReportGmailerrorredIcon sx={{ fontSize: 16 }} className="text-gray-400" />;
+            }
+            
+            return (
+              <span 
+                className={`cursor-pointer hover:underline transition-colors duration-200 ${
+                  contractInfo.isMultiContract 
+                    ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900' 
+                    : 'text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900'
+                }`}
+                title={`${contractInfo.tooltip}\n\nClick to copy contract address`}
+                onClick={() => handleContractCopy(contractInfo.contract)}
+                data-contract={contractInfo.contract}
+                style={{ padding: '2px 4px', borderRadius: '4px' }}
+              >
+                {contractInfo.display}
+                {contractInfo.isMultiContract && (
+                  <span className="ml-1 text-xs">🔗</span>
+                )}
+              </span>
+            );
+          })()}
+        </span>
+      </td>
 
 
       {/* Actions */}
        <td className='px-3 py-3 text-right sticky right-0 z-10 actions-column' style={{ backgroundColor: 'inherit' }}>
          <div className='flex items-center justify-end gap-2'>
                        {/* Refresh Token Button */}
-            {onRefreshToken && (
+            {onRefreshToken && row?.apiId && (
               <button
-                onClick={handleRefreshToken}
+                onClick={async () => {
+                  setIsRefreshingToken(true);
+                  try {
+                    await onRefreshToken(row.apiId);
+                  } catch (error) {
+                    console.error('Error refreshing token:', error);
+                  } finally {
+                    // Ensure animation completes
+                    setTimeout(() => {
+                      setIsRefreshingToken(false);
+                    }, 1000);
+                  }
+                }}
                 disabled={isRefreshingToken}
                 className='inline-flex items-center justify-center px-2 py-2 rounded-2xl bg-green-500 hover:bg-green-600 disabled:bg-green-400 text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md'
                 title='Refresh token data'

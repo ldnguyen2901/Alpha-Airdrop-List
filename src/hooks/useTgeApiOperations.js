@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
-import { fetchCryptoPrices, fetchTokenLogos, fetchTokenInfo, fetchTokenFullInfo, saveStatscardPrices, clearTokenInfoCacheForToken } from '../services';
+import { fetchCryptoPrices, fetchTokenLogos, fetchTokenFullInfo, saveStatscardPrices, clearTokenInfoCacheForToken } from '../services';
 import { loadTokenLogoFromDatabase, saveTokenLogoToDatabase } from '../services/neon';
 import { usePriceTracking } from './usePriceTracking';
 import { isMainToken, MAIN_TOKENS } from '../utils';
@@ -14,11 +14,14 @@ export const useTgeApiOperations = (
   setLoading,
   setLastUpdated
 ) => {
-  // Initialize price tracking hook for TGE
-  const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
-  
   // Cache for loaded logos to avoid reloading (TGE specific)
   const loadedLogosCache = useRef(new Set());
+  
+  // Track loading state to prevent multiple simultaneous refreshes
+  const isLoadingRef = useRef(false);
+  
+  // Initialize price tracking hook for TGE
+  const { trackPriceChange, getPriceStats, analyzeTrend } = usePriceTracking();
 
   // Derived list of api ids for fetching prices (unique, non-empty)
   const ids = useMemo(() => {
@@ -205,44 +208,85 @@ export const useTgeApiOperations = (
     try {
       console.log(`TGE: Refreshing single token: ${apiId}`);
       
-      // Find the row index
-      const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
-      if (rowIndex === -1) {
-        console.warn(`TGE: Token ${apiId} not found in rows`);
-        return;
-      }
-      
-      const token = rows[rowIndex];
-      
       // Fetch full token info including exchanges, chains, categories
       const tokenInfo = await fetchTokenFullInfo(apiId);
       
       if (tokenInfo) {
-        // Update the row with new data
-        updateRow(rowIndex, {
-          name: tokenInfo.name || token.name || '',
-          symbol: tokenInfo.symbol || token.symbol || '',
-          logo: tokenInfo.logo || token.logo || '',
-          price: tokenInfo.current_price || token.price || 0,
-          ath: tokenInfo.ath || token.ath || 0,
-          exchanges: tokenInfo.exchanges || token.exchanges || [],
-          chains: tokenInfo.chains || token.chains || [],
-          categories: tokenInfo.categories || token.categories || [],
-          // Keep other fields unchanged
-          launchAt: token.launchAt || '',
-          point: token.point || '',
-          type: token.type || 'TGE'
+        // Debug logging for single token refresh
+        console.log(`🔍 TGE Single token refresh for ${apiId}:`, {
+          ath: tokenInfo.ath,
+          atl: tokenInfo.atl,
+          contract: tokenInfo.contract,
+          contractAddresses: tokenInfo.contractAddresses,
+          chains: tokenInfo.chains
         });
         
-        // Clear cache for this token to ensure fresh data on next fetch
-        clearTokenInfoCacheForToken(apiId);
+        // Save logo to database
+        if (tokenInfo.logo) {
+          try {
+            await saveTokenLogoToDatabase(apiId, tokenInfo);
+          } catch (error) {
+            console.error(`Error saving logo to database for ${apiId}:`, error);
+          }
+        }
         
-        console.log(`TGE: ✅ Refreshed ${apiId} with full info and saved to database`);
+        // Find the row with this API ID (with retry mechanism for newly added tokens)
+        let rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        
+        // If not found, wait a bit and try again (for newly added tokens)
+        if (rowIndex === -1) {
+          console.log(`TGE: Token ${apiId} not found immediately, waiting for state update...`);
+          await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+          rowIndex = rows.findIndex(r => r && r !== null && r.apiId === apiId);
+        }
+        
+        if (rowIndex !== -1) {
+          const token = rows[rowIndex];
+          
+          // Update the row with new data
+          updateRow(rowIndex, {
+            name: tokenInfo.name || token.name || '',
+            symbol: tokenInfo.symbol || token.symbol || '',
+            logo: tokenInfo.logo || token.logo || '',
+            price: tokenInfo.current_price || token.price || 0,
+            ath: tokenInfo.ath || token.ath || 0,
+            atl: tokenInfo.atl || token.atl || 0, // Thêm ATL
+            contract: tokenInfo.contract || token.contract || '', // Thêm contract
+            exchanges: tokenInfo.exchanges || token.exchanges || [],
+            chains: tokenInfo.chains || token.chains || [],
+            categories: tokenInfo.categories || token.categories || [],
+            // Keep other fields unchanged
+            launchAt: token.launchAt || '',
+            point: token.point || '',
+            type: token.type || 'TGE'
+          });
+          
+          // Clear cache for this token to ensure fresh data on next fetch
+          clearTokenInfoCacheForToken(apiId);
+          
+          console.log(`TGE: ✅ Refreshed ${apiId} with full info and saved to database`);
+        } else {
+          console.warn(`TGE: Token ${apiId} not found in rows after retry`);
+        }
       } else {
         console.warn(`TGE: No data received for ${apiId}`);
       }
     } catch (error) {
       console.error(`TGE: Error refreshing single token ${apiId}:`, error);
+      // Show user-friendly error message
+      let errorMessage = `Failed to refresh token "${apiId}". `;
+      if (error.message.includes('Rate limit')) {
+        errorMessage += 'API rate limit exceeded. Please wait a moment and try again.';
+      } else if (error.message.includes('not found')) {
+        errorMessage += 'Token not found on CoinGecko. Please check the API ID.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage += 'Request timed out. Please check your internet connection.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage += 'Network error. Please check your internet connection.';
+      } else {
+        errorMessage += `Error: ${error.message}`;
+      }
+      console.error(errorMessage);
     }
   }, [rows, updateRow]);
 
@@ -253,6 +297,13 @@ export const useTgeApiOperations = (
       return;
     }
     
+    // Prevent multiple simultaneous refreshes
+    if (isLoadingRef.current) {
+      console.log('TGE: ⏸️ Refresh already in progress, skipping...');
+      return;
+    }
+    
+    isLoadingRef.current = true;
     setLoading(true);
     try {
       console.log(`TGE: Refreshing data for ${rows.length} tokens...`);
@@ -330,6 +381,7 @@ export const useTgeApiOperations = (
     } catch (error) {
       console.error('TGE: Error refreshing data:', error);
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, [rows, updateRow, setLoading, setLastUpdated, setTokenLogos]);
@@ -369,7 +421,7 @@ export const useTgeApiOperations = (
         return;
       }
       
-      // Find tokens that need full info (have API ID but missing exchanges, chains, or categories)
+      // Find tokens that need full info (have API ID but missing exchanges, chains, categories, contract, or atl)
       const tokensNeedingFullInfo = rows.filter(row => {
         if (!row || row === null || !row.apiId || isMainToken(row.apiId)) {
           return false;
@@ -393,11 +445,17 @@ export const useTgeApiOperations = (
           row.categories.length > 0 && 
           row.categories.some(cat => cat && cat.trim());
         
-        // Debug logging for each token
-        console.log(`TGE Token ${row.apiId}: exchanges=${hasExchanges}, chains=${hasChains}, categories=${hasCategories}`);
+        // Check if contract field exists and has data
+        const hasContract = row.contract && row.contract.trim();
         
-        // Include token if it's missing any of the three fields with meaningful data
-        return !(hasExchanges && hasChains && hasCategories);
+        // Check if atl field exists and has data (not 0)
+        const hasATL = row.atl && row.atl !== 0;
+        
+        // Debug logging for each token
+        console.log(`TGE Token ${row.apiId}: exchanges=${hasExchanges}, chains=${hasChains}, categories=${hasCategories}, contract=${hasContract}, atl=${hasATL}`);
+        
+        // Include token if it's missing any of the five fields with meaningful data
+        return !(hasExchanges && hasChains && hasCategories && hasContract && hasATL);
       });
       
       if (tokensNeedingFullInfo.length === 0) {
@@ -436,6 +494,8 @@ export const useTgeApiOperations = (
                   logo: tokenInfo.logo || token.logo || '',
                   price: tokenInfo.current_price || token.price || 0,
                   ath: tokenInfo.ath || token.ath || 0,
+                  atl: tokenInfo.atl || token.atl || 0, // Thêm ATL
+                  contract: tokenInfo.contract || token.contract || '', // Thêm contract
                   exchanges: tokenInfo.exchanges || [],
                   chains: tokenInfo.chains || [],
                   categories: tokenInfo.categories || []
@@ -465,51 +525,16 @@ export const useTgeApiOperations = (
     } catch (error) {
       console.error('TGE: Error in fetchAllTokensFullInfo:', error);
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
     }
   }, [rows, updateRow, setLastUpdated, setLoading]);
 
-  // Auto-refresh full info every 1 minute
-  const startAutoRefreshFullInfo = useCallback(() => {
-    console.log('🔄 TGE startAutoRefreshFullInfo called');
-    
-    // Clear any existing interval
-    if (window.tgeFullInfoRefreshInterval) {
-      console.log('🔄 TGE Clearing existing interval');
-      clearInterval(window.tgeFullInfoRefreshInterval);
-    }
-    
-    // Set up new interval (1 minute = 60,000 ms)
-    console.log('🔄 TGE Setting up new interval (60 seconds)');
-    window.tgeFullInfoRefreshInterval = setInterval(() => {
-      console.log('TGE: ⏰ Auto-refresh: Fetching full info for all tokens...');
-      fetchAllTokensFullInfo();
-    }, 60 * 1000); // 1 minute
-    
-    console.log('TGE: 🔄 Auto-refresh started: Will fetch full info every 1 minute');
-    console.log('🔄 TGE Interval ID:', window.tgeFullInfoRefreshInterval);
-  }, [fetchAllTokensFullInfo]);
-
-  // Stop auto-refresh
-  const stopAutoRefreshFullInfo = useCallback(() => {
-    console.log('🔄 TGE stopAutoRefreshFullInfo called');
-    if (window.tgeFullInfoRefreshInterval) {
-      console.log('🔄 TGE Clearing interval:', window.tgeFullInfoRefreshInterval);
-      clearInterval(window.tgeFullInfoRefreshInterval);
-      window.tgeFullInfoRefreshInterval = null;
-      console.log('⏹️ TGE Auto-refresh stopped');
-    }
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       console.log('🔄 TGE component unmounting, cleaning up intervals...');
-      if (window.tgeFullInfoRefreshInterval) {
-        console.log('🔄 TGE Clearing interval on unmount:', window.tgeFullInfoRefreshInterval);
-        clearInterval(window.tgeFullInfoRefreshInterval);
-        window.tgeFullInfoRefreshInterval = null;
-      }
     };
   }, []);
 
@@ -522,10 +547,8 @@ export const useTgeApiOperations = (
     refreshData,
     checkAndRefreshMissingPrices,
     fetchAllTokensFullInfo,
-    startAutoRefreshFullInfo,
-    stopAutoRefreshFullInfo,
     trackPriceChange,
     getPriceStats,
-    analyzeTrend
+    analyzeTrend,
   };
 };

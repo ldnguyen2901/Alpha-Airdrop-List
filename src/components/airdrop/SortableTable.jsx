@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { TABLE_HEADERS, getCountdownText } from '../../utils';
+import { TABLE_HEADERS, getCountdownText, expandAllRowsWithMultipleContracts } from '../../utils';
 import { useTableSort, useTableEditing } from '../../hooks';
 import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
@@ -61,9 +61,12 @@ const SortableTable = forwardRef(({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-          const sortedRows = useMemo(() => {
-          return sortRows(rows, searchToken);
-        }, [rows, sortConfig, searchToken, sortRows]);
+  const sortedRows = useMemo(() => {
+    // Temporarily disable expandAllRowsWithMultipleContracts to fix delete button issue
+    // const expandedRows = expandAllRowsWithMultipleContracts(rows);
+    // Then sort the expanded rows
+    return sortRows(rows, searchToken);
+  }, [rows, sortConfig, searchToken, sortRows]);
 
   // Pagination logic
   const totalPages = Math.ceil(sortedRows.length / itemsPerPage);
@@ -145,6 +148,8 @@ const SortableTable = forwardRef(({
           setEditingModal={setEditingModal}
           saveRow={handleSaveRow}
           modalPosition={editModalPosition}
+          onRefreshToken={onRefreshToken}
+          rows={rows}
         />
 
         <DeleteModal
@@ -192,7 +197,7 @@ const SortableTable = forwardRef(({
                 colSpan={
                   TABLE_HEADERS.filter((h) => {
                     if (h === 'API ID') return false;
-                    if (h === 'ATH' && !showATH) return false;
+                    if (h === 'AT(L-H)' && !showATH) return false;
                     return true;
                   }).length
                 }
@@ -222,6 +227,8 @@ const SortableTable = forwardRef(({
         setEditingModal={setEditingModal}
         saveRow={handleSaveRow}
         modalPosition={editModalPosition}
+        onRefreshToken={onRefreshToken}
+        rows={rows}
       />
 
       <DeleteModal

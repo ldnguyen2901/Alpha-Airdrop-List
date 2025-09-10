@@ -21,7 +21,6 @@ import {
   useImportExport,
   useDuplicateCheck,
   useResponsive,
-  useAutoRefresh,
   useModalOperations,
   useStatscardPrices
 } from '../hooks';
@@ -94,13 +93,13 @@ export default function AppContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Auto refresh - only refresh active table (airdrop)
-  const autoRefreshOps = useAutoRefresh(
-    apiOps.refreshData,
-    apiOps.refreshStatscardPrices,
-    state.isPageVisible,
-    state.setIsPageVisible
-  );
+  // Register Airdrop refresh functions with centralized auto-refresh
+  useEffect(() => {
+    autoRefreshContext.registerAirdropRefresh(
+      apiOps.refreshData,
+      apiOps.refreshStatscardPrices
+    );
+  }, [apiOps.refreshData, apiOps.refreshStatscardPrices, autoRefreshContext]);
   
   // Modal operations
   const modalOps = useModalOperations(
@@ -167,7 +166,7 @@ export default function AppContent() {
     if (state.rows.length > 0) {
       checkMissingPrices();
     }
-  }, [state.rows.length]); // Remove apiOps dependency
+  }, [state.rows.length]); // Only depend on rows.length to prevent loops
 
   // Auto force sync when page becomes visible (if needed)
   useEffect(() => {
@@ -258,6 +257,7 @@ export default function AppContent() {
           searchToken={state.searchToken}
           setSearchToken={state.setSearchToken}
           countdown={autoRefreshContext.countdown}
+          onManualRefresh={autoRefreshContext.manualRefresh}
         />
 
         <SortableTable
@@ -329,6 +329,7 @@ export default function AppContent() {
           setAddForm={state.setAddForm}
           addErrors={state.addErrors}
           handleAddRowSubmit={handleAddRowSubmit}
+          onRefreshToken={apiOps.refreshSingleToken}
         />
         
         <DuplicatesModal

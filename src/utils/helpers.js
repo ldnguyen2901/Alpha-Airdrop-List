@@ -63,15 +63,15 @@ export function parsePastedData(text) {
         // Super simple logic for ,ethereum,31/12/2024 format
         if (columns.length >= 3 && !(token && token.trim()) && (amount && amount.trim()) && (dateClaim && dateClaim.trim())) {
           // Format: ,API_ID,DATE
-          apiId = amount.trim();
+          apiId = amount.trim().toLowerCase(); // Convert to lowercase
           actualDate = dateClaim.trim();
         } else if (columns.length >= 2 && (token && token.trim()) && (amount && amount.trim())) {
           // Format: API_ID,DATE
-          apiId = token.trim();
+          apiId = token.trim().toLowerCase(); // Convert to lowercase
           actualDate = dateClaim.trim();
         } else if (fullName && fullName.trim()) {
           // Standard format: API ID in column D
-          apiId = fullName.trim();
+          apiId = fullName.trim().toLowerCase(); // Convert to lowercase
           actualToken = token && token.trim() ? token.trim() : '';
           actualAmount = amount && amount.trim() ? amount.trim() : '';
           actualDate = dateClaim && dateClaim.trim() ? dateClaim.trim() : '';
@@ -87,7 +87,7 @@ export function parsePastedData(text) {
             } else if (!isNaN(parseFloat(trimmedCol.replace(/[^\d.,]/g, '').replace(',', '.')))) {
               actualAmount = trimmedCol;
             } else if (!apiId) {
-              apiId = trimmedCol;
+              apiId = trimmedCol.toLowerCase(); // Convert to lowercase
             }
           }
         }

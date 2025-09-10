@@ -13,11 +13,11 @@ export default function TableHeader({
       Amount: 'amount',
       'Listing time': 'launchAt',
       'API ID': 'apiId',
-      'Point (Priority)': 'pointPriority',
-      'Point (FCFS)': 'pointFCFS',
+      'Point': 'pointPriority', // Sử dụng pointPriority làm key chính cho sorting
       'Token Price': 'price',
       Reward: 'reward',
-      'ATH': 'ath', // ⭐ (thay thế Highest Price)
+      'AT(L-H)': 'ath', // Sử dụng ath làm key chính cho sorting
+      'Contract': 'contract', // ⭐ (thêm mới)
       'Exchanges': 'exchanges', // ⭐ (thêm mới)
       'Chains': 'chains', // ⭐ (thêm mới)
       'Categories': 'categories', // ⭐ (thêm mới)
@@ -31,8 +31,8 @@ export default function TableHeader({
         {TABLE_HEADERS.map((h) => {
           // Always skip API ID column in table display
           if (h === 'API ID') return null;
-          // Skip ATH column if not showing
-          if (h === 'ATH' && !showATH) return null;
+          // Skip AT(L-H) column if not showing (same as showATH)
+          if (h === 'AT(L-H)' && !showATH) return null;
           // Skip Actions column in header (it's handled separately)
           if (h === 'Actions') return null;
           // Skip exchanges, chains, categories columns (hidden)
@@ -67,10 +67,10 @@ export default function TableHeader({
                 className={`flex items-center gap-1 ${
                   h === 'Token Price' ||
                   h === 'Reward' ||
-                  h === 'ATH' || // ⭐ (thay thế Highest Price)
+                  h === 'AT(L-H)' || // Gộp ATH và ATL
+                  h === 'Contract' || // ⭐ (thêm mới)
                   h === 'Listing time' ||
-                  h === 'Point (Priority)' ||
-                  h === 'Point (FCFS)' ||
+                  h === 'Point' || // Gộp Priority và FCFS
                   h === 'Exchanges' || // ⭐ (thêm mới)
                   h === 'Chains' || // ⭐ (thêm mới)
                   h === 'Categories' // ⭐ (thêm mới)
@@ -83,10 +83,10 @@ export default function TableHeader({
                     ? 'Token'
                     : h === 'Token Price'
                     ? 'Price'
-                    : h === 'Point (Priority)'
-                    ? 'Priority'
-                    : h === 'Point (FCFS)'
-                    ? 'FCFS'
+                    : h === 'Point'
+                    ? 'Point'
+                    : h === 'AT(L-H)'
+                    ? 'AT(L-H)'
                     : h}
                 </span>
                                  {isSortable && (

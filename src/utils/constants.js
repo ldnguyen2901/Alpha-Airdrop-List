@@ -11,8 +11,10 @@ export function newRow(partial = {}) {
     reward: 0, // Reward (tính = Amount × Price)
     highestPrice: 0, // Highest price reached (tự tracking)
     ath: 0, // ATH (từ API: ath) ⭐ (thêm mới)
+    atl: 0, // ATL (từ API: atl) ⭐ (thêm mới)
     logo: '', // Token logo URL (từ API: image) ⭐ (thêm mới)
     symbol: '', // Token symbol (từ API: symbol)
+    contract: '', // Contract address (từ API: platforms) ⭐ (thêm mới)
     exchanges: [], // Danh sách sàn giao dịch (từ API: tickers) ⭐ (thêm mới)
     chains: [], // Danh sách chuỗi blockchain (từ API: platforms) ⭐ (thêm mới)
     categories: [], // Danh sách danh mục (từ API: categories) ⭐ (thêm mới)
@@ -29,11 +31,11 @@ export const TABLE_HEADERS = [
   'Amount',
   'Listing time',
   'API ID',
-  'Point (Priority)',
-  'Point (FCFS)',
+  'Point', // Gộp Priority và FCFS
   'Token Price',
   'Reward',
-  'ATH', // ⭐ (thay thế Highest Price)
+  'AT(L-H)', // Gộp ATH và ATL
+  'Contract', // ⭐ (thêm mới)
   'Exchanges', // ⭐ (thêm mới)
   'Chains', // ⭐ (thêm mới)
   'Categories', // ⭐ (thêm mới)
@@ -48,6 +50,8 @@ export const CSV_HEADERS = [
   'Point (Priority)',
   'Point (FCFS)',
   'ATH', // ⭐ (thay thế Highest Price)
+  'ATL', // ⭐ (thêm mới)
+  'Contract', // ⭐ (thêm mới)
   'Logo',
   'Symbol',
   'Exchanges', // ⭐ (thêm mới)
@@ -64,11 +68,13 @@ export function newTgeRow(partial = {}) {
     launchAt: '', // Thời gian listing (user nhập Date + Time)
     apiId: '', // API ID (user nhập - REQUIRED)
     point: '', // Point (user nhập - optional)
-    type: 'TGE', // Type: TGE hoặc Pre-TGE
+    type: 'TGE', // Type: TGE, Pre-TGE, hoặc BC-TGE
     price: 0, // Giá hiện tại (từ API: current_price)
     ath: 0, // ATH (từ API: ath)
+    atl: 0, // ATL (từ API: atl) ⭐ (thêm mới)
     logo: '', // Logo URL (từ API: image)
     symbol: '', // Ký hiệu token (từ API: symbol)
+    contract: '', // Contract address (từ API: platforms) ⭐ (thêm mới)
     exchanges: [], // Danh sách sàn giao dịch (từ API: tickers) ⭐ (thêm mới)
     chains: [], // Danh sách chuỗi blockchain (từ API: platforms) ⭐ (thêm mới)
     categories: [], // Danh sách danh mục (từ API: categories) ⭐ (thêm mới)
@@ -85,7 +91,8 @@ export const TGE_TABLE_HEADERS = [
   'Point', // Điểm
   'Type', // Loại: TGE hoặc Pre-TGE
   'Token Price', // Giá token
-  'ATH', // All-time high
+  'AT(L-H)', // Gộp ATH và ATL giống Airdrop
+  'Contract', // Contract address ⭐ (thêm mới)
   'Exchanges', // ⭐ (thêm mới)
   'Chains', // ⭐ (thêm mới)
   'Categories', // ⭐ (thêm mới)
@@ -100,6 +107,8 @@ export const TGE_CSV_HEADERS = [
   'Point',
   'Type',
   'ATH',
+  'ATL', // ⭐ (thêm mới)
+  'Contract', // ⭐ (thêm mới)
   'Logo',
   'Symbol',
   'Exchanges', // ⭐ (thêm mới)

@@ -265,14 +265,21 @@ export const useDataOperations = (
       launchAt = normalizeDateTime(form.launchAt);
     }
 
+    // Debug: Log original API ID before processing
+    console.log('🔍 DEBUG useDataOperations - Original API ID from form:', form.apiId);
+    console.log('🔍 DEBUG useDataOperations - API ID after trim:', form.apiId.trim());
+    
     const newRowData = newRow({
       name: form.name.trim() || form.apiId.trim(), // Use API ID as name if name is empty
       amount: parseFloat(form.amount) || 0, // Default to 0 if amount is empty
       launchAt,
-      apiId: form.apiId.trim(),
+      apiId: form.apiId.trim().toLowerCase(), // Convert to lowercase
       pointPriority: form.pointPriority.trim() || '',
       pointFCFS: form.pointFCFS.trim() || '',
     });
+    
+    // Debug: Log final API ID in newRowData
+    console.log('🔍 DEBUG useDataOperations - Final API ID in newRowData:', newRowData.apiId);
 
     // Clean the row data before adding
     const cleanedRowData = cleanRowData(newRowData);

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { TGE_TABLE_HEADERS, getCountdownText } from '../../utils';
+import { TGE_TABLE_HEADERS, getCountdownText, expandAllRowsWithMultipleContracts } from '../../utils';
 import { useTableSort, useTgeTableEditing } from '../../hooks';
 import TableHeader from './table/TableHeader';
 import TableRow from './table/TableRow';
@@ -62,6 +62,9 @@ const SortableTable = forwardRef(({
   }, []);
 
   const sortedRows = useMemo(() => {
+    // Temporarily disable expandAllRowsWithMultipleContracts to fix delete button issue
+    // const expandedRows = expandAllRowsWithMultipleContracts(rows);
+    // Then sort the expanded rows
     return sortRows(rows, searchToken);
   }, [rows, sortConfig, searchToken, sortRows]);
 
@@ -145,6 +148,8 @@ const SortableTable = forwardRef(({
           setEditingModal={setEditingModal}
           saveRow={handleSaveRow}
           modalPosition={editModalPosition}
+          onRefreshToken={onRefreshToken}
+          rows={rows}
         />
 
         <DeleteModal
@@ -192,7 +197,7 @@ const SortableTable = forwardRef(({
                   colSpan={
                     TGE_TABLE_HEADERS.filter((h) => {
                       if (h === 'API ID') return false;
-                      if (h === 'ATH' && !showATH) return false;
+                      if (h === 'AT(L-H)' && !showATH) return false;
                       return true;
                     }).length
                   }
@@ -222,6 +227,8 @@ const SortableTable = forwardRef(({
         setEditingModal={setEditingModal}
         saveRow={handleSaveRow}
         modalPosition={editModalPosition}
+        onRefreshToken={onRefreshToken}
+        rows={rows}
       />
 
       <DeleteModal

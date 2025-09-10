@@ -23,6 +23,7 @@ export default function ActionButtons({
   searchToken,
   setSearchToken,
   countdown,
+  onManualRefresh,
 }) {
   const [showInlineForm, setShowInlineForm] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -60,18 +61,8 @@ export default function ActionButtons({
   };
 
   const handleFetchFullInfo = async () => {
-    if (!onFetchFullInfo) return;
-    
-    setIsFetchingFullInfo(true);
-    try {
+    if (onFetchFullInfo) {
       await onFetchFullInfo();
-    } catch (error) {
-      console.error('Error fetching full info:', error);
-    } finally {
-      // Stop spinning after 3 seconds
-      setTimeout(() => {
-        setIsFetchingFullInfo(false);
-      }, 3000);
     }
   };
 
@@ -151,7 +142,7 @@ export default function ActionButtons({
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         @keyframes fetch-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -188,12 +179,12 @@ export default function ActionButtons({
           </button>
           <button
             onClick={handleFetchFullInfo}
-            disabled={true}
-            className='px-3 py-2 rounded-2xl bg-purple-400 text-white shadow-sm text-sm transition-all duration-300 ease-in-out flex items-center gap-2 cursor-not-allowed'
-            title='Fetch exchanges, chains, categories for up to 10 tokens (Disabled)'
+            disabled={loading || isFetchingFullInfo}
+            className='px-3 py-2 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+            title='Fetch exchanges, chains, categories, contract, atl for up to 10 tokens'
           >
-            <InfoIcon 
-              sx={{ 
+            <AutorenewIcon
+              sx={{
                 fontSize: 16,
                 animation: isFetchingFullInfo ? 'spin 1s linear infinite' : 'none'
               }}
@@ -201,6 +192,7 @@ export default function ActionButtons({
             />
             Fetch Full Info
           </button>
+          
           <button
             onClick={handleCheckDuplicates}
             className='px-3 py-2 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2'
@@ -252,10 +244,10 @@ export default function ActionButtons({
                 : 'bg-transparent border-gray-400 dark:border-gray-500'
             }`}>
               {showATH && (
-                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
               )}
             </div>
-            ATH
+            More info
           </button>
 
           {/* Auto-refresh countdown display */}
@@ -269,6 +261,23 @@ export default function ActionButtons({
             />
             {countdown}s
           </div>
+
+          {/* Manual refresh button */}
+          <button
+            onClick={onManualRefresh}
+            disabled={loading || isRefreshing}
+            className='px-3 py-2 rounded-2xl bg-green-500 hover:bg-green-600 text-white shadow-sm text-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+            title='Manual refresh both Airdrop and TGE data'
+          >
+            <AutorenewIcon
+              sx={{
+                fontSize: 16,
+                animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+              }}
+              className={isRefreshing ? 'refresh-spin' : ''}
+            />
+            Refresh
+          </button>
 
         </div>
       </div>
