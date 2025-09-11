@@ -13,11 +13,11 @@ export * from './storage';
 // Excel utilities
 export * from './excel';
 
-// Error handling utilities
-export * from './errorHandler';
-
 // Cache management utilities
 export * from './cacheManager';
+
+// Price cache utilities
+export * from './priceCache';
 
 // Contract utilities
 export * from './contractUtils';

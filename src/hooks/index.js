@@ -19,3 +19,4 @@ export { useTableEditing } from './useTableEditing';
 export { useTgeTableEditing } from './useTableEditing';
 export { usePriceTracking } from './usePriceTracking';
 export { useForceSync } from './useForceSync';
+export { useGlobalPriceSync } from './useGlobalPriceSync';

@@ -2,49 +2,6 @@
 import { loadWorkspaceDataOnce, loadStatscardPrices, SHARED_WORKSPACE_ID, STATSCARD_WORKSPACE_ID } from '../services';
 import { filterMainTokensFromRows } from './helpers';
 
-// Check if local cache is out of sync with Neon
-export const checkCacheSync = async () => {
-  try {
-    // Get Neon data - filter out main tokens
-    const neonData = await loadWorkspaceDataOnce(SHARED_WORKSPACE_ID);
-    const filteredNeonData = filterMainTokensFromRows(neonData || []);
-    
-    // Get local data
-    const localData = localStorage.getItem('airdrop-alpha-data');
-    let parsedLocalData = null;
-    
-    if (localData) {
-      try {
-        parsedLocalData = JSON.parse(localData);
-      } catch (e) {
-        console.warn('Failed to parse local data:', e);
-        parsedLocalData = null;
-      }
-    }
-    
-    // If Neon is empty but local has data, clear local cache
-    if (filteredNeonData && Array.isArray(filteredNeonData) && filteredNeonData.length === 0) {
-      if (parsedLocalData && Array.isArray(parsedLocalData) && parsedLocalData.length > 0) {
-        console.log('Neon is empty but local cache has data. Clearing local cache...');
-        localStorage.removeItem('airdrop-alpha-data');
-        return { shouldClearCache: true, reason: 'neon_empty_local_has_data' };
-      }
-    }
-    
-    // If Neon has data but local is empty, this is normal
-    if (filteredNeonData && Array.isArray(filteredNeonData) && filteredNeonData.length > 0) {
-      if (!parsedLocalData || !Array.isArray(parsedLocalData) || parsedLocalData.length === 0) {
-        console.log('Neon has data but local cache is empty. This is normal.');
-        return { shouldClearCache: false, reason: 'neon_has_data_local_empty' };
-      }
-    }
-    
-    return { shouldClearCache: false, reason: 'cache_in_sync' };
-  } catch (error) {
-    console.error('Error checking cache sync:', error);
-    return { shouldClearCache: false, reason: 'error_checking_sync' };
-  }
-};
 
 // Clear all cache data
 export const clearAllCache = () => {

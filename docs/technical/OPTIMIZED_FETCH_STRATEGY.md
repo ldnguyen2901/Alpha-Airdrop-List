@@ -54,12 +54,12 @@ GET https://api.coingecko.com/api/v3/simple/price
 ## 📊 Chia nhỏ danh sách (Chunking)
 
 ### **Giới hạn API**
-- **Tối đa**: 100 IDs mỗi lần fetch
-- **Xử lý**: Tự động chia nhỏ danh sách > 100 IDs
+- **Tối đa**: 200 IDs mỗi lần fetch (tăng từ 100 để tối ưu hóa)
+- **Xử lý**: Tự động chia nhỏ danh sách > 200 IDs
 
 ### **Logic chia nhỏ**
 ```javascript
-const MAX_IDS_PER_CALL = 100;
+const MAX_IDS_PER_CALL = 200; // Tăng từ 100 để tối ưu hóa
 
 const chunkArray = (array, chunkSize) => {
   const chunks = [];

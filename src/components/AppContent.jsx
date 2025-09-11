@@ -22,9 +22,10 @@ import {
   useDuplicateCheck,
   useResponsive,
   useModalOperations,
-  useStatscardPrices
+  useStatscardPrices,
+  useGlobalPriceSync
 } from '../hooks';
-import { useAutoRefreshContext } from '../contexts';
+import { useAutoRefreshContext, useGlobalPriceContext } from '../contexts';
 
 /**
  * React Airdrop Alpha Tracker
@@ -38,6 +39,9 @@ import { useAutoRefreshContext } from '../contexts';
 export default function AppContent() {
   // Auto-refresh context
   const autoRefreshContext = useAutoRefreshContext();
+  
+  // Global price context
+  const globalPriceContext = useGlobalPriceContext();
   
   // Main state management
   const state = useAppState();
@@ -93,13 +97,13 @@ export default function AppContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Register Airdrop refresh functions with centralized auto-refresh
+  // Register Airdrop tokens with centralized auto-refresh (always register current tokens)
   useEffect(() => {
-    autoRefreshContext.registerAirdropRefresh(
-      apiOps.refreshData,
-      apiOps.refreshStatscardPrices
-    );
-  }, [apiOps.refreshData, apiOps.refreshStatscardPrices, autoRefreshContext]);
+    // Always register current tokens to ensure auto-refresh has latest data
+    if (state.rows && state.rows.length > 0) {
+      autoRefreshContext.registerAirdropTokens(state.rows);
+    }
+  }, [state.rows, autoRefreshContext]); // Register whenever rows change
   
   // Modal operations
   const modalOps = useModalOperations(
@@ -112,14 +116,16 @@ export default function AppContent() {
 
 
 
-  // Statscard prices operations
-  const statscardOps = useStatscardPrices(
-    state.setBtcPrice,
-    state.setEthPrice,
-    state.setBnbPrice,
-    null, // updateStatscardPrices function will be passed from useApiOperations
-    state.setTokenLogos
-  );
+  // Update statscard prices from global context
+  useEffect(() => {
+    const statscardPrices = globalPriceContext.statscardPrices;
+    state.setBtcPrice(statscardPrices.btc);
+    state.setEthPrice(statscardPrices.eth);
+    state.setBnbPrice(statscardPrices.bnb);
+  }, [globalPriceContext.statscardPrices, state.setBtcPrice, state.setEthPrice, state.setBnbPrice]);
+
+  // Sync global prices to table rows
+  useGlobalPriceSync(state.rows, dataOps.updateRowPriceOnly);
 
   // Update document title
   useEffect(() => {
@@ -134,18 +140,23 @@ export default function AppContent() {
         // Wait for Neon sync to complete
         await neonSyncOps.loadInitialData();
         
-        // Then load logos and refresh data
+        // Then load logos and refresh all prices using global context
         apiOps.loadLogosFromDatabase();
-        statscardOps.initializeStatscardPrices();
-        apiOps.refreshData();
-        apiOps.refreshStatscardPrices();
+        
+        // Use global refresh to get all prices in one API call
+        await globalPriceContext.refreshAllPrices(state.rows, []);
+        
       } catch (error) {
         console.error('Error in initial data loading:', error);
         // Fallback: load data anyway
         apiOps.loadLogosFromDatabase();
-        statscardOps.initializeStatscardPrices();
-        apiOps.refreshData();
-        apiOps.refreshStatscardPrices();
+        
+        // Try global refresh as fallback
+        try {
+          await globalPriceContext.refreshAllPrices(state.rows, []);
+        } catch (refreshError) {
+          console.error('Error in fallback global refresh:', refreshError);
+        }
       }
     };
 

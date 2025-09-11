@@ -22,9 +22,10 @@ import {
   useDuplicateCheck,
   useResponsive,
   useTgeModalOperations,
-  useStatscardPrices
+  useStatscardPrices,
+  useGlobalPriceSync
 } from '../hooks';
-import { useAutoRefreshContext } from '../contexts';
+import { useAutoRefreshContext, useGlobalPriceContext } from '../contexts';
 
 /**
  * React TGE Alpha Tracker
@@ -38,6 +39,9 @@ import { useAutoRefreshContext } from '../contexts';
 export default function TgeContent() {
   // Auto-refresh context
   const autoRefreshContext = useAutoRefreshContext();
+  
+  // Global price context
+  const globalPriceContext = useGlobalPriceContext();
   
   // Main state management
   const state = useTgeAppState();
@@ -92,13 +96,13 @@ export default function TgeContent() {
   // Responsive design
   useResponsive(state.setIsMobile);
   
-  // Register TGE refresh functions with centralized auto-refresh
+  // Register TGE tokens with centralized auto-refresh (always register current tokens)
   useEffect(() => {
-    autoRefreshContext.registerTgeRefresh(
-      apiOps.refreshData,
-      apiOps.refreshStatscardPrices
-    );
-  }, [apiOps.refreshData, apiOps.refreshStatscardPrices, autoRefreshContext]);
+    // Always register current tokens to ensure auto-refresh has latest data
+    if (state.rows && state.rows.length > 0) {
+      autoRefreshContext.registerTgeTokens(state.rows);
+    }
+  }, [state.rows, autoRefreshContext]); // Register whenever rows change
   
   // Modal operations
   const modalOps = useTgeModalOperations(
@@ -111,14 +115,16 @@ export default function TgeContent() {
 
 
 
-  // Statscard prices operations
-  const statscardOps = useStatscardPrices(
-    state.setBtcPrice,
-    state.setEthPrice,
-    state.setBnbPrice,
-    null, // updateStatscardPrices function will be passed from useApiOperations
-    state.setTokenLogos
-  );
+  // Update statscard prices from global context
+  useEffect(() => {
+    const statscardPrices = globalPriceContext.statscardPrices;
+    state.setBtcPrice(statscardPrices.btc);
+    state.setEthPrice(statscardPrices.eth);
+    state.setBnbPrice(statscardPrices.bnb);
+  }, [globalPriceContext.statscardPrices, state.setBtcPrice, state.setEthPrice, state.setBnbPrice]);
+
+  // Sync global prices to table rows
+  useGlobalPriceSync(state.rows, dataOps.updateRowPriceOnly);
 
   // Update document title
   useEffect(() => {
@@ -133,18 +139,23 @@ export default function TgeContent() {
         // Wait for Neon sync to complete - this will force load from database
         await neonSyncOps.loadInitialData();
         
-        // Then load logos and refresh data
+        // Then load logos and refresh all prices using global context
         apiOps.loadLogosFromDatabase();
-        statscardOps.initializeStatscardPrices();
-        apiOps.refreshData();
-        apiOps.refreshStatscardPrices();
+        
+        // Use global refresh to get all prices in one API call
+        await globalPriceContext.refreshAllPrices([], state.rows);
+        
       } catch (error) {
         console.error('TGE: Error in initial data loading:', error);
         // Fallback: load data anyway
         apiOps.loadLogosFromDatabase();
-        statscardOps.initializeStatscardPrices();
-        apiOps.refreshData();
-        apiOps.refreshStatscardPrices();
+        
+        // Try global refresh as fallback
+        try {
+          await globalPriceContext.refreshAllPrices([], state.rows);
+        } catch (refreshError) {
+          console.error('TGE: Error in fallback global refresh:', refreshError);
+        }
       }
     };
 

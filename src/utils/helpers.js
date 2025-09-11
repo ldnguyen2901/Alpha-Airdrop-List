@@ -226,14 +226,6 @@ export function formatAmount(n) {
   return s;
 }
 
-// Parse number input that may contain dots
-export function parseNumberInput(value) {
-  if (!value && value !== 0) return '';
-  // Remove dots and parse as number
-  const cleaned = String(value).replace(/\./g, '');
-  const num = Number(cleaned);
-  return isNaN(num) ? value : num;
-}
 
 // Format price/reward with exactly 4 decimal places and dot as thousands separator
 export function formatPrice(n) {

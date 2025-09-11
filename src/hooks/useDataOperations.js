@@ -95,7 +95,7 @@ export const useDataOperations = (
           const filteredRows = filterMainTokensFromRows(updatedRows);
           const rowsWithoutPriceAndReward = removePriceAndRewardFromRows(filteredRows);
           saveWorkspaceData(SHARED_WORKSPACE_ID, rowsWithoutPriceAndReward);
-          console.log('✅ Successfully saved row update to Neon');
+          // console.log('✅ Successfully saved row update to Neon'); // Commented out to reduce console spam
           
           // Update last sync time when successfully saved to database
           if (setLastSyncTime) {
@@ -108,6 +108,23 @@ export const useDataOperations = (
       return updatedRows;
     });
   }, [setRows, isRemoteUpdateRef, cleanRowData, setLastSyncTime]);
+
+  // Update specific row for price updates only (no database save)
+  const updateRowPriceOnly = useCallback((index, updates) => {
+    setRows(prevRows => {
+      const updatedRows = [...prevRows];
+      const cleanedUpdates = cleanRowData(updates);
+      updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
+      
+      // Auto-calculate reward if amount or price changed
+      updatedRows[index] = updateRewardInRow(updatedRows[index]);
+      
+      // Only save to localStorage for price updates (no Neon save)
+      saveDataToStorage(updatedRows);
+      
+      return updatedRows;
+    });
+  }, [setRows, cleanRowData]);
 
   // Remove row
   const removeRow = useCallback((index) => {
@@ -266,8 +283,8 @@ export const useDataOperations = (
     }
 
     // Debug: Log original API ID before processing
-    console.log('🔍 DEBUG useDataOperations - Original API ID from form:', form.apiId);
-    console.log('🔍 DEBUG useDataOperations - API ID after trim:', form.apiId.trim());
+    // console.log('🔍 DEBUG useDataOperations - Original API ID from form:', form.apiId);
+    // console.log('🔍 DEBUG useDataOperations - API ID after trim:', form.apiId.trim());
     
     const newRowData = newRow({
       name: form.name.trim() || form.apiId.trim(), // Use API ID as name if name is empty
@@ -279,7 +296,7 @@ export const useDataOperations = (
     });
     
     // Debug: Log final API ID in newRowData
-    console.log('🔍 DEBUG useDataOperations - Final API ID in newRowData:', newRowData.apiId);
+    // console.log('🔍 DEBUG useDataOperations - Final API ID in newRowData:', newRowData.apiId);
 
     // Clean the row data before adding
     const cleanedRowData = cleanRowData(newRowData);
@@ -293,6 +310,7 @@ export const useDataOperations = (
   return {
     addRow,
     updateRow,
+    updateRowPriceOnly,
     updateRowForAPI,
     removeRow,
     replaceRows,

@@ -329,55 +329,41 @@ export const useTgeApiOperations = (
         return;
       }
       
-      console.log(`TGE: Updating prices for ${tokensNeedingUpdate.length} tokens`);
+      console.log(`TGE: Updating prices for ${tokensNeedingUpdate.length} tokens using unified API`);
       
-      // Update prices in batches
-      const batchSize = 10;
-      for (let i = 0; i < tokensNeedingUpdate.length; i += batchSize) {
-        const batch = tokensNeedingUpdate.slice(i, i + batchSize);
-        const batchIds = batch.map(row => row.apiId);
-        
-        try {
-          const prices = await fetchCryptoPrices(batchIds);
-          
-          // Update rows with new prices
-          let updatedCount = 0;
-          batch.forEach(row => {
-            const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === row.apiId);
-            if (rowIndex !== -1 && prices[row.apiId]) {
-              updateRow(rowIndex, {
-                price: prices[row.apiId].usd || row.price || 0,
-                // Keep other fields unchanged
-                name: row.name || '',
-                symbol: row.symbol || '',
-                logo: row.logo || '',
-                ath: row.ath || 0,
-                exchanges: row.exchanges || [],
-                chains: row.chains || [],
-                categories: row.categories || [],
-                launchAt: row.launchAt || '',
-                point: row.point || '',
-                type: row.type || 'TGE'
-              });
-              updatedCount++;
-            }
+      // Use unified API call instead of batch processing
+      const apiIds = tokensNeedingUpdate.map(row => row.apiId);
+      const prices = await fetchCryptoPrices(apiIds);
+      
+      // Update rows with new prices
+      let updatedCount = 0;
+      tokensNeedingUpdate.forEach(row => {
+        const rowIndex = rows.findIndex(r => r && r !== null && r.apiId === row.apiId);
+        if (rowIndex !== -1 && prices[row.apiId]) {
+          updateRow(rowIndex, {
+            price: prices[row.apiId].usd || row.price || 0,
+            // Keep other fields unchanged
+            name: row.name || '',
+            symbol: row.symbol || '',
+            logo: row.logo || '',
+            ath: row.ath || 0,
+            exchanges: row.exchanges || [],
+            chains: row.chains || [],
+            categories: row.categories || [],
+            launchAt: row.launchAt || '',
+            point: row.point || '',
+            type: row.type || 'TGE'
           });
-          
-          console.log(`TGE: Updated prices for batch ${Math.floor(i / batchSize) + 1} (${updatedCount}/${batch.length} tokens)`);
-        } catch (error) {
-          console.warn(`TGE: Error updating prices for batch ${Math.floor(i / batchSize) + 1}, continuing...`, error);
+          updatedCount++;
         }
-        
-        // Add delay between batches to avoid rate limiting
-        if (i + batchSize < tokensNeedingUpdate.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
+      });
+      
+      console.log(`TGE: Updated prices for ${updatedCount}/${tokensNeedingUpdate.length} tokens using unified API`);
       
       // Update last updated timestamp
       setLastUpdated(new Date().toISOString());
       
-      console.log('TGE: Data refresh completed');
+      console.log('TGE: Data refresh completed using unified API');
     } catch (error) {
       console.error('TGE: Error refreshing data:', error);
     } finally {

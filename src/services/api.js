@@ -7,8 +7,8 @@ const chunkArray = (array, chunkSize) => {
   return chunks;
 };
 
-// Maximum IDs per API call
-const MAX_IDS_PER_CALL = 100;
+// Maximum IDs per API call - increased for better efficiency
+const MAX_IDS_PER_CALL = 200;
 
 export async function fetchCryptoPrices(ids, currency = 'usd') {
   if (!ids.length) return {};

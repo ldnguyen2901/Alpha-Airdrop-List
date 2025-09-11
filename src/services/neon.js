@@ -90,7 +90,10 @@ export async function saveWorkspaceData(workspaceId, rows) {
         last_updated_by = EXCLUDED.last_updated_by
     `;
     
-    console.log('Saved data to Neon:', cleanedRows.length, 'rows');
+    // Only log on significant changes (new data or large updates)
+    if (cleanedRows.length > 50) {
+      console.log('Saved data to Neon:', cleanedRows.length, 'rows');
+    }
     return result;
   } catch (error) {
     console.error('Error saving workspace data to Neon:', error);
@@ -107,16 +110,8 @@ export async function saveTgeWorkspaceData(workspaceId, rows) {
     
     // Skip save if no data
     if (!cleanedRows || cleanedRows.length === 0) {
-      console.log('Skipping save to TGE Neon - no data to save');
       return;
     }
-    
-    // Log what we're saving for debugging
-    console.log('TGE: Saving data to Neon:', {
-      workspaceId: targetWorkspaceId,
-      rowsCount: cleanedRows.length,
-      firstRow: cleanedRows[0] ? cleanedRows[0].apiId : 'none'
-    });
     
     // Upsert TGE workspace data
     const result = await sql`
@@ -128,7 +123,10 @@ export async function saveTgeWorkspaceData(workspaceId, rows) {
         last_updated_by = EXCLUDED.last_updated_by
     `;
     
-    console.log('Saved TGE data to Neon:', cleanedRows.length, 'rows');
+    // Only log on significant changes
+    if (cleanedRows.length > 50) {
+      console.log('Saved TGE data to Neon:', cleanedRows.length, 'rows');
+    }
     return result;
   } catch (error) {
     console.error('Error saving TGE workspace data to Neon:', error);

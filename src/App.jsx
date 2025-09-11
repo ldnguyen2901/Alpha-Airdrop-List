@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThemeProvider, AutoRefreshProvider } from './contexts';
+import { ThemeProvider, AutoRefreshProvider, GlobalPriceProvider } from './contexts';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { PersistLayout } from './components';
 import Airdrop from './pages/Airdrop';
@@ -17,16 +17,18 @@ import Tge from './pages/Tge';
 export default function App() {
   return (
     <ThemeProvider>
-      <AutoRefreshProvider>
-        <Routes>
-          <Route path="/" element={<PersistLayout />}>
-            <Route index element={<Navigate to="/airdrop" replace />} />
-            <Route path="airdrop" element={<Airdrop />} />
-            <Route path="tge" element={<Tge />} />
-            <Route path="*" element={<Navigate to="/airdrop" replace />} />
-          </Route>
-        </Routes>
-      </AutoRefreshProvider>
+      <GlobalPriceProvider>
+        <AutoRefreshProvider>
+          <Routes>
+            <Route path="/" element={<PersistLayout />}>
+              <Route index element={<Navigate to="/airdrop" replace />} />
+              <Route path="airdrop" element={<Airdrop />} />
+              <Route path="tge" element={<Tge />} />
+              <Route path="*" element={<Navigate to="/airdrop" replace />} />
+            </Route>
+          </Routes>
+        </AutoRefreshProvider>
+      </GlobalPriceProvider>
     </ThemeProvider>
   );
 }

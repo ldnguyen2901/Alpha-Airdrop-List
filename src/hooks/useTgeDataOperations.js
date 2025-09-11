@@ -25,7 +25,7 @@ export const useTgeDataOperations = (
   // Add new row
   const addRow = useCallback((rowData = null) => {
     const newRowData = rowData ? cleanRowData(rowData) : newTgeRow();
-    console.log('TGE: Adding new row:', newRowData);
+    // console.log('TGE: Adding new row:', newRowData); // Commented out to reduce console spam
     
     setRows(prevRows => {
       const updatedRows = [...prevRows, newRowData];
@@ -33,14 +33,14 @@ export const useTgeDataOperations = (
       // CHỈ save localStorage khi KHÔNG phải remote update
       if (!isRemoteUpdateRef.current) {
         saveTgeDataToStorage(updatedRows);
-        console.log('TGE: Saved to localStorage, total rows:', updatedRows.length);
+        // console.log('TGE: Saved to localStorage, total rows:', updatedRows.length); // Commented out to reduce console spam
       }
       
       // Always save to TGE workspace - exclude price field
       try {
         const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
         saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
-        console.log('TGE: Saved to Neon database, total rows:', rowsWithoutPrice.length);
+        // console.log('TGE: Saved to Neon database, total rows:', rowsWithoutPrice.length); // Commented out to reduce console spam
         
         // Update last sync time when successfully saved to database
         if (setLastSyncTime) {
@@ -92,7 +92,7 @@ export const useTgeDataOperations = (
         try {
           const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
           saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
-          console.log('TGE: Successfully saved row update to Neon');
+          // console.log('TGE: Successfully saved row update to Neon'); // Commented out to reduce console spam
           
           // Update last sync time when successfully saved to database
           if (setLastSyncTime) {
@@ -106,6 +106,20 @@ export const useTgeDataOperations = (
       return updatedRows;
     });
   }, [setRows, isRemoteUpdateRef, cleanRowData, setLastSyncTime]);
+
+  // Update specific row for price updates only (no database save)
+  const updateRowPriceOnly = useCallback((index, updates) => {
+    setRows(prevRows => {
+      const updatedRows = [...prevRows];
+      const cleanedUpdates = cleanRowData(updates);
+      updatedRows[index] = { ...updatedRows[index], ...cleanedUpdates };
+      
+      // Only save to localStorage for price updates (no Neon save)
+      saveTgeDataToStorage(updatedRows);
+      
+      return updatedRows;
+    });
+  }, [setRows, cleanRowData]);
 
   // Remove row
   const removeRow = useCallback((index) => {
@@ -149,7 +163,7 @@ export const useTgeDataOperations = (
       try {
         const rowsWithoutPrice = removePriceFromTgeRows(updatedRows);
         saveTgeWorkspaceData(TGE_WORKSPACE_ID, rowsWithoutPrice);
-        console.log('TGE: Saved multiple rows to Neon database, total rows:', rowsWithoutPrice.length);
+        // console.log('TGE: Saved multiple rows to Neon database, total rows:', rowsWithoutPrice.length); // Commented out to reduce console spam
         
         // Update last sync time when successfully saved to database
         if (setLastSyncTime) {
@@ -249,8 +263,8 @@ export const useTgeDataOperations = (
     }
     
     // Debug: Log original API ID before processing
-    console.log('🔍 DEBUG useTgeDataOperations - Original API ID from form:', form.apiId);
-    console.log('🔍 DEBUG useTgeDataOperations - API ID after trim:', form.apiId.trim());
+    // console.log('🔍 DEBUG useTgeDataOperations - Original API ID from form:', form.apiId);
+    // console.log('🔍 DEBUG useTgeDataOperations - API ID after trim:', form.apiId.trim());
     
     // Create new row data (excluding price - will be fetched from API)
     const newRowData = {
@@ -265,7 +279,7 @@ export const useTgeDataOperations = (
     };
     
     // Debug: Log final API ID in newRowData
-    console.log('🔍 DEBUG useTgeDataOperations - Final API ID in newRowData:', newRowData.apiId);
+    // console.log('🔍 DEBUG useTgeDataOperations - Final API ID in newRowData:', newRowData.apiId);
     
     // Add the row
     addRow(newRowData);
@@ -277,6 +291,7 @@ export const useTgeDataOperations = (
   return {
     addRow,
     updateRow,
+    updateRowPriceOnly,
     updateRowForAPI,
     removeRow,
     addMultipleRows,

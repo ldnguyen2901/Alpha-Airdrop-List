@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { AUTO_REFRESH_INTERVAL } from '../utils/constants';
+import { useGlobalPriceContext } from './GlobalPriceContext';
 
 const AutoRefreshContext = createContext();
 
@@ -17,11 +18,12 @@ export const AutoRefreshProvider = ({ children }) => {
   const [errorCount, setErrorCount] = useState(0);
   const [isPageVisible, setIsPageVisible] = useState(true);
 
-  // Refs to store refresh functions from both sections
-  const airdropRefreshDataRef = useRef(null);
-  const airdropRefreshStatscardRef = useRef(null);
-  const tgeRefreshDataRef = useRef(null);
-  const tgeRefreshStatscardRef = useRef(null);
+  // Get global price context
+  const globalPriceContext = useGlobalPriceContext();
+
+  // Refs to store token data from both sections
+  const airdropTokensRef = useRef([]);
+  const tgeTokensRef = useRef([]);
 
   // Timer refs
   const timerRef = useRef(null);
@@ -47,32 +49,36 @@ export const AutoRefreshProvider = ({ children }) => {
     setErrorCount(0);
   };
 
-  // Register refresh functions from sections
-  const registerAirdropRefresh = useCallback((refreshData, refreshStatscard) => {
-    airdropRefreshDataRef.current = refreshData;
-    airdropRefreshStatscardRef.current = refreshStatscard;
-    console.log('🔄 Registered Airdrop refresh functions');
+  // Register token data from sections
+  const registerAirdropTokens = useCallback((tokens) => {
+    const tokenCount = tokens ? tokens.length : 0;
+    // Always update tokens to ensure we have the latest data
+    airdropTokensRef.current = tokens || [];
+    // console.log(`🔄 Registered ${tokenCount} Airdrop tokens`); // Commented out to reduce console spam
   }, []);
 
-  const registerTgeRefresh = useCallback((refreshData, refreshStatscard) => {
-    tgeRefreshDataRef.current = refreshData;
-    tgeRefreshStatscardRef.current = refreshStatscard;
-    console.log('🔄 Registered TGE refresh functions');
+  const registerTgeTokens = useCallback((tokens) => {
+    const tokenCount = tokens ? tokens.length : 0;
+    // Always update tokens to ensure we have the latest data
+    tgeTokensRef.current = tokens || [];
+    // console.log(`🔄 Registered ${tokenCount} TGE tokens`); // Commented out to reduce console spam
   }, []);
 
-  // Handle page visibility changes
+  // Handle page visibility changes - with production fallback
   useEffect(() => {
     const handleVisibilityChange = () => {
       const isVisible = !document.hidden;
       setIsPageVisible(isVisible);
       
-      if (isVisible) {
-        console.log('Page became visible, resuming auto refresh');
-      } else {
-        console.log('Page became hidden, pausing auto refresh');
+      // Always log for debugging (even in production)
+      if (typeof window !== 'undefined') {
+        console.log('Page visibility changed:', isVisible ? 'visible' : 'hidden');
       }
     };
 
+    // Initialize page visibility state
+    setIsPageVisible(!document.hidden);
+    
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -102,27 +108,46 @@ export const AutoRefreshProvider = ({ children }) => {
     };
   }, [isAutoRefreshEnabled, isPageVisible]);
 
-  // Centralized auto refresh effect - refresh both sections
+  // Centralized auto refresh effect - refresh all prices in one go
   useEffect(() => {
-    if (!isAutoRefreshEnabled || !isPageVisible) {
+    if (!isAutoRefreshEnabled) {
       return;
     }
 
-    timerRef.current = setInterval(() => {
-      console.log('🔄 Centralized auto refresh: refreshing both Airdrop and TGE...');
+    // Production fallback: Always run auto-refresh regardless of page visibility
+    // This ensures auto-refresh works on Vercel production
+    const shouldRunRefresh = isPageVisible || process.env.NODE_ENV === 'production';
+    
+    if (!shouldRunRefresh) {
+      return;
+    }
+
+    timerRef.current = setInterval(async () => {
+      // Enhanced logging for production debugging
+      const timestamp = new Date().toISOString();
+      console.log(`🔄 [${timestamp}] Unified auto refresh: fetching all prices...`);
       
-      // Refresh Airdrop if functions are registered
-      if (airdropRefreshDataRef.current && airdropRefreshStatscardRef.current) {
-        console.log('🔄 Refreshing Airdrop data...');
-        airdropRefreshDataRef.current();
-        airdropRefreshStatscardRef.current();
-      }
-      
-      // Refresh TGE if functions are registered
-      if (tgeRefreshDataRef.current && tgeRefreshStatscardRef.current) {
-        console.log('🔄 Refreshing TGE data...');
-        tgeRefreshDataRef.current();
-        tgeRefreshStatscardRef.current();
+      try {
+        // Get all tokens from both sections
+        const allAirdropTokens = airdropTokensRef.current || [];
+        const allTgeTokens = tgeTokensRef.current || [];
+        
+        console.log(`📊 Refreshing prices for ${allAirdropTokens.length} Airdrop + ${allTgeTokens.length} TGE tokens`);
+        
+        // Use global price context to refresh all prices in one API call
+        await globalPriceContext.refreshAllPrices(allAirdropTokens, allTgeTokens);
+        
+        console.log(`✅ [${timestamp}] Unified auto refresh completed successfully`);
+        
+        // Reset error count on success
+        setErrorCount(0);
+        
+        // Reset countdown to sync with auto refresh cycle
+        setCountdown(AUTO_REFRESH_INTERVAL);
+        
+      } catch (error) {
+        console.error(`❌ [${timestamp}] Error in unified auto refresh:`, error);
+        setErrorCount(prev => prev + 1);
       }
     }, REFRESH_INTERVAL_MS);
 
@@ -132,7 +157,7 @@ export const AutoRefreshProvider = ({ children }) => {
         timerRef.current = null;
       }
     };
-  }, [isAutoRefreshEnabled, isPageVisible]);
+  }, [isAutoRefreshEnabled, isPageVisible, globalPriceContext]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -146,27 +171,31 @@ export const AutoRefreshProvider = ({ children }) => {
     };
   }, []);
 
-  const manualRefresh = useCallback(() => {
-    console.log('🔄 Manual refresh triggered for both sections...');
+  const manualRefresh = useCallback(async () => {
+    const timestamp = new Date().toISOString();
+    console.log(`🔄 [${timestamp}] Manual refresh triggered for all sections...`);
     
-    // Refresh Airdrop if functions are registered
-    if (airdropRefreshDataRef.current && airdropRefreshStatscardRef.current) {
-      console.log('🔄 Manual refresh: Airdrop');
-      airdropRefreshDataRef.current();
-      airdropRefreshStatscardRef.current();
+    try {
+      // Get all tokens from both sections
+      const allAirdropTokens = airdropTokensRef.current || [];
+      const allTgeTokens = tgeTokensRef.current || [];
+      
+      console.log(`📊 Manual refresh: ${allAirdropTokens.length} Airdrop + ${allTgeTokens.length} TGE tokens`);
+      
+      // Use global price context to refresh all prices in one API call
+      await globalPriceContext.refreshAllPrices(allAirdropTokens, allTgeTokens);
+      
+      console.log(`✅ [${timestamp}] Manual refresh completed successfully`);
+      
+      if (isAutoRefreshEnabled) {
+        setCountdown(AUTO_REFRESH_INTERVAL);
+      }
+      
+    } catch (error) {
+      console.error(`❌ [${timestamp}] Error in manual refresh:`, error);
+      setErrorCount(prev => prev + 1);
     }
-    
-    // Refresh TGE if functions are registered
-    if (tgeRefreshDataRef.current && tgeRefreshStatscardRef.current) {
-      console.log('🔄 Manual refresh: TGE');
-      tgeRefreshDataRef.current();
-      tgeRefreshStatscardRef.current();
-    }
-    
-    if (isAutoRefreshEnabled) {
-      setCountdown(AUTO_REFRESH_INTERVAL);
-    }
-  }, [isAutoRefreshEnabled]);
+  }, [isAutoRefreshEnabled, globalPriceContext]);
 
   const value = {
     isAutoRefreshEnabled,
@@ -176,8 +205,8 @@ export const AutoRefreshProvider = ({ children }) => {
     errorCount,
     incrementErrorCount,
     resetErrorCount,
-    registerAirdropRefresh,
-    registerTgeRefresh,
+    registerAirdropTokens,
+    registerTgeTokens,
     manualRefresh
   };
 

@@ -64,58 +64,6 @@ export function expandAllRowsWithMultipleContracts(rows) {
   return expandedRows;
 }
 
-/**
- * Collapse multiple contract rows back to a single row
- * @param {Array} rows - Array of rows (some may be from same token)
- * @returns {Array} Collapsed array of rows
- */
-export function collapseMultipleContractRows(rows) {
-  if (!Array.isArray(rows)) {
-    return [];
-  }
-
-  const tokenMap = new Map();
-  
-  rows.forEach(row => {
-    if (!row || row === null) return;
-    
-    const key = row.apiId;
-    
-    if (!tokenMap.has(key)) {
-      // First time seeing this token
-      tokenMap.set(key, {
-        ...row,
-        contractAddresses: {},
-        chains: []
-      });
-    }
-    
-    const existingRow = tokenMap.get(key);
-    
-    // Add contract to contractAddresses
-    if (row.contract && row.primaryChain) {
-      existingRow.contractAddresses[row.primaryChain] = row.contract;
-    }
-    
-    // Merge chains
-    if (row.chains && Array.isArray(row.chains)) {
-      existingRow.chains = [...new Set([...existingRow.chains, ...row.chains])];
-    }
-    
-    // Keep the primary contract (first one)
-    if (!existingRow.contract && row.contract) {
-      existingRow.contract = row.contract;
-    }
-    
-    // Remove multi-contract specific fields
-    delete existingRow.contractIndex;
-    delete existingRow.isMultiContract;
-    delete existingRow.totalContracts;
-    delete existingRow.primaryChain;
-  });
-
-  return Array.from(tokenMap.values());
-}
 
 /**
  * Get contract display info for a row
@@ -155,30 +103,4 @@ export function getContractDisplayInfo(row) {
   return { display: 'N/A', tooltip: '', isMultiContract: false };
 }
 
-/**
- * Check if a row has multiple contracts
- * @param {Object} row - Row data
- * @returns {boolean} True if row has multiple contracts
- */
-export function hasMultipleContracts(row) {
-  return row && 
-         row.contractAddresses && 
-         typeof row.contractAddresses === 'object' && 
-         Object.keys(row.contractAddresses).length > 1;
-}
 
-/**
- * Get all contracts for a token
- * @param {Object} row - Row data
- * @returns {Array} Array of {chain, contract} objects
- */
-export function getAllContractsForToken(row) {
-  if (!row || !row.contractAddresses) {
-    return row?.contract ? [{ chain: 'ethereum', contract: row.contract }] : [];
-  }
-
-  return Object.entries(row.contractAddresses).map(([chain, contract]) => ({
-    chain,
-    contract
-  }));
-}
